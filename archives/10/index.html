@@ -269,7 +269,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2016/02/17/devops/cm/ansible-dynamic-inventory/" data-id="ck3pzz86u00fv5epfnxmnxped" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2016/02/17/devops/cm/ansible-dynamic-inventory/" data-id="ck3q011ys00fn68pfb69bgfhw" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -347,144 +347,6 @@
 
 
 
-    <article id="post-devops/cm/ansible-adhoc" class="article article-type-post" itemscope itemprop="blogPost">
-    <div class="article-inner">
-        
-        
-            <header class="article-header">
-                
-    
-        <h1 itemprop="name">
-            <a class="article-title" href="/2016/02/17/devops/cm/ansible-adhoc/">Ansible Ad-Hoc 指令與 Modules</a>
-        </h1>
-    
-
-                
-                    <div class="article-meta">
-                        
-    <div class="article-date">
-        <i class="fa fa-calendar-o"></i>
-        Posted on 
-        <a href="/2016/02/17/devops/cm/ansible-adhoc/">
-            <u><time datetime="2016-02-17T04:23:01.000Z" itemprop="datePublished">2016-02-17</time></u>
-        </a>
-    </div>
-
-
-                        
-
-                        
-    <div class="article-category">
-    	<i class="fa fa-folder"></i>
-        <a class="article-category-link" href="/categories/DevOps/">DevOps</a>
-    </div>
-
-                        
-    <div class="article-tag">
-        <i class="fa fa-tag"></i>
-        <a class="tag-link" href="/tags/Ansible/">Ansible</a>, <a class="tag-link" href="/tags/Automation-Engine/">Automation Engine</a>, <a class="tag-link" href="/tags/DevOps/">DevOps</a>
-    </div>
-
-                    </div>
-                
-            </header>
-        
-        
-        <div class="article-entry" itemprop="articleBody">
-        
-            <p><p>ad-hoc command（特設指令）簡單說就是直接執行指令，這些指令不需要要被保存在日後使用。在進行 Ansible 的 Playbook 語言之前，了解 ad-hoc 指令也可以幫助我們做一些快速的事情，不一定要寫出一個完整的 Playbooks 指令。</p>
-<p>模組（也被稱為<code>Task plugins</code>或是<code>Library plugins</code>）是 Ansible 中實際執行的功能，它們會在每個 Playbook 任務中被執行，也可以透過 ansible 直接呼叫使用。目前 Ansible 已經擁有許多模組，可參閱 <a href="http://docs.ansible.com/ansible/modules_by_category.html" target="_blank" rel="noopener">Module Index</a>。</p></p>
-            <p class="article-more-link">
-                <a href="/2016/02/17/devops/cm/ansible-adhoc/">Read More</a>
-            </p>
-        
-        </div>
-        
-        <footer class="article-footer">
-            <div class="share-container">
-
-
-
-</div>
-
-    <a data-url="https://k2r2bai.com/2016/02/17/devops/cm/ansible-adhoc/" data-id="ck3pzz86s00fn5epfelt4orpr" class="article-share-link"><i class="fa fa-share"></i>Share</a>
-<script>
-    (function ($) {
-        // Prevent duplicate binding
-        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
-            __SHARE_BUTTON_BINDED__ = true;
-        } else {
-            return;
-        }
-        $('body').on('click', function() {
-            $('.article-share-box.on').removeClass('on');
-        }).on('click', '.article-share-link', function(e) {
-            e.stopPropagation();
-
-            var $this = $(this),
-                url = $this.attr('data-url'),
-                encodedUrl = encodeURIComponent(url),
-                id = 'article-share-box-' + $this.attr('data-id'),
-                offset = $this.offset(),
-                box;
-
-            if ($('#' + id).length) {
-                box = $('#' + id);
-
-                if (box.hasClass('on')){
-                    box.removeClass('on');
-                    return;
-                }
-            } else {
-                var html = [
-                    '<div id="' + id + '" class="article-share-box">',
-                        '<input class="article-share-input" value="' + url + '">',
-                        '<div class="article-share-links">',
-                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
-                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
-                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
-                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
-                        '</div>',
-                    '</div>'
-                ].join('');
-
-              box = $(html);
-
-              $('body').append(box);
-            }
-
-            $('.article-share-box.on').hide();
-
-            box.css({
-                top: offset.top + 25,
-                left: offset.left
-            }).addClass('on');
-
-        }).on('click', '.article-share-box', function (e) {
-            e.stopPropagation();
-        }).on('click', '.article-share-box-input', function () {
-            $(this).select();
-        }).on('click', '.article-share-box-link', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
-        });
-    })(jQuery);
-</script>
-
-            
-    
-        <a href="https://k2r2bai.com/2016/02/17/devops/cm/ansible-adhoc/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2016/02/17/devops/cm/ansible-adhoc/">Comments</a>
-    
-
-        </footer>
-    </div>
-</article>
-
-
-
-
     <article id="post-devops/cm/ansible-inventory" class="article article-type-post" itemscope itemprop="blogPost">
     <div class="article-inner">
         
@@ -545,7 +407,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2016/02/17/devops/cm/ansible-inventory/" data-id="ck3pzz86x00g25epf0cfsbdya" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2016/02/17/devops/cm/ansible-inventory/" data-id="ck3q011ys00fq68pf85no9ovd" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -623,6 +485,144 @@
 
 
 
+    <article id="post-devops/cm/ansible-adhoc" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 itemprop="name">
+            <a class="article-title" href="/2016/02/17/devops/cm/ansible-adhoc/">Ansible Ad-Hoc 指令與 Modules</a>
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2016/02/17/devops/cm/ansible-adhoc/">
+            <u><time datetime="2016-02-17T04:23:01.000Z" itemprop="datePublished">2016-02-17</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/DevOps/">DevOps</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Ansible/">Ansible</a>, <a class="tag-link" href="/tags/Automation-Engine/">Automation Engine</a>, <a class="tag-link" href="/tags/DevOps/">DevOps</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p><p>ad-hoc command（特設指令）簡單說就是直接執行指令，這些指令不需要要被保存在日後使用。在進行 Ansible 的 Playbook 語言之前，了解 ad-hoc 指令也可以幫助我們做一些快速的事情，不一定要寫出一個完整的 Playbooks 指令。</p>
+<p>模組（也被稱為<code>Task plugins</code>或是<code>Library plugins</code>）是 Ansible 中實際執行的功能，它們會在每個 Playbook 任務中被執行，也可以透過 ansible 直接呼叫使用。目前 Ansible 已經擁有許多模組，可參閱 <a href="http://docs.ansible.com/ansible/modules_by_category.html" target="_blank" rel="noopener">Module Index</a>。</p></p>
+            <p class="article-more-link">
+                <a href="/2016/02/17/devops/cm/ansible-adhoc/">Read More</a>
+            </p>
+        
+        </div>
+        
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2016/02/17/devops/cm/ansible-adhoc/" data-id="ck3q011yp00ff68pfnck87ny9" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2016/02/17/devops/cm/ansible-adhoc/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2016/02/17/devops/cm/ansible-adhoc/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+
+
     <article id="post-devops/cm/ansible-basic" class="article article-type-post" itemscope itemprop="blogPost">
     <div class="article-inner">
         
@@ -683,7 +683,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2016/02/16/devops/cm/ansible-basic/" data-id="ck3pzz86s00fq5epfptttk99e" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2016/02/16/devops/cm/ansible-basic/" data-id="ck3q011yq00fi68pfhsuj5243" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -820,7 +820,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2016/02/15/ceph/deploy/ceph-ansible/" data-id="ck3pzz86l00f65epfaf4z8v9l" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2016/02/15/ceph/deploy/ceph-ansible/" data-id="ck3q011yj00f268pflmxwvrh8" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -957,7 +957,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2016/02/14/devops/cm/puppet-foreman/" data-id="ck3pzz86z00ga5epfh71l1q38" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2016/02/14/devops/cm/puppet-foreman/" data-id="ck3q011yv00fy68pfvlykpwb0" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -1094,7 +1094,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2016/02/13/devops/cm/puppet-basic/" data-id="ck3pzz86y00g65epf2591s4cw" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2016/02/13/devops/cm/puppet-basic/" data-id="ck3q011yw00g268pfbdhbjowq" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -1232,7 +1232,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2016/02/12/devops/cm/saltstack-basic/" data-id="ck3pzz87000ge5epfnw57yvqp" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2016/02/12/devops/cm/saltstack-basic/" data-id="ck3q011yy00g668pf5cujen1k" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -1370,7 +1370,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2016/02/11/ceph/deploy/ceph-docker/" data-id="ck3pzz86o00fb5epf2e74r9qr" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2016/02/11/ceph/deploy/ceph-docker/" data-id="ck3q011yn00fb68pfjmkmpja7" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -1512,7 +1512,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2016/02/11/devops/monitoring/graphite/" data-id="ck3pzz87200gk5epfep6s3fc0" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2016/02/11/devops/monitoring/graphite/" data-id="ck3q011z100gd68pfjszqnppn" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
