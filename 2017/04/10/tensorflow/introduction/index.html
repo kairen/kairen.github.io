@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>TensorFlow 基本使用與分散式概念 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="TensorFlow™ 是利用資料流圖(Data Flow Graphs)來表達數值運算的開放式原始碼函式庫。資料流圖中的節點(Nodes)被用來表示數學運算，而邊(Edges)則用來表示在節點之間互相聯繫的多維資料陣列，即張量(Tensors)。它靈活的架構讓你能夠在不同平台上執行運算，例如 PC 中的一個或多的 CPU(或GPU)、智慧手持裝置與伺服器等。TensorFlow 最初是 Goog">
+<meta name="keywords" content="Python,ML&#x2F;DL">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TensorFlow 基本使用與分散式概念">
+<meta property="og:url" content="https://k2r2bai.com/2017/04/10/tensorflow/introduction/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="TensorFlow™ 是利用資料流圖(Data Flow Graphs)來表達數值運算的開放式原始碼函式庫。資料流圖中的節點(Nodes)被用來表示數學運算，而邊(Edges)則用來表示在節點之間互相聯繫的多維資料陣列，即張量(Tensors)。它靈活的架構讓你能夠在不同平台上執行運算，例如 PC 中的一個或多的 CPU(或GPU)、智慧手持裝置與伺服器等。TensorFlow 最初是 Goog">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/tf/tf-logo.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.401Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="TensorFlow 基本使用與分散式概念">
+<meta name="twitter:description" content="TensorFlow™ 是利用資料流圖(Data Flow Graphs)來表達數值運算的開放式原始碼函式庫。資料流圖中的節點(Nodes)被用來表示數學運算，而邊(Edges)則用來表示在節點之間互相聯繫的多維資料陣列，即張量(Tensors)。它靈活的架構讓你能夠在不同平台上執行運算，例如 PC 中的一個或多的 CPU(或GPU)、智慧手持裝置與伺服器等。TensorFlow 最初是 Goog">
+<meta name="twitter:image" content="https://k2r2bai.com/images/tf/tf-logo.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-tensorflow/introduction" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+            
+	
+		<img src="/images/tf/tf-logo.png" class="article-banner" />
+	
+
+
+
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            TensorFlow 基本使用與分散式概念
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2017/04/10/tensorflow/introduction/">
+            <u><time datetime="2017-04-10T08:23:01.000Z" itemprop="datePublished">2017-04-10</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/TensorFlow/">TensorFlow</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/ML-DL/">ML/DL</a>, <a class="tag-link" href="/tags/Python/">Python</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>TensorFlow™ 是利用資料流圖(Data Flow Graphs)來表達數值運算的開放式原始碼函式庫。資料流圖中的節點(Nodes)被用來表示數學運算，而邊(Edges)則用來表示在節點之間互相聯繫的多維資料陣列，即張量(Tensors)。它靈活的架構讓你能夠在不同平台上執行運算，例如 PC 中的一個或多的 CPU(或GPU)、智慧手持裝置與伺服器等。TensorFlow 最初是 Google 機器智能研究所的研究員和工程師開發而成，主要用於機器學習與深度神經網路方面研究。</p>
+<a id="more"></a>
+
+<p>TensorFlow 其實在意思上是要用兩個部分來解釋，Tensor 與 Flow：</p>
+<ul>
+<li><strong>Tensor</strong>：是中文翻譯是<code>張量</code>，其實就是一個<code>n</code>維度的陣列或列表。如一維 Tensor 就是向量，二維 Tensor 就是矩陣等等.</li>
+<li><strong>Flow</strong>：是指 Graph 運算過程中的資料流.</li>
+</ul>
+<h2 id="Data-Flow-Graphs"><a href="#Data-Flow-Graphs" class="headerlink" title="Data Flow Graphs"></a>Data Flow Graphs</h2><p>資料流圖(Data Flow Graphs)是一種有向圖的節點(Node)與邊(Edge)來描述計算過程。圖中的節點表示數學操作，亦表示資料 I/O 端點; 而邊則表示節點之間的關析，用來傳遞操作之間互相使用的多維陣列(Tensors)，而 Tensor 是在圖中流動的資料表示。一旦節點相連的邊傳來資料流，這時節點就會被分配到運算裝置上異步(節點之間)或同步(節點之內)的執行。</p>
+<p><img src="https://www.tensorflow.org/images/tensors_flowing.gif" alt></p>
+<h2 id="TensorFlow-基本使用"><a href="#TensorFlow-基本使用" class="headerlink" title="TensorFlow 基本使用"></a>TensorFlow 基本使用</h2><p>在開始進行 TensorFlow 之前，需要了解幾個觀念：</p>
+<ul>
+<li>使用 <a href="https://www.tensorflow.org/api_docs/python/tf/Graph" target="_blank" rel="noopener">tf.Graph</a> 來表示計算任務.</li>
+<li>採用<code>tensorflow::Session</code>的上下文(Context)來執行圖.</li>
+<li>以 Tensor 來表示所有資料，可看成擁有靜態資料類型，但有動態大小的多維陣列與列表，如 Boolean 或 String 轉成數值類型.</li>
+<li>透過<code>tf.Variable</code>來維護狀態.</li>
+<li>透過 feed 與 fetch 來任意操作(Arbitrary operation)給予值或從中取得資料.</li>
+</ul>
+<p>TensorFlow 的圖中的節點被稱為 <a href="https://www.tensorflow.org/api_docs/python/tf/Operation" target="_blank" rel="noopener">op(operation)</a>。一個<code>op</code>會有 0 至多個 Tensor，而每個 Tensor 是一種類別化的多維陣列，例如把一個圖集合表示成四維浮點陣列，分別為<code>[batch, height, width, channels]</code>。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/2630831-5da81623d4661886.jpg?imageMogr2/auto-orient/strip" alt></p>
+<p>利用三種不同稱呼來描述 Tensor 的維度，Shape、Rank 與 Dimension。可參考 <a href="https://www.tensorflow.org/programmers_guide/dims_types" target="_blank" rel="noopener">Rank, Shape, 和 Type</a>。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/2630831-3625a021343b5da3.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt></p>
+<p>一般只有 shape 能夠直接被 print，而 Tensor 則需要 Session 來提供，一般需要三個操作步驟：</p>
+<ol>
+<li>建立 Tensor.</li>
+<li>新增 op.</li>
+<li>建立 Session(包含一個 Graph)來執行運算.</li>
+</ol>
+<p>以下是一個簡單範例，說明如何建立運算：</p>
+<figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="comment"># coding=utf-8</span></span><br><span class="line"><span class="keyword">import</span> tensorflow <span class="keyword">as</span> tf</span><br><span class="line"></span><br><span class="line">a = tf.constant(<span class="number">1</span>)</span><br><span class="line">b = tf.constant(<span class="number">2</span>)</span><br><span class="line">c = tf.constant(<span class="number">3</span>)</span><br><span class="line">d = tf.constant(<span class="number">4</span>)</span><br><span class="line">add1 = tf.add(a, b)</span><br><span class="line">mul1 = tf.multiply(b, c)</span><br><span class="line">add2 = tf.add(c, d)</span><br><span class="line">output = tf.add(add1, mul1)</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    <span class="keyword">print</span> sess.run(output)</span><br></pre></td></tr></table></figure>
+
+<p>執行流程如下圖：<br><img src="https://github.com/lienhua34/notes/raw/master/tensorflow/asserts/graph_compute_flow.jpg?_=5998853" alt></p>
+<p>以下是一個簡單範例，說明如何建立多個 Graph：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># coding=utf-8</span></span><br><span class="line"><span class="keyword">import</span> tensorflow <span class="keyword">as</span> tf</span><br><span class="line"></span><br><span class="line">logs_path = <span class="string">'./basic_tmp'</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 建立一個 graph，並建立兩個常數 op ，這些 op 稱為節點</span></span><br><span class="line">g1 = tf.Graph()</span><br><span class="line"><span class="keyword">with</span> g1.as_default():</span><br><span class="line">    a = tf.constant([<span class="number">1.5</span>, <span class="number">6.0</span>])</span><br><span class="line">    b = tf.constant([<span class="number">1.5</span>, <span class="number">3.2</span>])</span><br><span class="line">    c = a * b</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Graph().as_default() <span class="keyword">as</span> g2:</span><br><span class="line">    <span class="comment"># 建立一個 1x2 矩陣與 2x1 矩陣 op</span></span><br><span class="line">    m1 = tf.constant([[<span class="number">1.</span>, <span class="number">0.</span>, <span class="number">2.</span>], [<span class="number">-1.</span>, <span class="number">3.</span>, <span class="number">1.</span>]])</span><br><span class="line">    m2 = tf.constant([[<span class="number">3.</span>, <span class="number">1.</span>], [<span class="number">2.</span>, <span class="number">1.</span>], [<span class="number">1.</span>, <span class="number">0.</span>]])</span><br><span class="line">    m3 = tf.matmul(m1, m2) <span class="comment"># 矩陣相乘</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 在 session 執行 graph，並進行資料數據操作 `c`。</span></span><br><span class="line"><span class="comment"># 然後指派給 cpu 做運算</span></span><br><span class="line"><span class="keyword">with</span> tf.Session(graph=g1) <span class="keyword">as</span> sess_cpu:</span><br><span class="line">  <span class="keyword">with</span> tf.device(<span class="string">"/cpu:0"</span>):</span><br><span class="line">      writer = tf.summary.FileWriter(logs_path, graph=g1)</span><br><span class="line">      print(sess_cpu.run(c))</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session(graph=g2) <span class="keyword">as</span> sess_gpu:</span><br><span class="line">  <span class="keyword">with</span> tf.device(<span class="string">"/gpu:0"</span>):</span><br><span class="line">      result = sess_gpu.run(m3)</span><br><span class="line">      print(result)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用 tf.InteractiveSession 方式來印出內容(不會實際執行)</span></span><br><span class="line">it_sess = tf.InteractiveSession()</span><br><span class="line">x = tf.Variable([<span class="number">1.0</span>, <span class="number">2.0</span>])</span><br><span class="line">a = tf.constant([<span class="number">3.0</span>, <span class="number">3.0</span>])</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用初始器 initializer op 的 run() 方法初始化 'x'</span></span><br><span class="line">x.initializer.run()</span><br><span class="line">sub = tf.subtract(x, a)</span><br><span class="line"></span><br><span class="line"><span class="keyword">print</span> sub.eval()</span><br><span class="line">it_sess.close()</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li>範例來至 <a href="https://www.tensorflow.org/versions/r0.10/get_started/basic_usage" target="_blank" rel="noopener">Basic Usage</a>。</li>
+<li>指定 Device 可以看這邊 <a href="https://www.tensorflow.org/versions/r0.10/how_tos/using_gpu/" target="_blank" rel="noopener">Using GPU</a>.</li>
+</ul>
+</blockquote>
+<p>上面範例可以看到建立了一個 Graph 的計算過程<code>c</code>，而當直接執行到<code>c</code>時，並不會真的執行運算，而是在<code>sess</code>會話建立後，並透過<code>sess</code>執行分配給 CPU 或 GPU 之類設備進行運算後，才會回傳一個節點的 Tensor，在 Python 中 Tensor 是一個 Numpy 的 ndarry 物件。</p>
+<p>TensorFlow 也可以透過變數來維護 Graph 的執行過程狀態，這邊提供一個簡單的累加器：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># coding=utf-8</span></span><br><span class="line"><span class="keyword">import</span> tensorflow <span class="keyword">as</span> tf</span><br><span class="line"></span><br><span class="line"><span class="comment"># 建立一個變數 counter，並初始化為 0</span></span><br><span class="line">state = tf.Variable(<span class="number">0</span>, name=<span class="string">"counter"</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 建立一個常數 op 為 1，並用來累加 state</span></span><br><span class="line">one = tf.constant(<span class="number">1</span>)</span><br><span class="line">new_value = tf.add(state, one)</span><br><span class="line">update = tf.assign(state, new_value)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 啟動 Graph 前，變數必須先被初始化(init) op</span></span><br><span class="line">init_op = tf.global_variables_initializer()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 啟動 Graph 來執行 op</span></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">  sess.run(init_op)</span><br><span class="line">  <span class="keyword">print</span> sess.run(state)</span><br><span class="line">  <span class="comment"># 執行 op 並更新 state</span></span><br><span class="line">  <span class="keyword">for</span> _ <span class="keyword">in</span> range(<span class="number">3</span>):</span><br><span class="line">    sess.run(update)</span><br><span class="line">    <span class="keyword">print</span> sess.run(state)</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>更多細節可以查看 <a href="https://www.tensorflow.org/programmers_guide/variables" target="_blank" rel="noopener">Variables</a>。</p>
+</blockquote>
+<p>另外可以利用 Fetch 方式來一次取得多個節點的 Tensor，範例如下：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># coding=utf-8</span></span><br><span class="line"><span class="keyword">import</span> tensorflow <span class="keyword">as</span> tf</span><br><span class="line"></span><br><span class="line">input1 = tf.constant(<span class="number">3.0</span>)</span><br><span class="line">input2 = tf.constant(<span class="number">2.0</span>)</span><br><span class="line">input3 = tf.constant(<span class="number">5.0</span>)</span><br><span class="line">intermed = tf.add(input2, input3)</span><br><span class="line">mul = tf.multiply(input1, intermed)</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">  <span class="comment"># 一次取得多個 Tensor</span></span><br><span class="line">  result = sess.run([mul, intermed])</span><br><span class="line">  <span class="keyword">print</span> result</span><br></pre></td></tr></table></figure>
+
+<p>而當我們想要在執行 Session 時，臨時替換 Tensor 內容的話，就可以利用 TensorFlow 內建的 Feed 方法來解決：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># coding=utf-8</span></span><br><span class="line"><span class="keyword">import</span> tensorflow <span class="keyword">as</span> tf</span><br><span class="line"></span><br><span class="line">input1 = tf.placeholder(tf.float32)</span><br><span class="line">input2 = tf.placeholder(tf.float32)</span><br><span class="line">output = tf.multiply(input1, input2)</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">  <span class="comment"># 透過 feed 來更改 op 內容，這只會在執行時有效</span></span><br><span class="line">  <span class="keyword">print</span> sess.run([output], feed_dict=&#123;input1:[<span class="number">7.</span>], input2:[<span class="number">2.</span>]&#125;)</span><br><span class="line">  <span class="keyword">print</span> sess.run([output])</span><br></pre></td></tr></table></figure>
+
+<h2 id="TensorFlow-分散式運算"><a href="#TensorFlow-分散式運算" class="headerlink" title="TensorFlow 分散式運算"></a>TensorFlow 分散式運算</h2><p>本節將以 TensorFlow 分散式深度學習為例。</p>
+<h3 id="gRPC"><a href="#gRPC" class="headerlink" title="gRPC"></a>gRPC</h3><p>gRPC(google Remote Procedure Call) 是 Google 開發的基於 HTTP/2 和 Protocol Buffer 3 的 RPC 框架，該框架有各種常見語言的實作，如 C、Java 與 Go 等語言，提供輕鬆跨語言的呼叫。</p>
+<h3 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h3><p>說明客戶端(Client)、叢集(Cluster)、工作(Job)、任務(Task)、TensorFlow 伺服器、Master 與 Worker 服務。</p>
+<p><img src="http://www.pittnuts.com/wp-content/uploads/2016/08/TFramework.png" alt></p>
+<p>如圖所示，幾個流程說明如下：</p>
+<ul>
+<li>整個系统映射到 TensorFlow 叢集.</li>
+<li>參數伺服器映射到一個 Job.</li>
+<li>每個模型(Model)副本映射到一個 Job.</li>
+<li>每台實體運算節點映射到其 Job 中的 Task.</li>
+<li>每個 Task 都有一個 TF Server，並利用 Master 服務來進行溝通與協調工作，而 Worker 服務則透過本地裝置(CPU 或 GPU)進行 TF graph 運算.</li>
+</ul>
+<p>TensorFlow 叢集裡包含了一個或多個工作(Job)，每個工作又可以拆分成一個或多個任務(Task)，簡單說 Cluster 是 Job 的集合，而 Job 是 Task 的集合。叢集概念主要用在一個特定層次對象，如訓練神經網路、平行操作多台機器等，一個叢集物件可以透過<code>tf.train.ClusterSpec</code>來定義。</p>
+<p>如上所述，TensorFlow 的叢集就是一組工作任務，每個任務是一個服務，而服務又分成<code>Master</code>與<code>Worker</code>這兩種，並提供給<code>Client</code>進行操作。</p>
+<ul>
+<li><strong>Client</strong>：是用於建立 TensorFlow 計算 Graph，並建立與叢集進行互動的<code>tensorflow::Session</code>行程，一般由 Python 或 C++ 實作，單一客戶端可以同時連接多個 TF 伺服器連接，同時也能被多個 TF 伺服器連接.</li>
+<li><strong>Master Service</strong>：是一個 RPC 服務行程，用來遠端連線一系列分散式裝置，主要提供<code>tensorflow::Session</code>介面，並負責透過 Worker Service 與工作的任務進行溝通.</li>
+<li><strong>Worker Service</strong>：是一個可以使用本地裝置(CPU 或 GPU)對部分 Graph 進行運算的 RPC 邏輯，透過<code>worker_service.proto</code>介面來實作，所有 TensorFlow 伺服器均包含了 Worker Service 邏輯.</li>
+</ul>
+<blockquote>
+<p><strong>TensorFlow 伺服器</strong>是運行<code>tf.train.Server</code>實例的行程，其為叢集一員，並有 Master 與 Worker 之分。</p>
+</blockquote>
+<p>而 TensorFlow 的工作(Job)可拆成多個相同功能的任務(Task)，這些工作又分成<code>Parameter server</code>與<code>Worker</code>，兩者功能說明如下：</p>
+<p><img src="https://img.tipelse.com/uploads/B/6A/B6A07C1923.jpeg" alt></p>
+<ul>
+<li><strong>Parameter server(ps)</strong>:是分散式系統縮放至工業大小機器學習的問題，它提供工作節點與伺服器節點之間的非同步與零拷貝 key-value 的溝通，並支援資料的一致性模型的分散式儲存。在 TensorFlow 中主要根據梯度更新變數，並儲存於<code>tf.Variable</code>，可理解成只儲存 TF Model 的變數，並存放 Variable 副本.</li>
+</ul>
+<p><img src="http://arimo.com/wp-content/uploads/2016/03/TF_Image_0.png" alt></p>
+<ul>
+<li><strong>Worker</strong>:通常稱為計算節點，一般管理無狀態(Stateless)，且執行密集型的 Graph 運算資源，並根據變數運算梯度。存放 Graph 副本.</li>
+</ul>
+<p><img src="http://arimo.com/wp-content/uploads/2016/03/TF_Image_1.png" alt></p>
+<blockquote>
+<ul>
+<li><a href="http://blog.csdn.net/cyh_24/article/details/50545780" target="_blank" rel="noopener">Parameter Server 詳解</a></li>
+</ul>
+</blockquote>
+<p>一般對於<code>小型規模訓練</code>，這種資料與參數量不多時，可以用一個 CPU 來同時執行兩種任務。而<code>中型規模訓練</code>，資料量較大，但參數量不多時，計算梯度的工作負載較高，而參數更新負載較低，所以計算梯度交給若干個 CPU 或 GPU 去執行，而更新參數則交給一個 CPU 即可。對於<code>大型規模訓練</code>，資料與參數量多時，不僅計算梯度需要部署多個 CPU 或 GPU，連更新參數也要不說到多個 CPU 中。</p>
+<p>然而單一節點能夠裝載的 CPU 與 GPU 是有限的，所以在大量訓練時就需要多台機器來提供運算能力的擴展。</p>
+<h3 id="分散式變數伺服器-Parameter-Server"><a href="#分散式變數伺服器-Parameter-Server" class="headerlink" title="分散式變數伺服器(Parameter Server)"></a>分散式變數伺服器(Parameter Server)</h3><p>當在較大規模的訓練時，隨著模型的變數越來越多，很可能造成單一節點因為效能問題，而無法負荷模型變數儲存與更新時，這時候就需要將變數分開到不同機器來做儲存與更新。而 TensorFlow 提供了變數伺服器的邏輯實現，並可以用多台機器來組成叢集，類似分散式儲存結構，主要用來解決變數的儲存與更新效能問題。</p>
+<h3 id="撰寫分散式程式注意概念"><a href="#撰寫分散式程式注意概念" class="headerlink" title="撰寫分散式程式注意概念"></a>撰寫分散式程式注意概念</h3><p>當我們在寫分散式程式時，需要知道使用的副本與訓練模式。</p>
+<p><img src="https://camo.githubusercontent.com/0b7a1232bd3f8861dfbccab568a30591588384dc/68747470733a2f2f7777772e74656e736f72666c6f772e6f72672f696d616765732f74656e736f72666c6f775f666967757265372e706e67" alt></p>
+<h4 id="In-graph-與-Between-graph-副本模式"><a href="#In-graph-與-Between-graph-副本模式" class="headerlink" title="In-graph 與 Between-graph 副本模式"></a>In-graph 與 Between-graph 副本模式</h4><p>下圖顯示兩者差異，而這邊也在進行描述。</p>
+<ul>
+<li><strong>In-graph</strong>：只有一個 Clinet(主要呼叫<code>tf::Session</code>行程)，並將裡面變數與 op 指定給對應的 Job 完成，因此資料分發只由一個 Client 完成。這種方式設定簡單，其他節點只需要 join 操作，並提供一個 gRPC 位址來等待任務。但是訓練資料只在單一節點，因此要把資料分發到不同機器時，會影響平行訓練效能。可理解成所有 op 都在同一個 Graph 中，伺服器只需要做<code>join()</code>功能.</li>
+<li><strong>Between-graph</strong>：多個獨立 Client 建立相同 Graph(包含變數)，並透過<code>tf.train.replica_device_setter</code>將這些參數映射到 ps 上，即訓練的變數儲存在 Parameter Server，而資料不用分發，資料分片(Shards)會存在個計算節點，因此個節點自己算自己的，算完後，把要更新變數告知 Parameter Server 進行更新。適合在 TB 級別的資料量使用，節省大量資料傳輸時間，也是深度學習推薦模式。</li>
+</ul>
+<h4 id="同步-Synchronous-訓練與非同步-Asynchronous-訓鍊"><a href="#同步-Synchronous-訓練與非同步-Asynchronous-訓鍊" class="headerlink" title="同步(Synchronous)訓練與非同步(Asynchronous)訓鍊"></a>同步(Synchronous)訓練與非同步(Asynchronous)訓鍊</h4><p>TensorFlow 的副本擁有 in-graph 和 between-graph 模式，這兩者都支援了同步與非同步更新。本節將說明同步與非同步兩者的差異為何。</p>
+<ul>
+<li><strong>Synchronous</strong>：每個 Graph 的副本讀取相同 Parameter 的值，然後平行計算梯度(gradients)，將所有計算完的梯度放在一起處理，當每次更新梯度時，需要等所以分發的資料計算完成，並回傳結果來把梯度累加計算平均，在進行更新變數。好處在於使用 loss 的下降時比較穩定，壞處就是要等最慢的分片計算時間。</li>
+</ul>
+<blockquote>
+<p>可以利用<code>tf.train.SyncReplicasOptimizer</code>來解決這個問題(在 Between-graph 情況下)，而在 In-graph 則將所有梯度平均即可。</p>
+</blockquote>
+<ul>
+<li><strong>Asynchronous</strong>：自己計算完梯度後，就去更新 paramenter，不同副本之前不會進行協調進度，因此計算資源被充分的利用。缺點是 loss 的下降不穩定。</li>
+</ul>
+<p><img src="http://img.blog.csdn.net/20161114005141032" alt></p>
+<p>一般在資料量小，且各節點計算能力平均下，適合使用同步模式; 反之在資料量大與各節點效能差異不同時，適合用非同步。</p>
+<h3 id="簡單分散式訓練程式"><a href="#簡單分散式訓練程式" class="headerlink" title="簡單分散式訓練程式"></a>簡單分散式訓練程式</h3><p>TensorFlow 提供建立 Server 函式來進行測試使用，以下是建立一個分散式訓練 Server 程式<code>server.py</code>：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># coding=utf-8</span></span><br><span class="line"><span class="keyword">import</span> tensorflow <span class="keyword">as</span> tf</span><br><span class="line"></span><br><span class="line"><span class="comment"># 定義 Cluster</span></span><br><span class="line">cluster = tf.train.ClusterSpec(&#123;<span class="string">"worker"</span>: [<span class="string">"localhost:2222"</span>]&#125;)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 建立 Worker server</span></span><br><span class="line">server = tf.train.Server(cluster,job_name=<span class="string">"worker"</span>,task_index=<span class="number">0</span>)</span><br><span class="line">server.join()</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>也可以透過<code>tf.train.Server.create_local_server()</code> 來建立 Local Server</p>
+</blockquote>
+<p>當確認程式沒有任何問題後，就可以透過以下方式啟動：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ python server.py</span><br><span class="line">2017-04-10 18:19:41.953448: I tensorflow/core/common_runtime/gpu/gpu_device.cc:977] Creating TensorFlow device (/gpu:0) -&gt; (device: 0, name: GeForce GTX 650, pci bus id: 0000:01:00.0)</span><br><span class="line">2017-04-10 18:19:41.983913: I tensorflow/core/distributed_runtime/rpc/grpc_channel.cc:200] Initialize GrpcChannelCache <span class="keyword">for</span> job <span class="built_in">local</span> -&gt; &#123;0 -&gt; localhost:2222&#125;</span><br><span class="line">2017-04-10 18:19:41.984946: I tensorflow/core/distributed_runtime/rpc/grpc_server_lib.cc:240] Started server with target: grpc://localhost:2222</span><br></pre></td></tr></table></figure>
+
+<p>接著我們要撰寫 Client 端來進行定義 Graph 運算的程式<code>client.py</code>：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># coding=utf-8</span></span><br><span class="line"><span class="keyword">import</span> tensorflow <span class="keyword">as</span> tf</span><br><span class="line"></span><br><span class="line"><span class="comment"># 執行目標 Session</span></span><br><span class="line">server_target = <span class="string">"grpc://localhost:2222"</span></span><br><span class="line">logs_path = <span class="string">'./basic_tmp'</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 指定 worker task 0 使用 CPU 運算</span></span><br><span class="line"><span class="keyword">with</span> tf.device(<span class="string">"/job:worker/task:0"</span>):</span><br><span class="line">    <span class="keyword">with</span> tf.device(<span class="string">"/cpu:0"</span>):</span><br><span class="line">        a = tf.constant([<span class="number">1.5</span>, <span class="number">6.0</span>], name=<span class="string">'a'</span>)</span><br><span class="line">        b = tf.Variable([<span class="number">1.5</span>, <span class="number">3.2</span>], name=<span class="string">'b'</span>)</span><br><span class="line">        c = (a * b) + (a / b)</span><br><span class="line">        d = c * a</span><br><span class="line">        y = tf.assign(b, d)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 啟動 Session</span></span><br><span class="line"><span class="keyword">with</span> tf.Session(server_target) <span class="keyword">as</span> sess:</span><br><span class="line">    sess.run(tf.global_variables_initializer())</span><br><span class="line">    writer = tf.summary.FileWriter(logs_path, graph=tf.get_default_graph())</span><br><span class="line">    print(sess.run(y))</span><br></pre></td></tr></table></figure>
+
+<p>完成後即可透過以下指令測試：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">$ python client.py</span><br><span class="line">[   <span class="number">4.875</span>       <span class="number">126.45000458</span>]</span><br></pre></td></tr></table></figure>
+
+<h3 id="線性迴歸訓練程式"><a href="#線性迴歸訓練程式" class="headerlink" title="線性迴歸訓練程式"></a>線性迴歸訓練程式</h3><p>上面範例提供了很簡單的 Client 與 Server 運算操作。而這邊建立一個 Between-graph 執行程式<code>bg_dist.py</code>：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># coding=utf-8</span></span><br><span class="line"><span class="keyword">import</span> tensorflow <span class="keyword">as</span> tf</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"></span><br><span class="line">parameter_servers = [<span class="string">"localhost:2222"</span>]</span><br><span class="line">workers = [<span class="string">"localhost:2223"</span>, <span class="string">"localhost:2224"</span>]</span><br><span class="line"></span><br><span class="line">tf.app.flags.DEFINE_string(<span class="string">"job_name"</span>, <span class="string">""</span>, <span class="string">"輸入 'ps' 或是 'worker'"</span>)</span><br><span class="line">tf.app.flags.DEFINE_integer(<span class="string">"task_index"</span>, <span class="number">0</span>, <span class="string">"Job 的任務 index"</span>)</span><br><span class="line">FLAGS = tf.app.flags.FLAGS</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">(_)</span>:</span></span><br><span class="line"></span><br><span class="line">    cluster = tf.train.ClusterSpec(&#123;<span class="string">"ps"</span>: parameter_servers, <span class="string">"worker"</span>: workers&#125;)</span><br><span class="line">    server = tf.train.Server(cluster,job_name=FLAGS.job_name,task_index=FLAGS.task_index)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> FLAGS.job_name == <span class="string">"ps"</span>:</span><br><span class="line">        server.join()</span><br><span class="line">    <span class="keyword">elif</span> FLAGS.job_name == <span class="string">"worker"</span>:</span><br><span class="line"></span><br><span class="line">        train_X = np.linspace(<span class="number">-1.0</span>, <span class="number">1.0</span>, <span class="number">100</span>)</span><br><span class="line">        train_Y = <span class="number">2.0</span> * train_X + np.random.randn(*train_X.shape) * <span class="number">0.33</span> + <span class="number">10.0</span></span><br><span class="line"></span><br><span class="line">        X = tf.placeholder(<span class="string">"float"</span>)</span><br><span class="line">        Y = tf.placeholder(<span class="string">"float"</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Assigns ops to the local worker by default.</span></span><br><span class="line">        <span class="keyword">with</span> tf.device(tf.train.replica_device_setter(</span><br><span class="line">                worker_device=<span class="string">"/job:worker/task:%d"</span> % FLAGS.task_index,</span><br><span class="line">                cluster=cluster)):</span><br><span class="line"></span><br><span class="line">            w = tf.Variable(<span class="number">0.0</span>, name=<span class="string">"weight"</span>)</span><br><span class="line">            b = tf.Variable(<span class="number">0.0</span>, name=<span class="string">"bias"</span>)</span><br><span class="line">            <span class="comment"># 損失函式，用於描述模型預測值與真實值的差距大小，常見為`均方差(Mean Squared Error)`</span></span><br><span class="line">            loss = tf.square(Y - tf.multiply(X, w) - b)</span><br><span class="line"></span><br><span class="line">            global_step = tf.Variable(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">            train_op = tf.train.AdagradOptimizer(<span class="number">0.01</span>).minimize(</span><br><span class="line">                loss, global_step=global_step)</span><br><span class="line"></span><br><span class="line">            saver = tf.train.Saver()</span><br><span class="line">            summary_op = tf.summary.merge_all()</span><br><span class="line">            init_op = tf.global_variables_initializer()</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 建立 "Supervisor" 來負責監督訓練過程</span></span><br><span class="line">        sv = tf.train.Supervisor(is_chief=(FLAGS.task_index == <span class="number">0</span>),</span><br><span class="line">                                 logdir=<span class="string">"/tmp/train_logs"</span>,</span><br><span class="line">                                 init_op=init_op,</span><br><span class="line">                                 summary_op=summary_op,</span><br><span class="line">                                 saver=saver,</span><br><span class="line">                                 global_step=global_step,</span><br><span class="line">                                 save_model_secs=<span class="number">600</span>)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">with</span> sv.managed_session(server.target) <span class="keyword">as</span> sess:</span><br><span class="line">            loss_value = <span class="number">100</span></span><br><span class="line">            <span class="keyword">while</span> <span class="keyword">not</span> sv.should_stop() <span class="keyword">and</span> loss_value &gt; <span class="number">70.0</span>:</span><br><span class="line">                <span class="comment"># 執行一個非同步 training 步驟.</span></span><br><span class="line">                <span class="comment"># 若要執行同步可利用`tf.train.SyncReplicasOptimizer` 來進行</span></span><br><span class="line">                <span class="keyword">for</span> (x, y) <span class="keyword">in</span> zip(train_X, train_Y):</span><br><span class="line">                    _, step = sess.run([train_op, global_step],</span><br><span class="line">                                       feed_dict=&#123;X: x, Y: y&#125;)</span><br><span class="line"></span><br><span class="line">                loss_value = sess.run(loss, feed_dict=&#123;X: x, Y: y&#125;)</span><br><span class="line">                print(<span class="string">"步驟: &#123;&#125;, loss: &#123;&#125;"</span>.format(step, loss_value))</span><br><span class="line"></span><br><span class="line">        sv.stop()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line">    tf.app.run()</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若想指定 Device 可以用以下方式：</p>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">tf.train.replica_device_setter(ps_tasks=<span class="number">0</span>, ps_device=<span class="string">'/job:ps'</span>, worker_device=<span class="string">'/job:worker'</span>, merge_devices=<span class="literal">True</span>, cluster=<span class="literal">None</span>, ps_ops=<span class="literal">None</span>)</span><br></pre></td></tr></table></figure>
+
+<p>撰寫完成後，透過以下指令來進行測試：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ python liner_dist.py --job_name=ps --task_index=0</span><br><span class="line">$ python liner_dist.py --job_name=worker --task_index=0</span><br><span class="line">$ python liner_dist.py --job_name=worker --task_index=1</span><br></pre></td></tr></table></figure>
+
+<h2 id="Tensorboard-視覺化工具"><a href="#Tensorboard-視覺化工具" class="headerlink" title="Tensorboard 視覺化工具"></a>Tensorboard 視覺化工具</h2><p>Tensorboard 是 TensorFlow 內建的視覺化工具，我們可以透過讀取事件紀錄結構化的資料，來顯示以下幾個項目來提供視覺化：</p>
+<ul>
+<li><strong>Event</strong>：訓練過程中統計資料(平均值等)變化狀態.</li>
+<li><strong>Image</strong>：訓練過程中紀錄的 Graph.</li>
+<li><strong>Audio</strong>：訓練過程中紀錄的 Audio.</li>
+<li><strong>Histogram</strong>：順練過程中紀錄的資料分散圖</li>
+</ul>
+<p>一個範例程式如下所示：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># coding=utf-8</span></span><br><span class="line"><span class="keyword">import</span> tensorflow <span class="keyword">as</span> tf</span><br><span class="line"></span><br><span class="line">logs_path = <span class="string">'./tmp/1'</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 建立一個 graph，並建立兩個常數 op ，這些 op 稱為節點</span></span><br><span class="line">g1 = tf.Graph()</span><br><span class="line"><span class="keyword">with</span> g1.as_default():</span><br><span class="line">    a = tf.constant([<span class="number">1.5</span>, <span class="number">6.0</span>], name=<span class="string">'a'</span>)</span><br><span class="line">    b = tf.Variable([<span class="number">1.5</span>, <span class="number">3.2</span>], name=<span class="string">'b'</span>)</span><br><span class="line">    c = (a * b) + (a / b)</span><br><span class="line">    d = c * a</span><br><span class="line">    y = tf.assign(b, d)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 在 session 執行 graph，並進行資料數據操作 `c`。</span></span><br><span class="line"><span class="comment"># 然後指派給 cpu 做運算</span></span><br><span class="line"><span class="keyword">with</span> tf.Session(graph=g1) <span class="keyword">as</span> sess_cpu:</span><br><span class="line">  <span class="keyword">with</span> tf.device(<span class="string">"/cpu:0"</span>):</span><br><span class="line">      sess_cpu.run(tf.global_variables_initializer())</span><br><span class="line">      writer = tf.summary.FileWriter(logs_path, graph=g1)</span><br><span class="line">      print(sess_cpu.run(y))</span><br></pre></td></tr></table></figure>
+
+<p>執行後會看到當前目錄產生<code>tmp_mnist</code> logs 檔案，這時候就可以透過 thensorboard 來視覺化訓練結果：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ tensorboard --logdir=run1:./tmp/1 --port=6006</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>run1 是當有多次 log 被載入時做為區別用。</p>
+</blockquote>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">TensorFlow 基本使用與分散式概念</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2017-4-10 16:04</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2017/04/23/container/moby-linuxkit/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    品嚐 Moby LinuxKit 的 Linux 作業系統
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2017/03/25/kubernetes/helm/quick-start/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">[Helm] 基礎介紹與使用</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2017/04/10/tensorflow/introduction/" data-id="ck3ns7q770069wmpfvhmttser" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2017/04/10/tensorflow/introduction/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2017/04/10/tensorflow/introduction/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Data-Flow-Graphs"><span class="toc-number">1.</span> <span class="toc-text">Data Flow Graphs</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#TensorFlow-基本使用"><span class="toc-number">2.</span> <span class="toc-text">TensorFlow 基本使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#TensorFlow-分散式運算"><span class="toc-number">3.</span> <span class="toc-text">TensorFlow 分散式運算</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#gRPC"><span class="toc-number">3.1.</span> <span class="toc-text">gRPC</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#概念"><span class="toc-number">3.2.</span> <span class="toc-text">概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#分散式變數伺服器-Parameter-Server"><span class="toc-number">3.3.</span> <span class="toc-text">分散式變數伺服器(Parameter Server)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#撰寫分散式程式注意概念"><span class="toc-number">3.4.</span> <span class="toc-text">撰寫分散式程式注意概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#簡單分散式訓練程式"><span class="toc-number">3.5.</span> <span class="toc-text">簡單分散式訓練程式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#線性迴歸訓練程式"><span class="toc-number">3.6.</span> <span class="toc-text">線性迴歸訓練程式</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Tensorboard-視覺化工具"><span class="toc-number">4.</span> <span class="toc-text">Tensorboard 視覺化工具</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2017/04/10/tensorflow/introduction/';
+        
+        this.page.identifier = 'tensorflow/introduction';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

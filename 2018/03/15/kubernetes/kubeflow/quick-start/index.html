@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>[Kubeflow] 初探基本功能與概念 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Kubeflow 是 Google 開源的機器學習工具，目標是簡化在 Kubernetes 上運行機器學習的過程，使之更簡單、可攜帶與可擴展。Kubeflow 目標不是在於重建其他服務，而是提供一個最佳開發系統來部署到各種基礎設施架構中，另外由於使用 Kubernetes 來做為基礎，因此只要有 Kubernetes 的地方，都能夠執行 Kubeflow。">
+<meta name="keywords" content="Container,GPU,ML&#x2F;DL,Kubeflow,TensorFlow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[Kubeflow] 初探基本功能與概念">
+<meta property="og:url" content="https://k2r2bai.com/2018/03/15/kubernetes/kubeflow/quick-start/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Kubeflow 是 Google 開源的機器學習工具，目標是簡化在 Kubernetes 上運行機器學習的過程，使之更簡單、可攜帶與可擴展。Kubeflow 目標不是在於重建其他服務，而是提供一個最佳開發系統來部署到各種基礎設施架構中，另外由於使用 Kubernetes 來做為基礎，因此只要有 Kubernetes 的地方，都能夠執行 Kubeflow。">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/k8s/kubeflow/1.png">
+<meta property="og:image" content="https://k2r2bai.com/images/k8s/kubeflow/2.png">
+<meta property="og:image" content="https://k2r2bai.com/images/k8s/kubeflow/3.png">
+<meta property="og:image" content="https://k2r2bai.com/images/k8s/kubeflow/4.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.396Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="[Kubeflow] 初探基本功能與概念">
+<meta name="twitter:description" content="Kubeflow 是 Google 開源的機器學習工具，目標是簡化在 Kubernetes 上運行機器學習的過程，使之更簡單、可攜帶與可擴展。Kubeflow 目標不是在於重建其他服務，而是提供一個最佳開發系統來部署到各種基礎設施架構中，另外由於使用 Kubernetes 來做為基礎，因此只要有 Kubernetes 的地方，都能夠執行 Kubeflow。">
+<meta name="twitter:image" content="https://k2r2bai.com/images/k8s/kubeflow/1.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-kubernetes/kubeflow/quick-start" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            [Kubeflow] 初探基本功能與概念
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2018/03/15/kubernetes/kubeflow/quick-start/">
+            <u><time datetime="2018-03-15T09:08:54.000Z" itemprop="datePublished">2018-03-15</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Container/">Container</a>, <a class="tag-link" href="/tags/GPU/">GPU</a>, <a class="tag-link" href="/tags/Kubeflow/">Kubeflow</a>, <a class="tag-link" href="/tags/ML-DL/">ML/DL</a>, <a class="tag-link" href="/tags/TensorFlow/">TensorFlow</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p><a href="https://github.com/kubeflow/kubeflow" target="_blank" rel="noopener">Kubeflow</a> 是 Google 開源的機器學習工具，目標是簡化在 Kubernetes 上運行機器學習的過程，使之更簡單、可攜帶與可擴展。Kubeflow 目標不是在於重建其他服務，而是提供一個最佳開發系統來部署到各種基礎設施架構中，另外由於使用 Kubernetes 來做為基礎，因此只要有 Kubernetes 的地方，都能夠執行 Kubeflow。</p>
+<a id="more"></a>
+
+<p>該工具能夠建立以下幾項功能：</p>
+<ul>
+<li>用於建議與管理互動式 Jupyter notebook 的 JupyterHub。</li>
+<li>可以設定使用 CPU 或 GPU，並透過單一設定調整單個叢集大小的 Tensorflow Training Controller。</li>
+<li>用 TensorFlow Serving 容器來提供模型服務。</li>
+</ul>
+<p>Kubeflow 目標是透過 Kubernetes 的特性使機器學習更加簡單與快速：</p>
+<ul>
+<li>在不同基礎設施上實現簡單、可重複的攜帶性部署(Laptop &lt;-&gt; ML rig &lt;-&gt; Training cluster &lt;-&gt; Production cluster)。</li>
+<li>部署與管理松耦合的微服務。</li>
+<li>根據需求進行縮放。</li>
+</ul>
+<h2 id="節點資訊"><a href="#節點資訊" class="headerlink" title="節點資訊"></a>節點資訊</h2><p>本次安裝作業系統採用<code>Ubuntu 16.04 Server</code>，測試環境為實體機器：</p>
+<table>
+<thead>
+<tr>
+<th>IP Address</th>
+<th>Role</th>
+<th>vCPU</th>
+<th>RAM</th>
+<th>Extra Device</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>172.22.132.51</td>
+<td>gpu-node1</td>
+<td>8</td>
+<td>16G</td>
+<td>GTX 1060 3G</td>
+</tr>
+<tr>
+<td>172.22.132.52</td>
+<td>gpu-node2</td>
+<td>8</td>
+<td>16G</td>
+<td>GTX 1060 3G</td>
+</tr>
+<tr>
+<td>172.22.132.53</td>
+<td>master1</td>
+<td>8</td>
+<td>16G</td>
+<td>無</td>
+</tr>
+</tbody></table>
+<h2 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h2><p>使用 Kubeflow 之前，需要確保以下條件達成：</p>
+<ul>
+<li>所有節點正確安裝指定版本的 NVIDIA driver、CUDA、Docker、NVIDIA Docker，請參考 <a href="https://kairen.github.io/2018/02/17/container/nvidia-docker-install/" target="_blank" rel="noopener">安裝 Nvidia Docker 2</a>。</li>
+<li>(option)所有 GPU 節點安裝 cuDNN v7.1.2 for CUDA 9.1，請至 <a href="https://developer.nvidia.com/cudnn" target="_blank" rel="noopener">NVIDIA cuDNN</a> 下載。</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ tar xvf cudnn-9.1-linux-x64-v7.1.tgz</span><br><span class="line">$ sudo cp cuda/include/cudnn.h /usr/<span class="built_in">local</span>/cuda/include/</span><br><span class="line">$ sudo cp cuda/lib64/libcudnn* /usr/<span class="built_in">local</span>/cuda/lib64/</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>所有節點以 kubeadm 部署成 Kubernetes v1.9+ 叢集，請參考 <a href="https://kairen.github.io/2016/09/29/kubernetes/deploy/kubeadm/" target="_blank" rel="noopener">用 kubeadm 部署 Kubernetes 叢集</a>。</li>
+<li>Kubernetes 叢集需要安裝 NVIDIA Device Plugins，請參考 <a href="https://kairen.github.io/2018/03/01/kubernetes/k8s-device-plugin/" target="_blank" rel="noopener">安裝 Kubernetes NVIDIA Device Plugins</a>。</li>
+<li>建立 NFS server 並在 Kubernetes 節點安裝 NFS common，然後利用 Kubernetes 建立 PV 提供給 Kubeflow 使用：</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 在 master 執行</span></span><br><span class="line">$ sudo apt-get update &amp;&amp; sudo apt-get install -y nfs-server</span><br><span class="line">$ sudo mkdir /nfs-data</span><br><span class="line">$ <span class="built_in">echo</span> <span class="string">"/nfs-data *(rw,sync,no_root_squash,no_subtree_check)"</span> | sudo tee -a /etc/exports</span><br><span class="line">$ sudo /etc/init.d/nfs-kernel-server restart</span><br><span class="line"></span><br><span class="line"><span class="comment"># 在 node 執行</span></span><br><span class="line">$ sudo apt-get update &amp;&amp; sudo apt-get install -y nfs-common</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>安裝<code>ksonnet 0.9.2</code>，請參考以下：</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ wget https://github.com/ksonnet/ksonnet/releases/download/v0.9.2/ks_0.9.2_linux_amd64.tar.gz</span><br><span class="line">$ tar xvf ks_0.9.2_linux_amd64.tar.gz</span><br><span class="line">$ sudo cp ks_0.9.2_linux_amd64/ks /usr/<span class="built_in">local</span>/bin/</span><br><span class="line">$ ks version</span><br><span class="line">ksonnet version: 0.9.2</span><br><span class="line">jsonnet version: v0.9.5</span><br><span class="line">client-go version: 1.8</span><br></pre></td></tr></table></figure>
+
+<h2 id="部署-Kubeflow"><a href="#部署-Kubeflow" class="headerlink" title="部署 Kubeflow"></a>部署 Kubeflow</h2><p>本節將說明如何利用 ksonnet 來部署 Kubeflow 到 Kubernetes 叢集中。首先在<code>master</code>節點初始化 ksonnet 應用程式目錄：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ks init my-kubeflow</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>如果遇到以下問題的話，可以自己建立 GitHub Token 來存取 GitHub API，請參考 <a href="https://ksonnet.io/docs/tutorial#troubleshooting-github-rate-limiting-errors" target="_blank" rel="noopener">Github rate limiting errors</a>。</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">ERROR GET https://api.github.com/repos/ksonnet/parts/commits/master: 403 API rate <span class="built_in">limit</span> exceeded <span class="keyword">for</span> 122.146.93.152.</span><br></pre></td></tr></table></figure>
+
+<p>接著安裝 Kubeflow 套件至應用程式目錄：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> my-kubeflow</span><br><span class="line">$ ks registry add kubeflow github.com/kubeflow/kubeflow/tree/master/kubeflow</span><br><span class="line">$ ks pkg install kubeflow/core</span><br><span class="line">$ ks pkg install kubeflow/tf-serving</span><br><span class="line">$ ks pkg install kubeflow/tf-job</span><br></pre></td></tr></table></figure>
+
+<p>然後建立 Kubeflow 核心元件，該元件包含 JupyterHub 與 TensorFlow job controller：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl create namespace kubeflow</span><br><span class="line">$ kubectl create clusterrolebinding tf-admin --clusterrole=cluster-admin --serviceaccount=default:tf-job-operator</span><br><span class="line">$ ks generate core kubeflow-core --name=kubeflow-core --namespace=kubeflow</span><br><span class="line"></span><br><span class="line"><span class="comment"># 啟動收集匿名使用者使用量資訊，如果不想開啟則忽略</span></span><br><span class="line">$ ks param <span class="built_in">set</span> kubeflow-core reportUsage <span class="literal">true</span></span><br><span class="line">$ ks param <span class="built_in">set</span> kubeflow-core usageId $(uuidgen)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 部署 Kubeflow</span></span><br><span class="line">$ ks param <span class="built_in">set</span> kubeflow-core jupyterHubServiceType LoadBalancer</span><br><span class="line">$ ks apply default -c kubeflow-core</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>詳細使用量資訊請參考 <a href="https://github.com/kubeflow/kubeflow/blob/master/user_guide.md#usage-reporting" target="_blank" rel="noopener">Usage Reporting
+</a>。</p>
+</blockquote>
+<p>完成後檢查 Kubeflow 元件部署結果：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl -n kubeflow get po -o wide</span><br><span class="line">NAME                                  READY     STATUS    RESTARTS   AGE       IP               NODE</span><br><span class="line">ambassador-7956cf5c7f-6hngq           2/2       Running   0          34m       10.244.41.132    kube-gpu-node1</span><br><span class="line">ambassador-7956cf5c7f-jgxnd           2/2       Running   0          34m       10.244.152.134   kube-gpu-node2</span><br><span class="line">ambassador-7956cf5c7f-jww2d           2/2       Running   0          34m       10.244.41.133    kube-gpu-node1</span><br><span class="line">spartakus-volunteer-8c659d4f5-bg7kn   1/1       Running   0          34m       10.244.152.135   kube-gpu-node2</span><br><span class="line">tf-hub-0                              1/1       Running   0          34m       10.244.152.133   kube-gpu-node2</span><br><span class="line">tf-job-operator-78757955b-2jbdh       1/1       Running   0          34m       10.244.41.131    kube-gpu-node1</span><br></pre></td></tr></table></figure>
+
+<p>這時候就可以登入 Jupyter Notebook，但這邊需要修改 Kubernetes Service，透過以下指令進行：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl -n kubeflow get svc -o wide</span><br><span class="line">NAME               TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE       SELECTOR</span><br><span class="line">ambassador         ClusterIP   10.101.157.91    &lt;none&gt;        80/TCP     45m       service=ambassador</span><br><span class="line">ambassador-admin   ClusterIP   10.107.24.138    &lt;none&gt;        8877/TCP   45m       service=ambassador</span><br><span class="line">k8s-dashboard      ClusterIP   10.111.128.104   &lt;none&gt;        443/TCP    45m       k8s-app=kubernetes-dashboard</span><br><span class="line">tf-hub-0           ClusterIP   None             &lt;none&gt;        8000/TCP   45m       app=tf-hub</span><br><span class="line">tf-hub-lb          ClusterIP   10.105.47.253    &lt;none&gt;        80/TCP     45m       app=tf-hub</span><br><span class="line"></span><br><span class="line"><span class="comment"># 修改 svc 將 Type 修改成 LoadBalancer，並且新增 externalIPs 指定為 Master IP。</span></span><br><span class="line">$ kubectl -n kubeflow edit svc tf-hub-lb</span><br><span class="line">...</span><br><span class="line">spec:</span><br><span class="line">  <span class="built_in">type</span>: LoadBalancer</span><br><span class="line">  externalIPs:</span><br><span class="line">  - 172.22.132.41</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<h2 id="測試-Kubeflow"><a href="#測試-Kubeflow" class="headerlink" title="測試 Kubeflow"></a>測試 Kubeflow</h2><p>開始測試前先建立一個 NFS PV 來提供給 Kubeflow Jupyter 使用：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cat &lt;&lt;EOF | kubectl create -f -</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: PersistentVolume</span><br><span class="line">metadata:</span><br><span class="line">  name: nfs-pv</span><br><span class="line">spec:</span><br><span class="line">  capacity:</span><br><span class="line">    storage: 20Gi</span><br><span class="line">  accessModes:</span><br><span class="line">    - ReadWriteOnce</span><br><span class="line">  nfs:</span><br><span class="line">    server: 172.22.132.41</span><br><span class="line">    path: /nfs-data</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<p>完成後連接 <code>http://Master_IP</code>，並輸入<code>任意帳號密碼</code>進行登入。</p>
+<p><img src="/images/k8s/kubeflow/1.png" alt></p>
+<p>登入後點選<code>Start My Server</code>按鈕來建立 Server 的 Spawner options，預設會有多種映像檔可以使用：</p>
+<ul>
+<li>CPU：gcr.io/kubeflow-images-staging/tensorflow-notebook-cpu。</li>
+<li>GPU：gcr.io/kubeflow-images-staging/tensorflow-notebook-gpu。</li>
+</ul>
+<p>這邊也使用以下 GCP 建構的映像檔做測試使用(GPU 當前為 CUDA 8)：</p>
+<ul>
+<li>gcr.io/kubeflow/tensorflow-notebook-cpu:latest</li>
+<li>gcr.io/kubeflow/tensorflow-notebook-gpu:latest</li>
+</ul>
+<p>若 CUDA 版本不同，請自行修改 <a href="https://github.com/GoogleCloudPlatform/container-engine-accelerators/blob/master/example/tensorflow-notebook-image" target="_blank" rel="noopener">GCP Tensorflow Notebook image</a> 或是 <a href="https://github.com/kubeflow/kubeflow/tree/master/components/k8s-model-server/images" target="_blank" rel="noopener">Kubeflow Tensorflow Notebook image </a>重新建構。</p>
+<p>如果使用 GPU 請執行以下指令確認是否可被分配資源：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl get nodes <span class="string">"-o=custom-columns=NAME:.metadata.name,GPU:.status.allocatable.nvidia\.com/gpu"</span></span><br><span class="line">NAME               GPU</span><br><span class="line">kube-gpu-master1   &lt;none&gt;</span><br><span class="line">kube-gpu-node1     1</span><br><span class="line">kube-gpu-node2     1</span><br></pre></td></tr></table></figure>
+
+<p>最後點選<code>Spawn</code>來完成建立 Server，如下圖所示：</p>
+<p><img src="/images/k8s/kubeflow/2.png" alt></p>
+<blockquote>
+<p>這邊先用 CPU 進行測試，由於本篇是安裝 CUDA 9.1 + cuDNN 7，因此要自己建構映像檔。</p>
+</blockquote>
+<p>接著等 Kubernetes 下載映像檔後，就會正常啟動，如下圖所示：</p>
+<p><img src="/images/k8s/kubeflow/3.png" alt></p>
+<p>當正常啟動後，點選<code>New &gt; Python 3</code>建立一個 Notebook 並貼上以下範例程式：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> __future__ <span class="keyword">import</span> print_function</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> tensorflow <span class="keyword">as</span> tf</span><br><span class="line"></span><br><span class="line">hello = tf.constant(<span class="string">'Hello TensorFlow!'</span>)</span><br><span class="line">s = tf.Session()</span><br><span class="line">print(s.run(hello))</span><br></pre></td></tr></table></figure>
+
+<p>正確執行會如以下圖所示：</p>
+<p><img src="/images/k8s/kubeflow/4.png" alt></p>
+<blockquote>
+<p>若想關閉叢集的話，可以點選<code>Control Plane</code>。</p>
+</blockquote>
+<p>另外由於 Kubeflow 會安裝 TF Operator 來管理 TFJob，這邊可以透過 Kubernetes 來手動建立 Job：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl create -f https://raw.githubusercontent.com/kubeflow/tf-operator/master/examples/tf_job.yaml</span><br><span class="line">$ kubectl get po</span><br><span class="line">NAME                              READY     STATUS    RESTARTS   AGE</span><br><span class="line">example-job-ps-qq6x-0-pdx7v       1/1       Running   0          5m</span><br><span class="line">example-job-ps-qq6x-1-2mpfp       1/1       Running   0          5m</span><br><span class="line">example-job-worker-qq6x-0-m5fm5   1/1       Running   0          5m</span><br></pre></td></tr></table></figure>
+
+<p>若想從 Kubernetes 叢集刪除 Kubeflow 相關元件的話，可執行下列指令達成：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ks delete default -c kubeflow-core</span><br></pre></td></tr></table></figure>
+
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">[Kubeflow] 初探基本功能與概念</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2018-3-15 17:03</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2018/03/21/kubernetes/federation-v1/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    使用 kubefed 建立 Kubernetes Federation(On-premises)
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2018/02/17/container/nvidia-docker-install/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">安裝 NVIDIA Docker 2 來讓容器使用 GPU</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2018/03/15/kubernetes/kubeflow/quick-start/" data-id="ck3ns7qbo00ibwmpf2erudwyw" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2018/03/15/kubernetes/kubeflow/quick-start/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2018/03/15/kubernetes/kubeflow/quick-start/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#節點資訊"><span class="toc-number">1.</span> <span class="toc-text">節點資訊</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#事前準備"><span class="toc-number">2.</span> <span class="toc-text">事前準備</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#部署-Kubeflow"><span class="toc-number">3.</span> <span class="toc-text">部署 Kubeflow</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#測試-Kubeflow"><span class="toc-number">4.</span> <span class="toc-text">測試 Kubeflow</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2018/03/15/kubernetes/kubeflow/quick-start/';
+        
+        this.page.identifier = 'kubernetes/kubeflow/quick-start';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

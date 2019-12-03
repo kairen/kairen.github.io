@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>Apache Flume 快速上手 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Apache Flume 是一個分散式日誌收集系統，是由 Cloudera 公司開發的一款高效能、高可靠性和高恢復性的系統。它能從不同來源的大量日誌資料進行高效收集、聚合、移動，最後儲存到一個資料中心儲存系統當中。架構經過重構後，從原來的 Flume OG 到現在的 Flume NG。Flume NG 更像一個輕量化的小套件，簡單使用且容易適應不同方式收集日誌，且支援 Failover 和 Loa">
+<meta name="keywords" content="Spark,Logging">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Apache Flume 快速上手">
+<meta property="og:url" content="https://k2r2bai.com/2016/04/04/data-engineer/apache-flume/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Apache Flume 是一個分散式日誌收集系統，是由 Cloudera 公司開發的一款高效能、高可靠性和高恢復性的系統。它能從不同來源的大量日誌資料進行高效收集、聚合、移動，最後儲存到一個資料中心儲存系統當中。架構經過重構後，從原來的 Flume OG 到現在的 Flume NG。Flume NG 更像一個輕量化的小套件，簡單使用且容易適應不同方式收集日誌，且支援 Failover 和 Loa">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/spark/flume_architecture.png">
+<meta property="og:image" content="https://k2r2bai.com/images/spark/flume_cluster.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.383Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Apache Flume 快速上手">
+<meta name="twitter:description" content="Apache Flume 是一個分散式日誌收集系統，是由 Cloudera 公司開發的一款高效能、高可靠性和高恢復性的系統。它能從不同來源的大量日誌資料進行高效收集、聚合、移動，最後儲存到一個資料中心儲存系統當中。架構經過重構後，從原來的 Flume OG 到現在的 Flume NG。Flume NG 更像一個輕量化的小套件，簡單使用且容易適應不同方式收集日誌，且支援 Failover 和 Loa">
+<meta name="twitter:image" content="https://k2r2bai.com/images/spark/flume_architecture.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-data-engineer/apache-flume" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            Apache Flume 快速上手
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2016/04/04/data-engineer/apache-flume/">
+            <u><time datetime="2016-04-04T09:08:54.000Z" itemprop="datePublished">2016-04-04</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Spark/">Spark</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Logging/">Logging</a>, <a class="tag-link" href="/tags/Spark/">Spark</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>Apache Flume 是一個分散式日誌收集系統，是由 Cloudera 公司開發的一款高效能、高可靠性和高恢復性的系統。它能從不同來源的大量日誌資料進行高效收集、聚合、移動，最後儲存到一個資料中心儲存系統當中。架構經過重構後，從原來的 Flume OG 到現在的 Flume NG。Flume NG 更像一個輕量化的小套件，簡單使用且容易適應不同方式收集日誌，且支援 Failover 和 Load Balancing</p>
+<a id="more"></a>
+
+<h2 id="架構角色說明"><a href="#架構角色說明" class="headerlink" title="架構角色說明"></a>架構角色說明</h2><p>Flume 架構中主要有以下幾個核心:</p>
+<ul>
+<li><strong>Event</strong>：一個資料單元，會附帶一個可選的訊息來源。ex:日誌紀錄、avro。</li>
+<li><strong>Client</strong>：操作位在原點的 Event 且將它傳送到 Flume Agent，主要是產生資料，運行在一個獨立程式。</li>
+<li><strong>Agent</strong>：一個獨立的 Flume 程式，包含 Source、Channel、Sink。</li>
+<li><strong>Source</strong>：用來消費從 Client 端收集資料到此的 Event，然後傳送到 Channel。</li>
+<li><strong>Channel</strong>：轉換 Event 的一個臨時儲存空間，保有從 Source 傳送過來的 Event。</li>
+<li><strong>Sink</strong>:從 Channel 中讀取並且移除 Event，將 Event 傳遞到 Flow Pipeline 的下一個 Agent（如果存在的話）。</li>
+</ul>
+<p><img src="/images/spark/flume_architecture.png" alt></p>
+<h2 id="安裝-Apache-Flume"><a href="#安裝-Apache-Flume" class="headerlink" title="安裝 Apache Flume"></a>安裝 Apache Flume</h2><p>本節將說明如何部署 Apache Flume，其中包含單機與多機部署方式。</p>
+<h3 id="單機"><a href="#單機" class="headerlink" title="單機"></a>單機</h3><p>首先節點需先安裝 Java，這邊採用 Oracle 的 Java8 來進行安裝：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo add-apt-repository -y ppa:webupd8team/java</span><br><span class="line">$ sudo apt-get update</span><br><span class="line">$ sudo apt-get install -y oracle-java8-installer</span><br></pre></td></tr></table></figure>
+
+<p>完成後，在主機上安裝下載 Flume 套件，使用<code>wget</code>下載：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ wget <span class="string">"ftp://ftp.twaren.net/Unix/Web/apache/flume/1.6.0/apache-flume-1.6.0-src.tar.gz"</span></span><br><span class="line">$ wget <span class="string">"ftp://ftp.twaren.net/Unix/Web/apache/flume/1.6.0/apache-flume-1.6.0-bin.tar.gz"</span></span><br><span class="line">$ tar zxvf apache-flume-1.6.0-src.tar.gz</span><br><span class="line">$ tar zxvf apache-flume-1.6.0-bin.tar.gz</span><br></pre></td></tr></table></figure>
+
+<p>下載完後，將 src 覆蓋到 bin 底下，並解壓縮到<code>/opt</code>底下:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo cp -ri apache-flume-1.6.0-src/* apache-flume-1.6.0-bin</span><br><span class="line">$ sudo mv /opt/apache-flume-1.5.0-bin /opt/flume</span><br></pre></td></tr></table></figure>
+
+<p>之後到<code>/opt/flume/conf</code>底下建立 example 配置檔:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo vim example.conf</span><br></pre></td></tr></table></figure>
+
+<p>設定以下內容:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># example.conf: A single-node Flume configuration</span><br><span class="line"></span><br><span class="line"># Name the components on this agent</span><br><span class="line">a1.sources = r1</span><br><span class="line">a1.sinks = k1</span><br><span class="line">a1.channels = c1</span><br><span class="line"></span><br><span class="line"># Describe/configure the source</span><br><span class="line">a1.sources.r1.type = netcat</span><br><span class="line">a1.sources.r1.bind = localhost</span><br><span class="line">a1.sources.r1.port = 44444</span><br><span class="line"></span><br><span class="line"># Describe the sink</span><br><span class="line">a1.sinks.k1.type = logger</span><br><span class="line"></span><br><span class="line"># Use a channel which buffers events in memory</span><br><span class="line">a1.channels.c1.type = memory</span><br><span class="line">a1.channels.c1.capacity = 1000</span><br><span class="line">a1.channels.c1.transactionCapacity = 100</span><br><span class="line"></span><br><span class="line"># Bind the source and sink to the channel</span><br><span class="line">a1.sources.r1.channels = c1</span><br><span class="line">a1.sinks.k1.channel = c1</span><br></pre></td></tr></table></figure>
+
+<p>之後啟動 Flume:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ bin/flume-ng agent -c conf -f example.conf -n a1 -Dflume.root.logger=INFO,console</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>-c/--conf</code>設定檔目錄，<code>-f/--conf-file</code>設定檔案路徑，<code>-n/--name</code>指定 agent 的名稱</p>
+</blockquote>
+<p>驗證 Flume 開啟是否已開啟</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ jps</span><br><span class="line">6760 Jps</span><br><span class="line">6623 Application</span><br></pre></td></tr></table></figure>
+
+<p>最後開 shell 終端窗口，telnet 到配置監聽 port:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ telnet localhost 44444</span><br><span class="line"># 輸入</span><br><span class="line">HI!</span><br><span class="line">OK</span><br><span class="line"></span><br><span class="line"># 輸出</span><br><span class="line">2016-02-24 11:40:30,389 INFO sink.LoggerSink: Event: &#123; headers:&#123;&#125; body: 48 65 6C 6C 6F 20 77 6F 72 6C 64 21 0D          HI!. &#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="多節點部署"><a href="#多節點部署" class="headerlink" title="多節點部署"></a>多節點部署</h3><p>本節說明多機部署方式，流程為 Agent1 和 Agent2 主要是兩個來源蒐集端，本身會監聽且接收 Flume 本地端的訊息，然後將資料整合到 Collector 做資料日誌整理</p>
+<p><img src="/images/spark/flume_cluster.png" alt></p>
+<p>部署節點角色規則如下:</p>
+<table>
+<thead>
+<tr>
+<th>IP Address</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>192.168.100.94</td>
+<td>Agent1</td>
+</tr>
+<tr>
+<td>192.168.100.96</td>
+<td>Agent2</td>
+</tr>
+<tr>
+<td>192.168.100.97</td>
+<td>Collector</td>
+</tr>
+</tbody></table>
+<p>一開始安裝配置與單機相同，從第一步驟到下載完後，將 src 覆蓋到 bin 底下，並解壓縮到<code>/opt</code>底下</p>
+<p>然後到各自的<code>/opt/flume/conf</code>底下建立配置檔</p>
+<p><code>Agent1</code>和<code>Agent2</code>配置內容如下:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># flume-client.properties: Agent1 Flume configuration</span><br><span class="line"></span><br><span class="line">#agent1 name</span><br><span class="line">agent1.sources = r1</span><br><span class="line">agent1.sinks = k1</span><br><span class="line">agent1.channels = c1</span><br><span class="line"></span><br><span class="line">#set gruop</span><br><span class="line">agent1.sinkgroups = g1</span><br><span class="line"></span><br><span class="line">#set channel</span><br><span class="line">agent1.channels.c1.type = memory</span><br><span class="line">agent1.channels.c1.capacity = 1000</span><br><span class="line">agent1.channels.c1.transactionCapacity = 100</span><br><span class="line"></span><br><span class="line">#set source</span><br><span class="line">agent1.sources.r1.channels = c1</span><br><span class="line">agent1.sources.r1.type = netcat</span><br><span class="line">agent1.sources.r1.bind = localhost</span><br><span class="line">agent1.sources.r1.port = 52020</span><br><span class="line"></span><br><span class="line">agent1.sources.r1.interceptors = i1</span><br><span class="line">agent1.sources.r1.interceptors.i1.type = static</span><br><span class="line">agent1.sources.r1.interceptors.i1.key = Type</span><br><span class="line">agent1.sources.r1.interceptors.i1.value = LOGIN</span><br><span class="line"></span><br><span class="line"># set sink</span><br><span class="line">agent1.sinks.k1.channel = c1</span><br><span class="line">agent1.sinks.k1.type = avro</span><br><span class="line">agent1.sinks.k1.hostname = 192.168.100.97</span><br><span class="line">agent1.sinks.k1.port = 44444</span><br><span class="line"></span><br><span class="line">#set sink group</span><br><span class="line">agent1.sinkgroups.g1.sinks = k1</span><br><span class="line"></span><br><span class="line">#set failover</span><br><span class="line">agent1.sinkgroups.g1.processor.type = failover</span><br><span class="line">agent1.sinkgroups.g1.processor.priority.k1 = 10</span><br><span class="line">agent1.sinkgroups.g1.processor.maxpenalty = 10000</span><br></pre></td></tr></table></figure>
+
+<p><code>Collector</code> 配置內容如下:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># flume-server.properties: Agent1 Flume configuration</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#set Agent name</span></span><br><span class="line">a1.sources = r1</span><br><span class="line">a1.sinks = k1</span><br><span class="line">a1.channels = c1</span><br><span class="line"></span><br><span class="line"><span class="comment">#set channel</span></span><br><span class="line">a1.channels.c1.type = memory</span><br><span class="line">a1.channels.c1.capacity = 1000</span><br><span class="line">a1.channels.c1.transactionCapacity = 100</span><br><span class="line"></span><br><span class="line"><span class="comment">#set source</span></span><br><span class="line">a1.sources.r1.type = avro</span><br><span class="line">a1.sources.r1.bind = 192.168.100.97</span><br><span class="line">a1.sources.r1.port = 44444</span><br><span class="line">a1.sources.r1.interceptors = i1</span><br><span class="line">a1.sources.r1.interceptors.i1.type = static</span><br><span class="line">a1.sources.r1.interceptors.i1.key = Collector</span><br><span class="line">a1.sources.r1.interceptors.i1.value = NNA</span><br><span class="line">a1.sources.r1.channels = c1</span><br><span class="line"></span><br><span class="line"><span class="comment"># set sink</span></span><br><span class="line">a1.sinks.k1.type=logger</span><br><span class="line">a1.sinks.k1.channel=c1</span><br></pre></td></tr></table></figure>
+
+<p>最後分別啓動<code>Agent</code>和<code>Collector</code>的 Flume：</p>
+<p>Agent:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ bin/flume-ng agent -n agent1 -c conf -f flume-client.properties -Dflume.root.logger=DEBUG,console</span><br></pre></td></tr></table></figure>
+
+<p>Collector:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ bin/flume-ng agent -n a1 -c conf -f flume-server.properties -Dflume.root.logger=DEBUG,console</span><br></pre></td></tr></table></figure>
+
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">Apache Flume 快速上手</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2016-4-4 17:04</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2016/04/06/data-engineer/akka-intro/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    Akka 基本介紹
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2016/04/01/linux/ubuntu/drbd/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">DRBD 進行跨節點的區塊儲存備份</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2016/04/04/data-engineer/apache-flume/" data-id="ck3ns7q5d001gwmpfmn1jet3o" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2016/04/04/data-engineer/apache-flume/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2016/04/04/data-engineer/apache-flume/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#架構角色說明"><span class="toc-number">1.</span> <span class="toc-text">架構角色說明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安裝-Apache-Flume"><span class="toc-number">2.</span> <span class="toc-text">安裝 Apache Flume</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#單機"><span class="toc-number">2.1.</span> <span class="toc-text">單機</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#多節點部署"><span class="toc-number">2.2.</span> <span class="toc-text">多節點部署</span></a></li></ol></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2016/04/04/data-engineer/apache-flume/';
+        
+        this.page.identifier = 'data-engineer/apache-flume';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

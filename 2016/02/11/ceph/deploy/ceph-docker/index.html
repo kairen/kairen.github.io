@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>Docker 快速部署 Ceph 測試叢集 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="本節將介紹如何透過 ceph-docker 工具安裝一個測試的 Ceph 環境，一個最簡單的 Ceph 儲存叢集至少要1 Monitor與3 OSD。另外部署 MDS 與 RGW 來進行簡單測試。">
+<meta name="keywords" content="Ceph,Storage,Docker">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Docker 快速部署 Ceph 測試叢集">
+<meta property="og:url" content="https://k2r2bai.com/2016/02/11/ceph/deploy/ceph-docker/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="本節將介紹如何透過 ceph-docker 工具安裝一個測試的 Ceph 環境，一個最簡單的 Ceph 儲存叢集至少要1 Monitor與3 OSD。另外部署 MDS 與 RGW 來進行簡單測試。">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/ceph/docker-ceph.jpg">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.378Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Docker 快速部署 Ceph 測試叢集">
+<meta name="twitter:description" content="本節將介紹如何透過 ceph-docker 工具安裝一個測試的 Ceph 環境，一個最簡單的 Ceph 儲存叢集至少要1 Monitor與3 OSD。另外部署 MDS 與 RGW 來進行簡單測試。">
+<meta name="twitter:image" content="https://k2r2bai.com/images/ceph/docker-ceph.jpg">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-ceph/deploy/ceph-docker" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            Docker 快速部署 Ceph 測試叢集
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2016/02/11/ceph/deploy/ceph-docker/">
+            <u><time datetime="2016-02-11T09:08:54.000Z" itemprop="datePublished">2016-02-11</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Ceph/">Ceph</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Ceph/">Ceph</a>, <a class="tag-link" href="/tags/Docker/">Docker</a>, <a class="tag-link" href="/tags/Storage/">Storage</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>本節將介紹如何透過 <a href="https://github.com/ceph/ceph-docker" target="_blank" rel="noopener">ceph-docker</a> 工具安裝一個測試的 Ceph 環境，一個最簡單的 Ceph 儲存叢集至少要<code>1 Monitor</code>與<code>3 OSD</code>。另外部署 MDS 與 RGW 來進行簡單測試。</p>
+<p><img src="/images/ceph/docker-ceph.jpg" alt></p>
+<a id="more"></a>
+
+<h2 id="節點配置"><a href="#節點配置" class="headerlink" title="節點配置"></a>節點配置</h2><p>本安裝採用一台虛擬機器來提供部署，可使用 VBox 或 OpenStack 等建立，其環境資源大小如下：</p>
+<table>
+<thead>
+<tr>
+<th>hostname</th>
+<th>CPUs</th>
+<th>RAM</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ceph-aio</td>
+<td>2vCPU</td>
+<td>4GB</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>若使用 Vagrant + VBox 的話，可以使用 <a href="https://gist.githubusercontent.com/kairen/c55a436718ddc22817ef820001aecb0f/raw/4be0a6cfa5087a4834494779b0809d76d701f67b/Vagrantfile" target="_blank" rel="noopener">Vagrantfile 腳本</a>。</p>
+</blockquote>
+<p>而該虛擬機要額外建立三顆虛擬區塊裝置，如下所示：</p>
+<table>
+<thead>
+<tr>
+<th>Dev path</th>
+<th>Disk</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>/dev/sdb</td>
+<td>20 GB</td>
+<td>osd-1 使用</td>
+</tr>
+<tr>
+<td>/dev/sdc</td>
+<td>20 GB</td>
+<td>osd-2 使用</td>
+</tr>
+<tr>
+<td>/dev/sdd</td>
+<td>20 GB</td>
+<td>osd-3 使用</td>
+</tr>
+</tbody></table>
+<h2 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h2><p>首先在主機安裝 Docker Engine，可以透過以下指令進行安裝：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl -fsSL https://get.docker.com/ | sh</span><br></pre></td></tr></table></figure>
+
+<h2 id="部署-Ceph-測試叢集"><a href="#部署-Ceph-測試叢集" class="headerlink" title="部署 Ceph 測試叢集"></a>部署 Ceph 測試叢集</h2><p>首先為了不與預設 Docker 網路共用，這邊額外建立一網路來提供給 Ceph 使用：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker network create --driver bridge ceph-net</span><br><span class="line">$ docker network inspect ceph-net</span><br><span class="line">&#123;</span><br><span class="line">    <span class="string">"Subnet"</span>: <span class="string">"172.18.0.0/16"</span>,</span><br><span class="line">    <span class="string">"Gateway"</span>: <span class="string">"172.18.0.1/16"</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="建立-Monitor"><a href="#建立-Monitor" class="headerlink" title="建立 Monitor"></a>建立 Monitor</h3><p>完成網路建立後，就可以開始部署 Ceph 叢集了。一開始我們必須先建立 Monitor Container：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> ~ &amp;&amp; DIR=$(<span class="built_in">pwd</span>)</span><br><span class="line">$ sudo docker run -d --net=ceph-net \</span><br><span class="line">-v <span class="variable">$&#123;DIR&#125;</span>/ceph:/etc/ceph \</span><br><span class="line">-v <span class="variable">$&#123;DIR&#125;</span>/lib/ceph/:/var/lib/ceph/ \</span><br><span class="line">-e MON_IP=172.18.0.2 \</span><br><span class="line">-e CEPH_PUBLIC_NETWORK=172.18.0.0/16 \</span><br><span class="line">--name mon1 \</span><br><span class="line">ceph/daemon mon</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若發生錯誤請刪除以下目錄。如以下指令：</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo rm -rf <span class="variable">$&#123;DIR&#125;</span>/etc/ceph/</span><br><span class="line">$ sudo rm -rf <span class="variable">$&#123;DIR&#125;</span>/var/lib/ceph/</span><br></pre></td></tr></table></figure>
+
+<p>檢查是否正確部署：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker <span class="built_in">exec</span> -ti mon1 ceph -v</span><br><span class="line">ceph version 10.2.2 (45107e21c568dd033c2f0a3107dec8f0b0e58374)</span><br><span class="line"></span><br><span class="line">$ docker <span class="built_in">exec</span> -ti mon1 ceph -s</span><br><span class="line">cluster 2c254496-e948-4abb-a6dc-9aea41bbb56a</span><br><span class="line"> health HEALTH_ERR</span><br><span class="line">        no osds</span><br><span class="line"> monmap e1: 1 mons at &#123;1068f41de69a=172.18.0.2:6789/0&#125;</span><br><span class="line">        election epoch 3, quorum 0 1068f41de69a</span><br><span class="line"> osdmap e1: 0 osds: 0 up, 0 <span class="keyword">in</span></span><br><span class="line">        flags sortbitwise</span><br><span class="line">  pgmap v2: 64 pgs, 1 pools, 0 bytes data, 0 objects</span><br><span class="line">        0 kB used, 0 kB / 0 kB avail</span><br><span class="line">              64 creating</span><br></pre></td></tr></table></figure>
+
+<h3 id="建立-OSD"><a href="#建立-OSD" class="headerlink" title="建立 OSD"></a>建立 OSD</h3><p>上面可以看到 Monitor 建立完成，但是會有錯誤，因為目前沒有 OSD。因此這邊將建立三個 OSD Container 來模擬叢集做實際儲存的功能，透過以下方式部署：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> ~ &amp;&amp; DIR=$(<span class="built_in">pwd</span>)</span><br><span class="line">$ sudo docker run -d --net=ceph-net \</span><br><span class="line">--privileged=<span class="literal">true</span> --pid=host \</span><br><span class="line">-v <span class="variable">$&#123;DIR&#125;</span>/ceph:/etc/ceph \</span><br><span class="line">-v <span class="variable">$&#123;DIR&#125;</span>/lib/ceph/:/var/lib/ceph/ \</span><br><span class="line">-v /dev/:/dev/ \</span><br><span class="line">-e OSD_DEVICE=/dev/sdb \</span><br><span class="line">-e OSD_TYPE=disk \</span><br><span class="line">-e OSD_FORCE_ZAP=1 \</span><br><span class="line">--name osd1 \</span><br><span class="line">ceph/daemon osd</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若要建立多個 OSD，只需要修改<code>OSD_DEVICE</code>與<code>name</code>即可，這邊建議建立三個 OSD。因為預設 pool 採用三份副本，若節點數過少需要自行修改副本數或 CRUSH Map。</p>
+</blockquote>
+<p>完成後，可以透過以下指令檢查 Device 被使用：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker <span class="built_in">exec</span> -ti osd1 df | grep <span class="string">"osd"</span></span><br><span class="line">/dev/sdb1                     20857836   34924  20822912   1% /var/lib/ceph/osd/ceph-0</span><br></pre></td></tr></table></figure>
+
+<p>也可以直接透過 Monitor 來查看叢集安全狀態，如 PG 是否有誤等：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker <span class="built_in">exec</span> -ti mon1 ceph -s</span><br><span class="line">cluster 23fa3f2c-a401-46e0-abc1-d71b4625b348</span><br><span class="line"> health HEALTH_OK</span><br><span class="line"> monmap e2: 1 mons at &#123;0b7ff674673f=172.18.0.2:6789/0&#125;</span><br><span class="line">        election epoch 4, quorum 0 0b7ff674673f</span><br><span class="line">    mgr no daemons active</span><br><span class="line"> osdmap e15: 3 osds: 3 up, 3 <span class="keyword">in</span></span><br><span class="line">        flags sortbitwise,require_jewel_osds,require_kraken_osds</span><br><span class="line">  pgmap v29: 64 pgs, 1 pools, 0 bytes data, 0 objects</span><br><span class="line">        101 MB used, 61005 MB / 61106 MB avail</span><br><span class="line">              64 active+clean</span><br></pre></td></tr></table></figure>
+
+<h3 id="建立-RGW"><a href="#建立-RGW" class="headerlink" title="建立 RGW"></a>建立 RGW</h3><p>當完成一個 RAODS(MON+OSD)叢集後，即可建立物件儲存閘道(RAODS Gateway)提供 S3 與 Swift 相容的 API，來儲存檔案到叢集中，一個 RGW Container 建立如下所示：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> ~ &amp;&amp; DIR=$(<span class="built_in">pwd</span>)</span><br><span class="line">$ sudo docker run -d --net=ceph-net \</span><br><span class="line">-v <span class="variable">$&#123;DIR&#125;</span>/lib/ceph/:/var/lib/ceph/ \</span><br><span class="line">-v <span class="variable">$&#123;DIR&#125;</span>/ceph:/etc/ceph \</span><br><span class="line">-p 8080:8080 \</span><br><span class="line">--name rgw1 \</span><br><span class="line">ceph/daemon rgw</span><br></pre></td></tr></table></figure>
+
+<p>完成後，透過 curl 工具來測試是否正確部署：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl -H <span class="string">"Content-Type: application/json"</span> <span class="string">"http://127.0.0.1:8080"</span></span><br><span class="line">&lt;?xml version=<span class="string">"1.0"</span> encoding=<span class="string">"UTF-8"</span>?&gt;&lt;ListAllMyBucketsResult xmlns=<span class="string">"http://s3.amazonaws.com/doc/2006-03-01/"</span>&gt;&lt;Owner&gt;&lt;ID&gt;anonymous&lt;/ID&gt;&lt;DisplayName&gt;&lt;/DisplayName&gt;&lt;/Owner&gt;&lt;Buckets&gt;&lt;/Buckets&gt;&lt;/ListAllMyBucketsResult&gt;</span><br></pre></td></tr></table></figure>
+
+<p>透過 Python Client 進行檔案儲存，首先下載程式：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ wget <span class="string">"https://gist.githubusercontent.com/kairen/e0dec164fa6664f40784f303076233a5/raw/33add5a18cb7d6f18531d8d481562d017557747c/s3client"</span></span><br><span class="line">$ chmod u+x s3client</span><br><span class="line">$ sudo pip install boto</span><br></pre></td></tr></table></figure>
+
+<p>接著透過以下指令建立一個使用者：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker <span class="built_in">exec</span> -ti rgw1 radosgw-admin user create --uid=<span class="string">"test"</span> --display-name=<span class="string">"I'm Test account"</span> --email=<span class="string">"test@example.com"</span></span><br><span class="line"></span><br><span class="line"><span class="string">"keys"</span>: [</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="string">"user"</span>: <span class="string">"test"</span>,</span><br><span class="line">            <span class="string">"access_key"</span>: <span class="string">"PFMKGXCFD77L8X4CF0T4"</span>,</span><br><span class="line">            <span class="string">"secret_key"</span>: <span class="string">"SA8RpGO7SoN4TIdRxYtxloc5kRSLQvhOihJdDGG3"</span></span><br><span class="line">        &#125;</span><br><span class="line">    ],</span><br></pre></td></tr></table></figure>
+
+<p>建立一個放置環境參數的檔案<code>s3key.sh</code>：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="built_in">export</span> S3_ACCESS_KEY=<span class="string">"PFMKGXCFD77L8X4CF0T4"</span></span><br><span class="line"><span class="built_in">export</span> S3_SECRET_KEY=<span class="string">"SA8RpGO7SoN4TIdRxYtxloc5kRSLQvhOihJdDGG3"</span></span><br><span class="line"><span class="built_in">export</span> S3_HOST=<span class="string">"127.0.0.1"</span></span><br><span class="line"><span class="built_in">export</span> S3_PORT=<span class="string">"8080"</span></span><br></pre></td></tr></table></figure>
+
+<p>然後 source 檔案，並嘗試執行列出 bucket 指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ . s3key.sh</span><br><span class="line">$ ./s3client list</span><br><span class="line">---------- Bucket List ----------</span><br></pre></td></tr></table></figure>
+
+<p>建立一個 Bucket，並上傳檔案：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ./s3client create files</span><br><span class="line">Create [files] success ...</span><br><span class="line"></span><br><span class="line">$ ./s3client upload files s3key.sh /</span><br><span class="line">Upload [s3key.sh] success ...</span><br></pre></td></tr></table></figure>
+
+<p>完成後，即可透過 list 與 download 來查看與下載：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ./s3client list files</span><br><span class="line">---------- [files] ----------</span><br><span class="line">s3key.sh            	157                 	2016-07-26T06:48:14.327Z</span><br><span class="line"></span><br><span class="line">$ ./s3client download files s3key.sh</span><br><span class="line">Download [s3key.sh] success ...</span><br></pre></td></tr></table></figure>
+
+<h3 id="建立-MDS"><a href="#建立-MDS" class="headerlink" title="建立 MDS"></a>建立 MDS</h3><p>當系統需要使用到 CephFS 時，我們將必須建立 MDS(Metadata Server) 來提供詮釋資料的儲存，一個 MDS 容器部署如下：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> ~ &amp;&amp; DIR=$(<span class="built_in">pwd</span>)</span><br><span class="line">$ sudo docker run -d --net=ceph-net \</span><br><span class="line">-v <span class="variable">$&#123;DIR&#125;</span>/lib/ceph/:/var/lib/ceph/ \</span><br><span class="line">-v <span class="variable">$&#123;DIR&#125;</span>/ceph:/etc/ceph \</span><br><span class="line">-e CEPHFS_CREATE=1 \</span><br><span class="line">--name mds1 \</span><br><span class="line">ceph/daemon mds</span><br></pre></td></tr></table></figure>
+
+<p>透過以下指令檢查是否建立無誤：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker <span class="built_in">exec</span> -ti mds1 ceph mds <span class="built_in">stat</span></span><br><span class="line">e5: 1/1/1 up &#123;0=mds-aea2f53de13a=up:active&#125;</span><br><span class="line"></span><br><span class="line">$ docker <span class="built_in">exec</span> -ti mds1 ceph fs ls</span><br><span class="line">name: cephfs, metadata pool: cephfs_metadata, data pools: [cephfs_data ]</span><br></pre></td></tr></table></figure>
+
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">Docker 快速部署 Ceph 測試叢集</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2016-2-11 17:02</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2016/02/12/devops/cm/saltstack-basic/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    SaltStack 介紹
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2016/02/11/devops/monitoring/graphite/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">利用 Graphite 監控系統資料</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2016/02/11/ceph/deploy/ceph-docker/" data-id="ck3ns7qah00f8wmpf3r7v1mfg" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2016/02/11/ceph/deploy/ceph-docker/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2016/02/11/ceph/deploy/ceph-docker/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#節點配置"><span class="toc-number">1.</span> <span class="toc-text">節點配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#事前準備"><span class="toc-number">2.</span> <span class="toc-text">事前準備</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#部署-Ceph-測試叢集"><span class="toc-number">3.</span> <span class="toc-text">部署 Ceph 測試叢集</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#建立-Monitor"><span class="toc-number">3.1.</span> <span class="toc-text">建立 Monitor</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#建立-OSD"><span class="toc-number">3.2.</span> <span class="toc-text">建立 OSD</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#建立-RGW"><span class="toc-number">3.3.</span> <span class="toc-text">建立 RGW</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#建立-MDS"><span class="toc-number">3.4.</span> <span class="toc-text">建立 MDS</span></a></li></ol></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2016/02/11/ceph/deploy/ceph-docker/';
+        
+        this.page.identifier = 'ceph/deploy/ceph-docker';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

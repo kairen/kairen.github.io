@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>使用 ceph-deploy 工具部署 Ceph 叢集 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="本節將介紹如何透過 ceph-deploy 工具安裝一個測試的 Ceph 環境，一個最簡單的 Ceph 儲存叢集至少要一台Monitor與三台OSD。而 MDS 則是當使用到 CephFS 的時候才需要部署。">
+<meta name="keywords" content="Ceph,Storage">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用 ceph-deploy 工具部署 Ceph 叢集">
+<meta property="og:url" content="https://k2r2bai.com/2015/11/20/ceph/deploy/ceph-deploy/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="本節將介紹如何透過 ceph-deploy 工具安裝一個測試的 Ceph 環境，一個最簡單的 Ceph 儲存叢集至少要一台Monitor與三台OSD。而 MDS 則是當使用到 CephFS 的時候才需要部署。">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.378Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="使用 ceph-deploy 工具部署 Ceph 叢集">
+<meta name="twitter:description" content="本節將介紹如何透過 ceph-deploy 工具安裝一個測試的 Ceph 環境，一個最簡單的 Ceph 儲存叢集至少要一台Monitor與三台OSD。而 MDS 則是當使用到 CephFS 的時候才需要部署。">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-ceph/deploy/ceph-deploy" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            使用 ceph-deploy 工具部署 Ceph 叢集
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2015/11/20/ceph/deploy/ceph-deploy/">
+            <u><time datetime="2015-11-20T09:08:54.000Z" itemprop="datePublished">2015-11-20</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Ceph/">Ceph</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Ceph/">Ceph</a>, <a class="tag-link" href="/tags/Storage/">Storage</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>本節將介紹如何透過 <a href="https://github.com/ceph/ceph-deploy" target="_blank" rel="noopener">ceph-deploy</a> 工具安裝一個測試的 Ceph 環境，一個最簡單的 Ceph 儲存叢集至少要一台<code>Monitor</code>與三台<code>OSD</code>。而 MDS 則是當使用到 CephFS 的時候才需要部署。</p>
+<a id="more"></a>
+
+<h2 id="環境準備"><a href="#環境準備" class="headerlink" title="環境準備"></a>環境準備</h2><p>在開始部署 Ceph 叢集之前，我們需要在每個節點做一些基本的準備，來確保叢集安裝的過程是流暢的，本次安裝會擁有 6 台節點，叢集拓樸圖如下所示：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">                           +------------------+</span><br><span class="line">                           | [ Deploy  Node ] |</span><br><span class="line">                           |   10.21.20.99    |</span><br><span class="line">                           | Ceph deploy tool |</span><br><span class="line">                           +--------+---------+</span><br><span class="line">                                    |</span><br><span class="line">                                    |           </span><br><span class="line">     +------------------+           |           +-----------------+</span><br><span class="line">     |  [ Admin Node ]  |           |           |[ Monitor  Node ]|</span><br><span class="line">     |   10.21.20.100   |-----------+-----------|   10.21.20.101  |</span><br><span class="line">     |  Ceph admin ops  |           |           |  Ceph mon Node  |</span><br><span class="line">     +------------------+           |           +-----------------+</span><br><span class="line">                                    |</span><br><span class="line">        +---------------------------+--------------------------+</span><br><span class="line">        |                           |                          |</span><br><span class="line">        |                           |                          |</span><br><span class="line">+-------+----------+       +--------+---------+       +--------+---------+</span><br><span class="line">|  [ OSD Node 1 ]  |       |  [ OSD Node 2 ]  |       |  [ OSD Node 3 ]  |</span><br><span class="line">|   10.21.20.121   +-------+   10.21.20.122   +-------+   10.21.20.123   |</span><br><span class="line">|  Object Storage  |       |  Object Storage  |       |  Object Storage  |</span><br><span class="line">|   Disk  *  2     |       |   Disk  *  2     |       |   Disk  *  2     |</span><br><span class="line">+------------------+       +------------------+       +------------------+</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>P.S. 上面磁碟分為兩個，因為這邊教學不將 journal 分開來，故一顆當作系統使用，一顆為資料儲存與 journal 使用。<br>P.S. 這邊網路建議設定為<code>static</code>，若有支援 Jumbo frame 也可以開啟。</p>
+</blockquote>
+<p>首先在每一台節點新增以下內容到<code>/etc/hosts</code>：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">127.0.0.1 localhost</span><br><span class="line"></span><br><span class="line">10.21.20.99 ceph-deploy</span><br><span class="line">10.21.20.100 ceph-admin</span><br><span class="line">10.21.20.101 ceph-mon1</span><br><span class="line">10.21.20.121 ceph-osd1</span><br><span class="line">10.21.20.122 ceph-osd2</span><br><span class="line">10.21.20.123 ceph-osd3</span><br></pre></td></tr></table></figure>
+
+<p>然後在每台節點執行以下指令來使<code>sudo</code>不需要輸入密碼：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">echo</span> <span class="string">"ubuntu ALL = (root) NOPASSWD:ALL"</span> | sudo tee /etc/sudoers.d/ubuntu &amp;&amp; sudo chmod 440 /etc/sudoers.d/ubuntu</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>上面 <code>ubuntu</code> 是節點的使用者名稱，這邊都是一樣。<br>P.S. 當然若要注意安全考量，而不讓該使用者直接使用有權限的資源，可以使用 root user。</p>
+</blockquote>
+<p>接著在設定<code>Deploy</code>節點能夠以無密碼方式進行 SSH 登入其他節點，請依照以下執行：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ssh-keygen -t rsa</span><br><span class="line">$ ssh-copy-id ceph-mon1</span><br><span class="line">$ ssh-copy-id ceph-mds</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若 Deploy 節點的使用者與其他不同的話，編輯<code>~/.ssh/config</code>加入以下內容：</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">Host ceph-admin</span><br><span class="line">    Hostname ceph-admin</span><br><span class="line">    User ubuntu</span><br><span class="line">Host ceph-mds</span><br><span class="line">    Hostname ceph-mds</span><br><span class="line">    User mds</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>之後在<code>Deploy</code>節點安裝部署工具，首先安裝基本相依套件，使用<code>apt-get</code>來進行安裝，再透過<code>python-pip</code>進行安裝部署工具：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get install -y python-pip</span><br><span class="line">$ sudo pip install ceph-deploy</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>P.S. ceph-deploy 所安裝的 ceph 版本，會受到 ceph-deply 工具版本不同而有所差異。</p>
+</blockquote>
+<p>完成後即可開始部署 Ceph 環境。</p>
+<h3 id="環境部署"><a href="#環境部署" class="headerlink" title="環境部署"></a>環境部署</h3><p>首先建立一個名稱為<code>mycluster</code>的目錄，並進入該目錄：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ sudo mkdir mycluster</span><br><span class="line">$ cd mycluster</span><br></pre></td></tr></table></figure>
+
+<p>採用 ceph-deploy 工具部署環境時，需要依照以下步驟進行，首先建立要當任 Monitor 的節點，透過以下方式：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ceph-deploy new ceph-mon1 &lt;other_nodes&gt;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>當執行該指令時，不是直接讓 ceph-mon1 節點安裝成為 Monitor，而只是新增一個<code>conf</code>，並標示誰是 Monitor，當在初始化階段時，才將該設定檔給對應節點，讓它啟動是設定為 Monitor 角色。</p>
+</blockquote>
+<p>接著我們需要先讓每個節點（ceph-deploy除外）安裝 ceph-common 套件，透過以下方式安裝：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ceph-deploy install ceph-admin ceph-mds &lt;other_nodes&gt;</span><br></pre></td></tr></table></figure>
+
+<p>當完成安裝後，才能開始真正的部署節點的角色，第一先將 Monitor 都完成部署，才能讓叢集先正常被運作，透過以下指令來將 Monitors 初始化：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ceph-deploy mon create-initial</span><br></pre></td></tr></table></figure>
+
+<p>上述沒有問題後，就可以開始部署實際作為儲存的 OSD 節點，我們可以透過以下指令進行：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ceph-deploy osd prepare ceph-osd1:/dev/sdb &lt;other_nodes&gt;:&lt;data_disk&gt;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若要將 journal 分離，可以使用以下方式：</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ceph-deploy osd prepare ceph-osd1:/dev/sdb:/dev/sdc &lt;other_nodes&gt;:&lt;data_disk&gt;:&lt;journal_disk&gt;</span><br></pre></td></tr></table></figure>
+
+<p>部署沒有問題的話，即可啟用該 OSD：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ceph-deploy osd activate ceph-osd1:/dev/sdb &lt;other_nodes&gt;:&lt;data_disk&gt;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>P.S. 較新的版本該指令可以省略，因為在準備期間就會幫你直接啟動。</p>
+</blockquote>
+<p>這樣一個簡單的叢集就部署完成了，這時候我們可以隨需求加入<code>admin</code>與<code>MDS</code>節點，可以透過以下方式進行：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ceph-deploy admin ceph-admin</span><br><span class="line">$ ceph-deploy mds create ceph-mds</span><br></pre></td></tr></table></figure>
+
+<p>完成後，可以透過以下指令檢查 ceph 叢集狀態：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ceph health</span><br><span class="line">HEALTH_OK</span><br><span class="line"></span><br><span class="line">$ ceph status</span><br><span class="line">cluster e2432059-e219-4555-8d37-c32d5b16e4a4</span><br><span class="line"> health HEALTH_OK</span><br><span class="line"> monmap e1: 1 mons at &#123;ceph-mon1=10.21.20.101:6789/0&#125;</span><br><span class="line">        election epoch 6, quorum 0, ceph-mon1</span><br><span class="line"> osdmap e119: 3 osds: 3 up, 3 <span class="keyword">in</span></span><br><span class="line">        flags sortbitwise</span><br><span class="line">  pgmap v813: 128 pgs, 2 pools, 91289 kB data, 22856 objects</span><br><span class="line">        691 MB used, 2152 GB / 2152 GB avail</span><br><span class="line">             128 active+clean</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li>如果出現<code>ERROR: missing keyring, cannot use cephx for authentication</code>，請注意這個檔案<code>/etc/ceph/ceph.client.admin.keyring</code>是否有權限讀取。</li>
+<li>如果出現<code>too few PGs per</code>，修改<code>pg_num</code>與<code>pgp_num</code>。範例如下：</li>
+</ul>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ ceph osd pool set rbd pg_num 128</span><br><span class="line">$ ceph osd pool set rbd pgp_num 128</span><br></pre></td></tr></table></figure>
+
+<p>若要檢查 mds 可以使用以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ceph mds <span class="built_in">stat</span></span><br></pre></td></tr></table></figure>
+
+<p>若想檢查 OSDs 的目前狀態可以使用以下幾個指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ceph osd <span class="built_in">stat</span></span><br><span class="line">osdmap e119: 3 osds: 3 up, 3 <span class="keyword">in</span></span><br><span class="line">       flags sortbitwise</span><br><span class="line"></span><br><span class="line">$ ceph osd dump</span><br><span class="line">$ ceph osd tree</span><br></pre></td></tr></table></figure>
+
+<p>最後如果進行多台 Monitor 的部署的話，要注意讓這些節點的時間同步。Ceph 使用多 Monitort 來避免單點故障問題，部署的比例可自行定義，比如 1 台、3:1 台、5:3 台等等。</p>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">使用 ceph-deploy 工具部署 Ceph 叢集</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2015-11-20 17:11</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2015/11/21/ceph/cephfs/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    Ceph FS 基本操作
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2015/11/19/ceph/introduction/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">Ceph 分散式儲存系統介紹</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2015/11/20/ceph/deploy/ceph-deploy/" data-id="ck3ns7qab00ezwmpfzz7pdssb" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2015/11/20/ceph/deploy/ceph-deploy/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2015/11/20/ceph/deploy/ceph-deploy/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#環境準備"><span class="toc-number">1.</span> <span class="toc-text">環境準備</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#環境部署"><span class="toc-number">1.1.</span> <span class="toc-text">環境部署</span></a></li></ol></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2015/11/20/ceph/deploy/ceph-deploy/';
+        
+        this.page.identifier = 'ceph/deploy/ceph-deploy';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

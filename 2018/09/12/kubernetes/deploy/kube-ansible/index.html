@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>開發 Ansible Playbooks 部署 Kubernetes v1.11.x HA 叢集 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="本篇將介紹如何透過 Ansible Playbooks 來快速部署多節點 Kubernetes，一般自建 Kubernetes 叢集時，很多初步入門都會透過 kubeadm 或腳本來部署，雖然 kubeadm 簡化了很多流程，但是還是需要很多手動操作過程，這使得當節點超過 5 - 8 台時就覺得很麻煩，因此許多人會撰寫腳本來解決這個問題，但是腳本的靈活性不佳，一旦設定過程過於龐大時也會造成其複雜性">
+<meta name="keywords" content="Kubernetes,Docker,Ansible">
+<meta property="og:type" content="article">
+<meta property="og:title" content="開發 Ansible Playbooks 部署 Kubernetes v1.11.x HA 叢集">
+<meta property="og:url" content="https://k2r2bai.com/2018/09/12/kubernetes/deploy/kube-ansible/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="本篇將介紹如何透過 Ansible Playbooks 來快速部署多節點 Kubernetes，一般自建 Kubernetes 叢集時，很多初步入門都會透過 kubeadm 或腳本來部署，雖然 kubeadm 簡化了很多流程，但是還是需要很多手動操作過程，這使得當節點超過 5 - 8 台時就覺得很麻煩，因此許多人會撰寫腳本來解決這個問題，但是腳本的靈活性不佳，一旦設定過程過於龐大時也會造成其複雜性">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/k8s/kube-ansible-banner.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.392Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="開發 Ansible Playbooks 部署 Kubernetes v1.11.x HA 叢集">
+<meta name="twitter:description" content="本篇將介紹如何透過 Ansible Playbooks 來快速部署多節點 Kubernetes，一般自建 Kubernetes 叢集時，很多初步入門都會透過 kubeadm 或腳本來部署，雖然 kubeadm 簡化了很多流程，但是還是需要很多手動操作過程，這使得當節點超過 5 - 8 台時就覺得很麻煩，因此許多人會撰寫腳本來解決這個問題，但是腳本的靈活性不佳，一旦設定過程過於龐大時也會造成其複雜性">
+<meta name="twitter:image" content="https://k2r2bai.com/images/k8s/kube-ansible-banner.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-kubernetes/deploy/kube-ansible" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+            
+	
+		<img src="/images/k8s/kube-ansible-banner.png" class="article-banner" />
+	
+
+
+
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            開發 Ansible Playbooks 部署 Kubernetes v1.11.x HA 叢集
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2018/09/12/kubernetes/deploy/kube-ansible/">
+            <u><time datetime="2018-09-12T09:08:54.000Z" itemprop="datePublished">2018-09-12</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Ansible/">Ansible</a>, <a class="tag-link" href="/tags/Docker/">Docker</a>, <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>本篇將介紹如何透過 Ansible Playbooks 來快速部署多節點 Kubernetes，一般自建 Kubernetes 叢集時，很多初步入門都會透過 kubeadm 或腳本來部署，雖然 kubeadm 簡化了很多流程，但是還是需要很多手動操作過程，這使得當節點超過 5 - 8 台時就覺得很麻煩，因此許多人會撰寫腳本來解決這個問題，但是腳本的靈活性不佳，一旦設定過程過於龐大時也會造成其複雜性增加，因此這邊採用 Ansible 來完成許多重複的部署過程，並提供相關變數來調整叢集部署的元件、Container Runtime 等等。</p>
+<a id="more"></a>
+
+<p>這邊我將利用自己撰寫的 <a href="https://github.com/kairen/kube-ansible" target="_blank" rel="noopener">kube-ansible</a> 來部署一組 Kubernetes HA 叢集，而該 Playbooks 的 HA 是透過 HAProxy + Keepalived 來完成，這邊也會將 docker 取代成 containerd 來提供更輕量的 container runtime，另外該 Ansible 會採用全二進制檔案(kube-apiserver 等除外)方式進行安裝。</p>
+<p>本次 Kubernetes 安裝版本：</p>
+<ul>
+<li>Kubernetes v1.11.2</li>
+<li>Etcd v3.2.9</li>
+<li>containerd v1.1.2</li>
+</ul>
+<!--more-->
+
+<h2 id="節點資訊"><a href="#節點資訊" class="headerlink" title="節點資訊"></a>節點資訊</h2><p>本次安裝作業系統採用<code>Ubuntu 16+</code>，測試環境為實體主機：</p>
+<table>
+<thead>
+<tr>
+<th>IP Address</th>
+<th>Role</th>
+<th>CPU</th>
+<th>Memory</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>172.22.132.8</td>
+<td>VIP</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>172.22.132.9</td>
+<td>k8s-m1</td>
+<td>4</td>
+<td>16G</td>
+</tr>
+<tr>
+<td>172.22.132.10</td>
+<td>k8s-m2</td>
+<td>4</td>
+<td>16G</td>
+</tr>
+<tr>
+<td>172.22.132.11</td>
+<td>k8s-m3</td>
+<td>4</td>
+<td>16G</td>
+</tr>
+<tr>
+<td>172.22.132.12</td>
+<td>k8s-g1</td>
+<td>4</td>
+<td>16G</td>
+</tr>
+<tr>
+<td>172.22.132.13</td>
+<td>k8s-g2</td>
+<td>4</td>
+<td>16G</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>理論上<code>CentOS 7.x</code>或<code>Debian 8</code>都可以。</p>
+</blockquote>
+<h2 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h2><p>安裝前需要確認以下幾個項目：</p>
+<ul>
+<li>所有節點的網路之間可以互相溝通。</li>
+<li><code>部署節點</code>對其他節點不需要 SSH 密碼即可登入。</li>
+<li>所有節點都擁有 Sudoer 權限，並且不需要輸入密碼。</li>
+<li>所有節點需要安裝 <code>Python</code>。</li>
+<li>所有節點需要設定<code>/etc/host</code>解析到所有主機。</li>
+<li><code>部署節點</code>需要安裝 Ansible。</li>
+</ul>
+<p>Ubuntu 16.04 安裝 Ansible:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get install -y software-properties-common git cowsay</span><br><span class="line">$ sudo apt-add-repository -y ppa:ansible/ansible</span><br><span class="line">$ sudo apt-get update &amp;&amp; sudo apt-get install -y ansible</span><br></pre></td></tr></table></figure>
+
+<p>CentOS 7 安裝 Ansible：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo yum install -y epel-release</span><br><span class="line">$ sudo yum -y install ansible cowsay</span><br></pre></td></tr></table></figure>
+
+<p>Mac OS X 安裝 Ansible:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ brew install ansible</span><br></pre></td></tr></table></figure>
+
+<h2 id="透過-Ansible-部署-Kubernetes"><a href="#透過-Ansible-部署-Kubernetes" class="headerlink" title="透過 Ansible 部署 Kubernetes"></a>透過 Ansible 部署 Kubernetes</h2><p>本節將說明如何使用 Ansible 來部署 Kubernetes HA 叢集，首先我們透過 Git 取得專案:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://github.com/kairen/kube-ansible.git</span><br><span class="line">$ <span class="built_in">cd</span> kube-ansible</span><br></pre></td></tr></table></figure>
+
+<h3 id="Kubernetes-叢集"><a href="#Kubernetes-叢集" class="headerlink" title="Kubernetes 叢集"></a>Kubernetes 叢集</h3><p>首先建立一個檔案<code>inventory/hosts.ini</code>來描述被部署的節點與群組關析：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[etcds]</span><br><span class="line">k8s-m[1:3] ansible_user=ubuntu</span><br><span class="line"></span><br><span class="line">[masters]</span><br><span class="line">k8s-m[1:3] ansible_user=ubuntu</span><br><span class="line"></span><br><span class="line">[nodes]</span><br><span class="line">k8s-g1 ansible_user=ubuntu</span><br><span class="line">k8s-g2 ansible_user=ubuntu</span><br><span class="line"></span><br><span class="line">[kube-cluster:children]</span><br><span class="line">masters</span><br><span class="line">nodes</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>ansible_user</code>為作業系統 SSH 的使用者名稱。</p>
+</blockquote>
+<p>接著編輯<code>group_vars/all.yml</code>來根據需求設定功能，如以下範例：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="attr">kube_version:</span> <span class="number">1.11</span><span class="number">.2</span></span><br><span class="line"></span><br><span class="line"><span class="attr">container_runtime:</span> <span class="string">containerd</span></span><br><span class="line"></span><br><span class="line"><span class="attr">cni_enable:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">container_network:</span> <span class="string">calico</span></span><br><span class="line"><span class="attr">cni_iface:</span> <span class="string">""</span> <span class="comment"># CNI 網路綁定的網卡</span></span><br><span class="line"></span><br><span class="line"><span class="attr">vip_interface:</span> <span class="string">""</span> <span class="comment"># VIP 綁定的網卡</span></span><br><span class="line"><span class="attr">vip_address:</span> <span class="number">172.22</span><span class="number">.132</span><span class="number">.8</span> <span class="comment"># VIP 位址</span></span><br><span class="line"></span><br><span class="line"><span class="attr">etcd_iface:</span> <span class="string">""</span> <span class="comment"># etcd 綁定的網卡</span></span><br><span class="line"></span><br><span class="line"><span class="attr">enable_ingress:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">enable_dashboard:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">enable_logging:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">enable_monitoring:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">enable_metric_server:</span> <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="attr">grafana_user:</span> <span class="string">"admin"</span></span><br><span class="line"><span class="attr">grafana_password:</span> <span class="string">"p@ssw0rd"</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>上面綁定網卡若沒有輸入，通常會使用節點預設網卡(一般來說是第一張網卡)。</p>
+</blockquote>
+<p>完成設定<code>group_vars/all.yml</code>檔案後，就可以先透過 Ansible 來檢查叢集狀態：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible -i inventory/hosts.ini all -m ping</span><br><span class="line">k8s-g1 | SUCCESS =&gt; &#123;</span><br><span class="line">    <span class="string">"changed"</span>: <span class="literal">false</span>,</span><br><span class="line">    <span class="string">"ping"</span>: <span class="string">"pong"</span></span><br><span class="line">&#125;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>當叢集確認沒有問題後，即可執行<code>cluster.yml</code>來部署 Kubernetes 叢集：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible-playbook -i inventory/hosts.ini cluster.yml</span><br><span class="line">...</span><br><span class="line">PLAY RECAP ***********************************************************************************************************************</span><br><span class="line">k8s-g1                     : ok=64   changed=32   unreachable=0    failed=0</span><br><span class="line">k8s-g2                     : ok=62   changed=32   unreachable=0    failed=0</span><br><span class="line">k8s-m1                     : ok=171  changed=85   unreachable=0    failed=0</span><br><span class="line">k8s-m2                     : ok=144  changed=69   unreachable=0    failed=0</span><br><span class="line">k8s-m3                     : ok=144  changed=69   unreachable=0    failed=0</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>確認都沒發生錯誤後，表示部署完成。</p>
+</blockquote>
+<p>這邊選擇一台 master 節點(<code>k8s-m1</code>)來 SSH 進入測試叢集是否正常，透過 kubectl 指令來查看：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 查看元件狀態</span></span><br><span class="line">$ kubectl get cs</span><br><span class="line">NAME                 STATUS    MESSAGE              ERROR</span><br><span class="line">controller-manager   Healthy   ok</span><br><span class="line">scheduler            Healthy   ok</span><br><span class="line">etcd-1               Healthy   &#123;<span class="string">"health"</span>: <span class="string">"true"</span>&#125;</span><br><span class="line">etcd-2               Healthy   &#123;<span class="string">"health"</span>: <span class="string">"true"</span>&#125;</span><br><span class="line">etcd-0               Healthy   &#123;<span class="string">"health"</span>: <span class="string">"true"</span>&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 查看節點狀態</span></span><br><span class="line">$ kubectl get no</span><br><span class="line">NAME      STATUS    ROLES     AGE       VERSION</span><br><span class="line">k8s-g1    Ready     &lt;none&gt;    3m        v1.11.2</span><br><span class="line">k8s-g2    Ready     &lt;none&gt;    3m        v1.11.2</span><br><span class="line">k8s-m1    Ready     master    5m        v1.11.2</span><br><span class="line">k8s-m2    Ready     master    5m        v1.11.2</span><br><span class="line">k8s-m3    Ready     master    5m        v1.11.2</span><br></pre></td></tr></table></figure>
+
+<h3 id="Addons-部署"><a href="#Addons-部署" class="headerlink" title="Addons 部署"></a>Addons 部署</h3><p>確認節點沒問題後，就可以透過<code>addons.yml</code>來部署 Kubernetes extra addons：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible-playbook -i inventory/hosts.ini addons.yml</span><br><span class="line">...</span><br><span class="line">PLAY RECAP ***********************************************************************************************************************</span><br><span class="line">k8s-m1                     : ok=27   changed=22   unreachable=0    failed=0</span><br><span class="line">k8s-m2                     : ok=10   changed=5    unreachable=0    failed=0</span><br><span class="line">k8s-m3                     : ok=10   changed=5    unreachable=0    failed=0</span><br></pre></td></tr></table></figure>
+
+<p>完成後即可透過 kubectl 來檢查服務，如 kubernetes-dashboard：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl get po,svc -n kube-system -l k8s-app=kubernetes-dashboard</span><br><span class="line">NAME                                       READY     STATUS    RESTARTS   AGE</span><br><span class="line">pod/kubernetes-dashboard-6948bdb78-bkqbr   1/1       Running   0          32m</span><br><span class="line"></span><br><span class="line">NAME                           TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE</span><br><span class="line">service/kubernetes-dashboard   ClusterIP   10.105.199.72   &lt;none&gt;        443/TCP   32m</span><br></pre></td></tr></table></figure>
+
+<p>完成後，即可透過 API Server 的 Proxy 來存取 <a href="https://172.22.132.8:8443/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/。" target="_blank" rel="noopener">https://172.22.132.8:8443/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/。</a></p>
+<p><img src="https://i.imgur.com/G3g4LLo.png" alt></p>
+<h2 id="測試是否有-HA"><a href="#測試是否有-HA" class="headerlink" title="測試是否有 HA"></a>測試是否有 HA</h2><p>首先透過 etcdctl 來檢查狀態：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">export</span> PKI=<span class="string">"/etc/kubernetes/pki/etcd"</span></span><br><span class="line">$ ETCDCTL_API=3 etcdctl \</span><br><span class="line">    --cacert=<span class="variable">$&#123;PKI&#125;</span>/etcd-ca.pem \</span><br><span class="line">    --cert=<span class="variable">$&#123;PKI&#125;</span>/etcd.pem \</span><br><span class="line">    --key=<span class="variable">$&#123;PKI&#125;</span>/etcd-key.pem \</span><br><span class="line">    --endpoints=<span class="string">"https://172.22.132.9:2379"</span> \</span><br><span class="line">    member list</span><br><span class="line"></span><br><span class="line">c9c9f1e905ce83ae, started, k8s-m1, https://172.22.132.9:2380, https://172.22.132.9:2379</span><br><span class="line">cb81b1446a3a689f, started, k8s-m3, https://172.22.132.11:2380, https://172.22.132.11:2379</span><br><span class="line">db0b2674ebb24f80, started, k8s-m2, https://172.22.132.10:2380, https://172.22.132.10:2379</span><br></pre></td></tr></table></figure>
+
+<p>接著進入<code>k8s-m1</code>節點測試叢集 HA 功能，這邊先關閉該節點：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo poweroff</span><br></pre></td></tr></table></figure>
+
+<p>接著進入到<code>k8s-m2</code>節點，透過 kubectl 來檢查叢集是否能夠正常執行：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 先檢查元件狀態</span></span><br><span class="line">$ kubectl get cs</span><br><span class="line">NAME                 STATUS      MESSAGE                                                                                                                                          ERROR</span><br><span class="line">controller-manager   Healthy     ok</span><br><span class="line">scheduler            Healthy     ok</span><br><span class="line">etcd-2               Healthy     &#123;<span class="string">"health"</span>: <span class="string">"true"</span>&#125;</span><br><span class="line">etcd-1               Healthy     &#123;<span class="string">"health"</span>: <span class="string">"true"</span>&#125;</span><br><span class="line">etcd-0               Unhealthy   Get https://172.22.132.9:2379/health: net/http: request canceled <span class="keyword">while</span> waiting <span class="keyword">for</span> connection (Client.Timeout exceeded <span class="keyword">while</span> awaiting headers)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 檢查 nodes 狀態</span></span><br><span class="line">$ kubectl get no</span><br><span class="line">NAME      STATUS     ROLES     AGE       VERSION</span><br><span class="line">k8s-g1    Ready      &lt;none&gt;    10m       v1.11.2</span><br><span class="line">k8s-g2    Ready      &lt;none&gt;    10m       v1.11.2</span><br><span class="line">k8s-m1    NotReady   master    12m       v1.11.2</span><br><span class="line">k8s-m2    Ready      master    12m       v1.11.2</span><br><span class="line">k8s-m3    Ready      master    12m       v1.11.2</span><br><span class="line"></span><br><span class="line"><span class="comment"># 測試是否可以建立 Pod</span></span><br><span class="line">$ kubectl run nginx --image nginx --restart=Never --port 80</span><br><span class="line">$ kubectl expose pod nginx --port 80 --<span class="built_in">type</span> NodePort</span><br><span class="line">$ kubectl get po,svc</span><br><span class="line">NAME        READY     STATUS    RESTARTS   AGE</span><br><span class="line">pod/nginx   1/1       Running   0          1m</span><br><span class="line"></span><br><span class="line">NAME                 TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)        AGE</span><br><span class="line">service/kubernetes   ClusterIP   10.96.0.1        &lt;none&gt;        443/TCP        3h</span><br><span class="line">service/nginx        NodePort    10.102.191.102   &lt;none&gt;        80:31780/TCP   6s</span><br></pre></td></tr></table></figure>
+
+<p>透過 cURL 檢查 NGINX 服務是否正常：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl 172.22.132.8:31780</span><br><span class="line">&lt;!DOCTYPE html&gt;</span><br><span class="line">&lt;html&gt;</span><br><span class="line">&lt;head&gt;</span><br><span class="line">&lt;title&gt;Welcome to nginx!&lt;/title&gt;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<h2 id="重置叢集"><a href="#重置叢集" class="headerlink" title="重置叢集"></a>重置叢集</h2><p>最後若想要重新部署叢集的話，可以透過<code>reset-cluster.yml</code>來清除叢集：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible-playbook -i inventory/hosts.ini reset-cluster.yml</span><br></pre></td></tr></table></figure>
+
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">開發 Ansible Playbooks 部署 Kubernetes v1.11.x HA 叢集</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2018-9-12 17:09</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2018/10/17/container/build-docker/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    透過原始碼建構 Docker 與 NVIDIA Docker
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2018/08/24/kubernetes/knative/quick-start/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">[Knative] 初探基本功能與概念</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2018/09/12/kubernetes/deploy/kube-ansible/" data-id="ck3ns7qb800h5wmpffygcei3b" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2018/09/12/kubernetes/deploy/kube-ansible/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2018/09/12/kubernetes/deploy/kube-ansible/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#節點資訊"><span class="toc-number">1.</span> <span class="toc-text">節點資訊</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#事前準備"><span class="toc-number">2.</span> <span class="toc-text">事前準備</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#透過-Ansible-部署-Kubernetes"><span class="toc-number">3.</span> <span class="toc-text">透過 Ansible 部署 Kubernetes</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Kubernetes-叢集"><span class="toc-number">3.1.</span> <span class="toc-text">Kubernetes 叢集</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Addons-部署"><span class="toc-number">3.2.</span> <span class="toc-text">Addons 部署</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#測試是否有-HA"><span class="toc-number">4.</span> <span class="toc-text">測試是否有 HA</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#重置叢集"><span class="toc-number">5.</span> <span class="toc-text">重置叢集</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2018/09/12/kubernetes/deploy/kube-ansible/';
+        
+        this.page.identifier = 'kubernetes/deploy/kube-ansible';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

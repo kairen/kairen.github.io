@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>Apache Cassandra 分散式資料庫 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Cassandra 是最初由 Facebook 開發，之後貢獻給 Apache 基金會維護的分散式 NoSQL 資料庫系統，一般被認為 Amazon Dyname 與 Google BigTable 的結合體，主要是分散性像 Dynamo，然而資料模型卻如 BigTable。目前有多家公司採用，可運行上千台節點來提供超過 200 TB 的資料。 Cassandra 擁有幾個特點，也因為這些特點讓許">
+<meta name="keywords" content="Spark,Database,NoSQL">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Apache Cassandra 分散式資料庫">
+<meta property="og:url" content="https://k2r2bai.com/2015/11/17/data-engineer/apache-cassandra/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Cassandra 是最初由 Facebook 開發，之後貢獻給 Apache 基金會維護的分散式 NoSQL 資料庫系統，一般被認為 Amazon Dyname 與 Google BigTable 的結合體，主要是分散性像 Dynamo，然而資料模型卻如 BigTable。目前有多家公司採用，可運行上千台節點來提供超過 200 TB 的資料。 Cassandra 擁有幾個特點，也因為這些特點讓許">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/spark/cassandra_arch.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.382Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Apache Cassandra 分散式資料庫">
+<meta name="twitter:description" content="Cassandra 是最初由 Facebook 開發，之後貢獻給 Apache 基金會維護的分散式 NoSQL 資料庫系統，一般被認為 Amazon Dyname 與 Google BigTable 的結合體，主要是分散性像 Dynamo，然而資料模型卻如 BigTable。目前有多家公司採用，可運行上千台節點來提供超過 200 TB 的資料。 Cassandra 擁有幾個特點，也因為這些特點讓許">
+<meta name="twitter:image" content="https://k2r2bai.com/images/spark/cassandra_arch.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-data-engineer/apache-cassandra" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            Apache Cassandra 分散式資料庫
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2015/11/17/data-engineer/apache-cassandra/">
+            <u><time datetime="2015-11-17T09:08:54.000Z" itemprop="datePublished">2015-11-17</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Spark/">Spark</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Database/">Database</a>, <a class="tag-link" href="/tags/NoSQL/">NoSQL</a>, <a class="tag-link" href="/tags/Spark/">Spark</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>Cassandra 是最初由 Facebook 開發，之後貢獻給 Apache 基金會維護的分散式 NoSQL 資料庫系統，一般被認為 Amazon Dyname 與 Google BigTable 的結合體，主要是分散性像 Dynamo，然而資料模型卻如 BigTable。目前有多家公司採用，可運行上千台節點來提供超過 200 TB 的資料。</p>
+<p>Cassandra 擁有幾個特點，也因為這些特點讓許多人選擇使用該資料庫，以下幾個項目簡單列出其特點：</p>
+<ul>
+<li>完全去中心化，且不是主從架構的備份</li>
+<li>統一類型的節點</li>
+<li>以 P2P 協定串連起網路，清除 SPOF（Single Point Of Failure）問題</li>
+<li>高擴展性，新增與刪除節點容易</li>
+<li>可呼叫的一致性，並支援強一致性與弱一致性</li>
+<li>支援跨區域的叢集架構</li>
+<li>每個區域儲存一份完整資料，來提供存取局部性、容錯與災難復原</li>
+<li><strong>寫入效能理論上比讀取好（但近期有證實現在讀取也很不錯），適合串流資料儲存</strong></li>
+<li>比 HBase 的隨機存取效能要好上許多，但不擅長區間掃描</li>
+<li>可作為 HBase 的即時查詢快取。</li>
+</ul>
+<a id="more"></a>
+
+<p><img src="/images/spark/cassandra_arch.png" alt></p>
+<p>若要瞭解更多 Cassandra 可以閱讀 <a href="http://wiki.apache.org/cassandra/GettingStarted" target="_blank" rel="noopener">Cassandra Wiki
+</a>。</p>
+<h2 id="部署多節點叢集"><a href="#部署多節點叢集" class="headerlink" title="部署多節點叢集"></a>部署多節點叢集</h2><p>本節將安裝一個簡單的 Cassandra 叢集，來提供 NoSQL 資料庫以存取資料，以下為節點配置：</p>
+<table>
+<thead>
+<tr>
+<th>IP Address</th>
+<th>HostName</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>172.17.0.2</td>
+<td>cassandra-1</td>
+</tr>
+<tr>
+<td>172.17.0.3</td>
+<td>cassandra-2</td>
+</tr>
+<tr>
+<td>172.17.0.4</td>
+<td>cassandra-3</td>
+</tr>
+</tbody></table>
+<p>首先需在每個節點安裝 Java，這邊採用 Oracle 的 Java 來進行安裝：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get install -y software-properties-common</span><br><span class="line">$ sudo add-apt-repository -y ppa:webupd8team/java</span><br><span class="line">$ sudo apt-get update</span><br><span class="line">$ echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections</span><br><span class="line">$ echo debconf shared/accepted-oracle-license-v1-1 seen true | sudo debconf-set-selections</span><br><span class="line">$ sudo apt-get -y install oracle-java7-installer</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若要安裝<code>java8</code>請修改成<code>oracle-java8-installer</code>。</p>
+</blockquote>
+<p>接著在各節點安裝 Cassandra 套件，這邊採用<code>apt-get</code>安裝，首先加入 Repository：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">echo</span> <span class="string">"deb http://www.apache.org/dist/cassandra/debian 22x main"</span> | sudo tee -a /etc/apt/sources.list.d/cassandra.sources.list</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊安裝<code>2.2.x</code>版本，若要其他版本則修改<code>22x</code>，如改為<code>21x</code>。</p>
+</blockquote>
+<p>為了避免軟體套件更新軟體時有簽證警告，需加入 Apache 基金會與套件資源庫相關的三個公有金鑰：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ gpg --keyserver pgp.mit.edu --recv-keys F758CE318D77295D</span><br><span class="line">$ gpg --<span class="built_in">export</span> --armor F758CE318D77295D | sudo apt-key add -</span><br><span class="line">$ gpg --keyserver pgp.mit.edu --recv-keys 2B5C1B00</span><br><span class="line">$ gpg --<span class="built_in">export</span> --armor 2B5C1B00 | sudo apt-key add -</span><br><span class="line">$ gpg --keyserver pgp.mit.edu --recv-keys 0353B12C</span><br><span class="line">$ gpg --<span class="built_in">export</span> --armor 0353B12C | sudo apt-key add -</span><br></pre></td></tr></table></figure>
+
+<p>完成後更新 apt-get Repository：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get update</span><br></pre></td></tr></table></figure>
+
+<p>安裝 Cassandra NoSQL 於每個節點上：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get install -y cassandra</span><br></pre></td></tr></table></figure>
+
+<p>完成後，我們必須開始配置各節點來組成一個叢集，先把每個節點的 Cassandra 服務關閉：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo service cassandra stop</span><br></pre></td></tr></table></figure>
+
+<p>關閉後，在每個節點編輯<code>/etc/cassandra/cassandra.yaml</code>檔案，並修改一下內容：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">cluster_name: <span class="string">'examples'</span>  </span><br><span class="line">num_tokens: 256  </span><br><span class="line">seed_provider:  </span><br><span class="line">    - class_name: org.apache.cassandra.locator.SimpleSeedProvider</span><br><span class="line">      parameters:</span><br><span class="line">          - seeds: <span class="string">"172.17.0.2, 172.17.0.3, 172.17.0.4"</span></span><br><span class="line"></span><br><span class="line">listen_address: 172.17.0.2  </span><br><span class="line">broadcast_address: 172.17.0.2</span><br><span class="line">rpc_address: 0.0.0.0  </span><br><span class="line">broadcast_rpc_address: 172.17.0.2</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>P.S. 這邊要注意不同節點會有不同，如<code>listen_address</code>與<code>seeds</code>等。</p>
+</blockquote>
+<p>都完成設定檔後，就可以重啟每台的 Cassandra 服務：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo service cassandra restart</span><br></pre></td></tr></table></figure>
+
+<p>當確認所有節點重新啟動後，在<code>其中一個節點</code>建立 keyspaces 來做 replication：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cqlsh</span><br><span class="line">cqlsh&gt; create keyspace Spark_smack WITH REPLICATION = &#123; <span class="string">'class'</span> : <span class="string">'SimpleStrategy'</span>, <span class="string">'replication_factor'</span> : <span class="string">'3'</span> &#125;;  </span><br><span class="line"><span class="built_in">exit</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>Spark_smack</code> 該值是可以依個人名稱修改。</p>
+</blockquote>
+<p>建立完成後，可以使用<code>nodetool</code>指令來檢查是否成功：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ nodetool status spark_smack</span><br><span class="line"></span><br><span class="line">Datacenter: datacenter1</span><br><span class="line">=======================</span><br><span class="line">Status=Up/Down</span><br><span class="line">|/ State=Normal/Leaving/Joining/Moving</span><br><span class="line">--  Address     Load       Tokens       Owns (effective)  Host ID                               Rack</span><br><span class="line">UN  172.17.0.3  255.68 KB  256          100.0%            9c9eb117-f787-47bd-825f-3daf49eba489  rack1</span><br><span class="line">UN  172.17.0.2  252.03 KB  256          100.0%            7a4adb77-42d1-402f-b57b-4a40ad013e2c  rack1</span><br><span class="line">UN  172.17.0.4  127.2 KB   256          100.0%            5823fd78-45f2-4328-9470-f1053bb3fc3b  rack1</span><br></pre></td></tr></table></figure>
+
+<h2 id="驗證系統"><a href="#驗證系統" class="headerlink" title="驗證系統"></a>驗證系統</h2><p>我們透過 Client 程式來連到<code>cassandra-1</code>節點來驗證叢集是否建立成功：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cqlsh</span><br><span class="line">cqlsh&gt; use &lt;keyspace name&gt;;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊<code>&lt;keyspace name&gt;</code>範例為 spark_smack。</p>
+</blockquote>
+<p>然後建立一個資料表：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> emp(  </span><br><span class="line">   emp_id <span class="built_in">int</span> PRIMARY <span class="keyword">KEY</span>,</span><br><span class="line">   emp_name <span class="built_in">text</span>,</span><br><span class="line">   emp_city <span class="built_in">text</span>,</span><br><span class="line">   emp_sal varint,</span><br><span class="line">   emp_phone varint</span><br><span class="line">   );</span><br></pre></td></tr></table></figure>
+
+<p>接著插入一筆資料到資料表：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> emp (emp_id, emp_name, emp_city )  </span><br><span class="line">  <span class="keyword">VALUES</span>(<span class="number">1</span>, <span class="string">'Kyle'</span>, <span class="string">'Taichung'</span> );</span><br></pre></td></tr></table></figure>
+
+<p>若都沒有任何錯誤的話，現在連接到其他節點來檢查是否有同步資料：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cqlsh</span><br><span class="line">cqlsh&gt; use spark_smack;</span><br><span class="line">cqlsh&gt; select * from emp;</span><br><span class="line"></span><br><span class="line"> emp_id | emp_city | emp_name | emp_phone | emp_sal</span><br><span class="line">--------+----------+----------+-----------+---------</span><br><span class="line">      1 | Taichung |     Kyle |      null |    null</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>P.S 若發生如以下錯誤，請依照指示解決：</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">Connection error: (<span class="string">'Unable to connect to any servers'</span>, &#123;<span class="string">'127.0.0.1'</span>: error(111, <span class="string">"Tried connecting to [('127.0.0.1', 9042)]. Last error: Connection refused"</span>)&#125;)</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>首先檢查設定檔<code>/etc/cassandra/cassandra.yaml</code>裡面的<code>rpc_address</code>是否為<code>0.0.0.0</code>。</p>
+</blockquote>
+<p>最後，若要復原與備份可以閱讀 <a href="http://blog.powerupcloud.com/2015/09/13/cassandra-backup-and-recovery/" target="_blank" rel="noopener">Cassandra Backup and Recovery</a>。</p>
+<h2 id="參考資源"><a href="#參考資源" class="headerlink" title="參考資源"></a>參考資源</h2><ul>
+<li><a href="https://www.byvoid.com/blog/cassandra-intro" target="_blank" rel="noopener">Cassandra简介</a></li>
+<li><a href="http://blog.powerupcloud.com/2016/01/10/install-and-configure-a-3-node-cassandra-cluster-on-ubuntu-14-04/" target="_blank" rel="noopener">Install and Configure a 3 node Cassandra Cluster on Ubuntu 14.04</a></li>
+<li><a href="http://www.infoq.com/cn/articles/cassandra-mythology" target="_blank" rel="noopener">關於 Cassandra 的錯誤觀點</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">Apache Cassandra 分散式資料庫</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2015-11-17 17:11</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2015/11/19/ceph/introduction/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    Ceph 分散式儲存系統介紹
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2015/11/10/cncf/kubernetes/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">Kuberentes 是什麼？</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2015/11/17/data-engineer/apache-cassandra/" data-id="ck3ns7q5e001kwmpf1g338txw" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2015/11/17/data-engineer/apache-cassandra/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2015/11/17/data-engineer/apache-cassandra/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#部署多節點叢集"><span class="toc-number">1.</span> <span class="toc-text">部署多節點叢集</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#驗證系統"><span class="toc-number">2.</span> <span class="toc-text">驗證系統</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#參考資源"><span class="toc-number">3.</span> <span class="toc-text">參考資源</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2015/11/17/data-engineer/apache-cassandra/';
+        
+        this.page.identifier = 'data-engineer/apache-cassandra';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

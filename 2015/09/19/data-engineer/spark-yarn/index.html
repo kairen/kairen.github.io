@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>Spark on Hadoop YARN 單機安裝 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="本教學為安裝 Spark on Hadoop YARN 的 all-in-one 版本，將 Spark 應用程式執行於 YARN 上，來讓應用程式執行於不同的工作節點上。">
+<meta name="keywords" content="Spark,Mesos">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spark on Hadoop YARN 單機安裝">
+<meta property="og:url" content="https://k2r2bai.com/2015/09/19/data-engineer/spark-yarn/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="本教學為安裝 Spark on Hadoop YARN 的 all-in-one 版本，將 Spark 應用程式執行於 YARN 上，來讓應用程式執行於不同的工作節點上。">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.384Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spark on Hadoop YARN 單機安裝">
+<meta name="twitter:description" content="本教學為安裝 Spark on Hadoop YARN 的 all-in-one 版本，將 Spark 應用程式執行於 YARN 上，來讓應用程式執行於不同的工作節點上。">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-data-engineer/spark-yarn" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            Spark on Hadoop YARN 單機安裝
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2015/09/19/data-engineer/spark-yarn/">
+            <u><time datetime="2015-09-19T09:08:54.000Z" itemprop="datePublished">2015-09-19</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Spark/">Spark</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Mesos/">Mesos</a>, <a class="tag-link" href="/tags/Spark/">Spark</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>本教學為安裝 Spark on Hadoop YARN 的 all-in-one 版本，將 Spark 應用程式執行於 YARN 上，來讓應用程式執行於不同的工作節點上。</p>
+<a id="more"></a>
+
+<h2 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h2><p>首先我們要先安裝 ssh-server 與 Java JDK，並配置需要的相關環境：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get install openssh-server</span><br></pre></td></tr></table></figure>
+
+<p>設定<user>(hadoop)不用需打 sudo 密碼：</user></p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">echo</span> <span class="string">"hadoop ALL = (root) NOPASSWD:ALL"</span> | sudo tee /etc/sudoers.d/hadoop &amp;&amp; sudo chmod 440 /etc/sudoers.d/hadoop</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>P.S 要注意 <code>hadoop</code> 要隨著現在使用的 User 變動。</p>
+</blockquote>
+<p>建立ssh key，並複製 key 使之不用密碼登入：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ssh-keygen -t rsa</span><br><span class="line">$ ssh-copy-id localhost</span><br></pre></td></tr></table></figure>
+
+<p>安裝Java 1.7 JDK：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get purge openjdk*</span><br><span class="line">$ sudo apt-get -y autoremove</span><br><span class="line">$ sudo apt-get install -y software-properties-common</span><br><span class="line">$ sudo add-apt-repository -y ppa:webupd8team/java</span><br><span class="line">$ sudo apt-get update</span><br><span class="line">$ echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections</span><br><span class="line">$ echo debconf shared/accepted-oracle-license-v1-1 seen true | sudo debconf-set-selections</span><br><span class="line">$ sudo apt-get -y install oracle-java7-installer</span><br></pre></td></tr></table></figure>
+
+<h2 id="安裝-Hadoop-YARN"><a href="#安裝-Hadoop-YARN" class="headerlink" title="安裝 Hadoop YARN"></a>安裝 Hadoop YARN</h2><p>首先我們須先將 Hadoop YARN 安裝完成，詳細步驟如下所示。<br>下載Hadoop 2.6.0 or laster version：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl -s <span class="string">"https://archive.apache.org/dist/hadoop/core/hadoop-2.6.0/hadoop-2.6.0.tar.gz"</span> | sudo tar -xz -C /opt/</span><br><span class="line">$ sudo mv /opt/hadoop-2.6.0 /opt/hadoop</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若要下載不同版本可以到官方查看。</p>
+</blockquote>
+<p>到 hadoop 底下的 /etc/hadoop 設定所有conf檔與<code>evn.sh</code>檔：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> /opt/hadoop/etc/hadoop</span><br><span class="line">$ sudo vim hadoop-env.sh</span><br><span class="line"><span class="comment"># 修改裡面的Java_Home</span></span><br><span class="line"><span class="built_in">export</span> JAVA_HOME=/usr/lib/jvm/java-7-oracle</span><br></pre></td></tr></table></figure>
+
+<p>修改<code>mapred-site.xml.template</code>檔案：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo mv mapred-site.xml.template mapred-site.xml</span><br><span class="line">$ sudo vim mapred-site.xml</span><br><span class="line"></span><br><span class="line"><span class="comment"># 修改以下放置到&lt;configuration&gt;&lt;/configuration&gt;裡面</span></span><br><span class="line">&lt;property&gt;</span><br><span class="line">   &lt;name&gt;mapreduce.framework.name&lt;/name&gt;</span><br><span class="line">   &lt;value&gt;yarn&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+
+<p>修改<code>hdfs-site.xml</code>檔案：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo mkdir -p /usr/<span class="built_in">local</span>/hadoop_store/hdfs/namenode</span><br><span class="line">$ sudo mkdir -p /usr/<span class="built_in">local</span>/hadoop_store/hdfs/datanode</span><br><span class="line">$ sudo chown -R <span class="variable">$USER</span>:<span class="variable">$USER</span> /usr/<span class="built_in">local</span>/hadoop_store</span><br><span class="line">$ sudo vim hdfs-site.xml</span><br><span class="line"></span><br><span class="line"><span class="comment"># 修改以下放置到&lt;configuration&gt;&lt;/configuration&gt;裡面</span></span><br><span class="line">&lt;property&gt;</span><br><span class="line">   &lt;name&gt;dfs.replication&lt;/name&gt;</span><br><span class="line">   &lt;value&gt;1&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">   &lt;name&gt;dfs.namenode.name.dir&lt;/name&gt;</span><br><span class="line">   &lt;value&gt;/usr/<span class="built_in">local</span>/hadoop_store/hdfs/namenode&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">   &lt;name&gt;dfs.datanode.data.dir&lt;/name&gt;</span><br><span class="line">   &lt;value&gt;/usr/<span class="built_in">local</span>/hadoop_store/hdfs/datanode&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+
+<p>修改<code>core-site.xml</code>檔案：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo mkdir -p /app/hadoop/tmp</span><br><span class="line">$ sudo chown <span class="variable">$USER_NAME</span>:<span class="variable">$USER_NAME</span> /app/hadoop/tmp</span><br><span class="line">$ sudo vim core-site.xml</span><br><span class="line"></span><br><span class="line"><span class="comment"># 修改以下放置到&lt;configuration&gt;&lt;/configuration&gt;裡面</span></span><br><span class="line">    &lt;property&gt;</span><br><span class="line">        &lt;name&gt;fs.defaultFS&lt;/name&gt;</span><br><span class="line">        &lt;value&gt;hdfs://localhost:9000&lt;/value&gt;</span><br><span class="line">    &lt;/property&gt;</span><br><span class="line">    &lt;property&gt;</span><br><span class="line">        &lt;name&gt;hadoop.tmp.dir&lt;/name&gt;</span><br><span class="line">        &lt;value&gt;/app/hadoop/tmp&lt;/value&gt;</span><br><span class="line">        &lt;description&gt;A base <span class="keyword">for</span> other temporary directories.&lt;/description&gt;</span><br><span class="line">    &lt;/property&gt;</span><br></pre></td></tr></table></figure>
+
+<p>修改<code>yarn-site.xml</code>檔案：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo vim yarn-site.xml</span><br><span class="line"></span><br><span class="line"><span class="comment"># 修改以下放置到&lt;configuration&gt;&lt;/configuration&gt;裡面</span></span><br><span class="line"> &lt;property&gt;</span><br><span class="line">        &lt;name&gt;yarn.nodemanager.aux-services&lt;/name&gt;</span><br><span class="line">        &lt;value&gt;mapreduce_shuffle&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+
+<p>進行 Namenode 格式化：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> /opt/hadoop/bin</span><br><span class="line">$ ./hadoop namenode -format</span><br></pre></td></tr></table></figure>
+
+<p>沒出錯的話，就可以開啟Hadoop對應服務：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> /opt/hadoop/sbin</span><br><span class="line">$ ./start-yarn.sh</span><br><span class="line">$ ./start-dfs.sh</span><br></pre></td></tr></table></figure>
+
+<p>檢查是否開啟以下服務：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ jps</span><br><span class="line">3457 ResourceManager</span><br><span class="line">7087 Jps</span><br><span class="line">3593 NodeManager</span><br><span class="line">4190 DataNode</span><br><span class="line">4025 NameNode</span><br><span class="line">4383 SecondaryNameNode</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>開啟 <a href="http://localhost:8088" target="_blank" rel="noopener">Website YARN Dashboard</a> 與 <a href="http://localhost:50070" target="_blank" rel="noopener">HDFS Dashboard</a></p>
+</blockquote>
+<p>設定環境變數：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cd</span></span><br><span class="line">$ sudo vim .bashrc</span><br><span class="line"><span class="comment"># 加入以下到最後一行</span></span><br><span class="line"><span class="built_in">export</span> HADOOP_HOME=<span class="string">"/opt/hadoop"</span></span><br><span class="line"><span class="built_in">export</span> PATH=PATH:<span class="variable">$HADOOP_HOME</span></span><br><span class="line"><span class="built_in">export</span> HADOOP_BIN=<span class="string">"/opt/hadoop/bin"</span></span><br><span class="line"><span class="built_in">export</span> PATH=<span class="variable">$PATH</span>:<span class="variable">$HADOOP_BIN</span></span><br></pre></td></tr></table></figure>
+
+<p>透過<code>source</code>指令引用環境變數：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">source</span> .bashrc</span><br></pre></td></tr></table></figure>
+
+<h3 id="驗證系統"><a href="#驗證系統" class="headerlink" title="驗證系統"></a>驗證系統</h3><p>為了驗證系統是否建置成功，可執行一個範例程式來看看是否能夠正常執行，如下所示：<br>首先上傳資料到HDFS上：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo vim words.txt</span><br><span class="line"></span><br><span class="line"><span class="comment"># 加入以下，可以自行在多加</span></span><br><span class="line">AA</span><br><span class="line">CD</span><br><span class="line">BB</span><br><span class="line">DE</span><br><span class="line">AA</span><br><span class="line">AA</span><br><span class="line"><span class="comment"># 加入以上</span></span><br><span class="line"></span><br><span class="line">$ hadoop fs -mkdir /example</span><br><span class="line">$ hadoop fs -put words.txt /example</span><br></pre></td></tr></table></figure>
+
+<p>執行範例程式：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> /opt/hadoop/share/hadoop/mapreduce</span><br><span class="line">$ hadoop jar hadoop-mapreduce-examples-2.6.0.jar wordcount /example/words.txt /example/output</span><br></pre></td></tr></table></figure>
+
+<h2 id="Spark-安裝"><a href="#Spark-安裝" class="headerlink" title="Spark 安裝"></a>Spark 安裝</h2><p>不管單機或叢集，安裝 Spark 只需要在 Master 節點上進行即可，步驟如下：</p>
+<p>首先下載 Spark，並修改權限：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl -s https://d3kbcqa49mib13.cloudfront.net/spark-1.5.2-bin-hadoop2.6.tgz | sudo tar -xz -C /opt/</span><br><span class="line">$ sudo mv /opt/spark-1.5.2-bin-hadoop2.6 /opt/spark</span><br><span class="line">$ sudo chown <span class="variable">$USER</span>:<span class="variable">$USER</span> -R /opt/spark</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>其他 Hadoop 版本可以到這邊<a href="http://d3kbcqa49mib13.cloudfront.net" target="_blank" rel="noopener">Spark-Hadoop</a>查看。</p>
+</blockquote>
+<p>設定 Spark 環境參數：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">echo</span> <span class="string">"export HADOOP_CONF_DIR=\$HADOOP_HOME/etc/hadoop"</span> | sudo tee -a /opt/spark/conf/spark-env.sh</span><br><span class="line">$ <span class="built_in">echo</span> <span class="string">"export YARN_CONF_DIR=\$HADOOP_HOME/etc/hadoop"</span> | sudo tee -a /opt/spark/conf/spark-env.sh</span><br><span class="line">$ <span class="built_in">echo</span> <span class="string">"export SPARK_HOME=/opt/spark"</span> | sudo tee -a /opt/spark/conf/spark-env.sh</span><br><span class="line">$ <span class="built_in">echo</span> <span class="string">"export SPARK_JAR=/opt/spark/lib/spark-assembly-1.5.2-hadoop2.6.0.jar"</span> | sudo tee -a /opt/spark/conf/spark-env.sh</span><br><span class="line">$ <span class="built_in">echo</span> <span class="string">"export PATH=\$SPARK_HOME/bin:\$PATH"</span> | sudo tee -a /opt/spark/conf/spark-env.sh</span><br></pre></td></tr></table></figure>
+
+<p>設定使用者環境參數：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">echo</span> <span class="string">"export SPARK_HOME=/opt/spark"</span> | sudo tee -a ~/.bashrc</span><br><span class="line">$ <span class="built_in">echo</span> <span class="string">"export PATH=\$SPARK_HOME/bin:\$PATH"</span> | sudo tee -a ~/.bashrc</span><br></pre></td></tr></table></figure>
+
+<h3 id="驗證系統-1"><a href="#驗證系統-1" class="headerlink" title="驗證系統"></a>驗證系統</h3><p>為了驗證 Spark 是否成功安裝，可以透過執行一個範例程式來看看結果，如下所示：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> /opt/spark</span><br><span class="line">$ spark-submit --class org.apache.spark.examples.SparkPi \</span><br><span class="line">--master yarn-cluster \</span><br><span class="line">--num-executors 1 \</span><br><span class="line">--executor-memory 1g \</span><br><span class="line">--executor-cores 1 \</span><br><span class="line">lib/spark-examples*.jar \</span><br><span class="line">1</span><br></pre></td></tr></table></figure>
+
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">Spark on Hadoop YARN 單機安裝</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2015-9-19 17:09</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2015/10/03/linux/centos/centos-pxe/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    CentOS 6.5 PXE 安裝與設定
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2015/09/18/data-engineer/spark-standalone/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">Spark Standalone 模擬分散式運算</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2015/09/19/data-engineer/spark-yarn/" data-id="ck3ns7q5n0025wmpf8xrff14h" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2015/09/19/data-engineer/spark-yarn/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2015/09/19/data-engineer/spark-yarn/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#事前準備"><span class="toc-number">1.</span> <span class="toc-text">事前準備</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安裝-Hadoop-YARN"><span class="toc-number">2.</span> <span class="toc-text">安裝 Hadoop YARN</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#驗證系統"><span class="toc-number">2.1.</span> <span class="toc-text">驗證系統</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Spark-安裝"><span class="toc-number">3.</span> <span class="toc-text">Spark 安裝</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#驗證系統-1"><span class="toc-number">3.1.</span> <span class="toc-text">驗證系統</span></a></li></ol></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2015/09/19/data-engineer/spark-yarn/';
+        
+        this.page.identifier = 'data-engineer/spark-yarn';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

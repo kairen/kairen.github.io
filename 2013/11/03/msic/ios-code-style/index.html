@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>NYTime Objective-C 程式規範 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Objective-C 程式規範，參考於紐約時報所規範之程式風格。">
+<meta name="keywords" content="iOS,Programming">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NYTime Objective-C 程式規範">
+<meta property="og:url" content="https://k2r2bai.com/2013/11/03/msic/ios-code-style/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Objective-C 程式規範，參考於紐約時報所規範之程式風格。">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/msic/objc.png">
+<meta property="og:image" content="https://k2r2bai.com/images/msic/code_group.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.399Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="NYTime Objective-C 程式規範">
+<meta name="twitter:description" content="Objective-C 程式規範，參考於紐約時報所規範之程式風格。">
+<meta name="twitter:image" content="https://k2r2bai.com/images/msic/objc.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-msic/ios-code-style" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            NYTime Objective-C 程式規範
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2013/11/03/msic/ios-code-style/">
+            <u><time datetime="2013-11-03T04:23:01.000Z" itemprop="datePublished">2013-11-03</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/iOS/">iOS</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Programming/">Programming</a>, <a class="tag-link" href="/tags/iOS/">iOS</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>Objective-C 程式規範，參考於紐約時報所規範之程式風格。</p>
+<p><img src="/images/msic/objc.png" alt></p>
+<a id="more"></a>
+
+<h2 id="點語法"><a href="#點語法" class="headerlink" title="點語法"></a>點語法</h2><p> 始终使用點語法來存取<strong>屬性</strong>，存取其他實例時應用<strong>中括號[]</strong>。</p>
+<p><strong>建議：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line">view.backgroundColor = [<span class="built_in">UIColor</span> orangeColor];</span><br><span class="line">[<span class="built_in">UIApplication</span> sharedApplication].delegate;</span><br></pre></td></tr></table></figure>
+
+<p><strong>反對：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line">[view setBackgroundColor:[<span class="built_in">UIColor</span> orangeColor]];</span><br><span class="line"><span class="built_in">UIApplication</span>.sharedApplication.delegate;</span><br></pre></td></tr></table></figure>
+
+<h2 id="間距"><a href="#間距" class="headerlink" title="間距"></a>間距</h2><ul>
+<li>永遠不要使用制表符號（tab）間隔。確保在Xcode 中設定了此偏好。</li>
+<li>方法的大括號和其他的大括號（<code>if</code>/<code>else</code>/<code>switch</code>/<code>while</code> 等等）始終和宣告在同一行開始，在新的一行結束。</li>
+</ul>
+<p><strong>建議：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (user.isHappy) &#123;</span><br><span class="line"><span class="comment">// Do something</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">else</span> &#123;</span><br><span class="line"><span class="comment">// Do something else</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>方法之間空格一行，這樣有助於視覺的清晰度和程式碼組織性。在方法中的功能區塊之間應該使用空白分開，但往往可能建立一個新的方法。</li>
+<li><code>@synthesize</code> 和 <code>@dynamic</code> 在實現中都須佔一個新行。</li>
+</ul>
+<h2 id="條件判斷"><a href="#條件判斷" class="headerlink" title="條件判斷"></a>條件判斷</h2><p>條件判斷主要部分不需使用大括號來防止<a href="https://github.com/NYTimes/objective-c-style-guide/issues/26#issuecomment-22074256" target="_blank" rel="noopener">出錯</a>。這些錯誤包含添加第二行(程式碼)，並希望它是if 語法的一部分時。還有另外一種<a href="http://programmers.stackexchange.com/a/16530" target="_blank" rel="noopener">更危險的</a>，當 if 語法裡面的一行被註解掉，下一行就會在不經意間成為了這個 if 語法的一部分。此外，這種風格也更符合所有其他的條件判斷，因此也更容易檢查。</p>
+<p><strong>建議：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (!error) &#123;</span><br><span class="line">    <span class="keyword">return</span> success;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>反對：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (!error)</span><br><span class="line">    <span class="keyword">return</span> success;</span><br></pre></td></tr></table></figure>
+
+<p>或</p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (!error) <span class="keyword">return</span> success;</span><br></pre></td></tr></table></figure>
+
+<h3 id="三元運算式"><a href="#三元運算式" class="headerlink" title="三元運算式"></a>三元運算式</h3><p>三元運算式以 (<strong>條件</strong>) ? <strong>成立</strong> : <strong>不成立</strong>;</p>
+<p>只有當它可以增加程式碼清晰度或整潔時才使用。單一的條件都應該優先考虑使用。多條件時通常使用 if 會更好懂，或者重構成實體變數。</p>
+<p><strong>建議：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line">result = (a &gt; b) ? x : y;</span><br></pre></td></tr></table></figure>
+
+<p><strong>反對：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line">result = a &gt; b ? x = c &gt; d ? c : d : y;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Switch-case"><a href="#Switch-case" class="headerlink" title="Switch case"></a>Switch case</h2><p>由於使用Switch case會針對所有條件是進行處理，需針對所有條件實現，以及用區塊對case做工作區別，確保區塊的正確需給予一項約束：</p>
+<p><strong>建議：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line">MyEnum types = MyEnumValueA;</span><br><span class="line"></span><br><span class="line"><span class="keyword">switch</span> (types) &#123;</span><br><span class="line">    <span class="keyword">case</span> MyEnumValueA:&#123;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">case</span> MyEnumValueB: &#123;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">case</span> MyEnumValueC: &#123;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">default</span>: &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>反對：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="keyword">int</span> types = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">switch</span> (types) &#123;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">1</span>:</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">2</span>:</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="錯誤處理"><a href="#錯誤處理" class="headerlink" title="錯誤處理"></a>錯誤處理</h2><p>當引用一個回傳錯誤參數（error parameter）的方法時，應該針對回傳值，而非錯誤變數。</p>
+<p><strong>建議：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="built_in">NSError</span> *error;</span><br><span class="line"><span class="keyword">if</span> (![<span class="keyword">self</span> trySomethingWithError:&amp;error]) &#123;</span><br><span class="line">    <span class="comment">// 錯誤處理</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>反對：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="built_in">NSError</span> *error;</span><br><span class="line">[<span class="keyword">self</span> trySomethingWithError:&amp;error];</span><br><span class="line"><span class="keyword">if</span> (error) &#123;</span><br><span class="line">    <span class="comment">// 錯誤處理</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>一些Apple的API在成功的情况下會寫一些垃圾值给錯誤參數(如果非空)，所以針對錯誤變數可能會造成虛假结果 (或者崩溃)。</p>
+<h2 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h2><p>方法宣告中，在 -/+ 符號後應該有一個空格。方法片段之間也應該有一個空格。</p>
+<p><strong>建議：</strong></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">- (void)setExampleText:(NSString *)text image:(UIImage *)image;</span><br></pre></td></tr></table></figure>
+
+<h2 id="變數"><a href="#變數" class="headerlink" title="變數"></a>變數</h2><p>變數名稱應該盡可能命名具有描述性。除了 <code>for()</code> 迴圈外，其他情况都應該避免使用單字母的變數名。<br>星號表示指標變數，例如：<code>NSString *text</code> 不要寫成 <code>NSString* text</code> 或者 <code>NSString * text</code> ，常數除外。<br>盡量定義屬性來取代直接使用實體變數。除了初始化方法（<code>init</code>， <code>initWithCoder:</code>等）， <code>dealloc</code> 方法和自定義的setters和 getters内部，應避免直接存取實體變數。更多有關在初始化方法和 dealloc方法中使用存取器方法的資訊，可參考<a href="https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/MemoryMgmt/Articles/mmPractical.html#//apple_ref/doc/uid/TP40004447-SW6" target="_blank" rel="noopener">這邊</a>。</p>
+<p><strong>建議：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">NYTSection</span>: <span class="title">NSObject</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>) <span class="built_in">NSString</span> *headline;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>反對：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">NYTSection</span> : <span class="title">NSObject</span> </span>&#123;</span><br><span class="line">    <span class="built_in">NSString</span> *headline;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>) <span class="built_in">NSString</span>* string;</span><br></pre></td></tr></table></figure>
+
+<h4 id="變數屬性限制"><a href="#變數屬性限制" class="headerlink" title="變數屬性限制"></a>變數屬性限制</h4><p>當涉及到<a href="(https://developer.apple.com/library/ios/releasenotes/objectivec/rn-transitioningtoarc/Introduction/Introduction.html#//apple_ref/doc/uid/TP40011226-CH1-SW4)">ARC</a>變數屬性限制時，<br>限制保留字 (<code>__strong</code>, <code>__weak</code>, <code>__unsafe_unretained</code>, <code>__autoreleasing</code>) 應該位於Class與變數名稱之間，如：<code>NSString * __weak text</code>。</p>
+<h3 id="命名"><a href="#命名" class="headerlink" title="命名"></a>命名</h3><p>盡可能遵照Apple的命名法則，尤其那些涉及到<a href="https://developer.apple.com/library/mac/#documentation/Cocoa/Conceptual/MemoryMgmt/Articles/MemoryMgmt.html" target="_blank" rel="noopener">記憶體管理規範</a>，（<a href="http://stackoverflow.com/a/2865194/340508" target="_blank" rel="noopener">NonARC</a>）的。</p>
+<p><strong>長一點</strong>和<strong>描述性</strong>的方法名稱和變數名稱都不错。</p>
+<p><strong>建議：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="built_in">UIButton</span> *settingsButton;</span><br></pre></td></tr></table></figure>
+
+<p><strong>反對：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="built_in">UIButton</span> *setBut;</span><br></pre></td></tr></table></figure>
+
+<p>類別名稱和常數名稱應該使用三個字母當開頭（例如 <code>KRT</code>），但 Core Data 實體名稱可以省略。為了程式碼的乾淨，常數應該使用相關類別的名字作為開頭，並使用駝峰式命名法。</p>
+<p><strong>建議：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> <span class="built_in">NSTimeInterval</span> NYTArticleViewControllerNavigationFadeAnimationDuration = <span class="number">0.3</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>反對：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> <span class="built_in">NSTimeInterval</span> fadetime = <span class="number">1.7</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>屬性</strong>和<strong>區域變數</strong>應該使用<strong>駝峰式命名法</strong>，並且首字母小寫。</p>
+<p>為了保持一致，實體變數應該使用駝峰式命名，且首字母小寫，以下底線為開頭。這是<strong>LLVM</strong>的自動合成的實體變數一致。<br><strong>如果LLVM可以自動合成變數，那就讓它自動合成吧。</strong></p>
+<p><strong>建議：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="keyword">@synthesize</span> descriptiveVariableName = _descriptiveVariableName;</span><br></pre></td></tr></table></figure>
+
+<p><strong>反對：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="keyword">id</span> varnm;</span><br></pre></td></tr></table></figure>
+
+<h3 id="註解"><a href="#註解" class="headerlink" title="註解"></a>註解</h3><p>當需要的时候，註解應該被用來解释 <strong>為什麼</strong> 特定程式做了某些事情。所使用之任何註解必須保持最新，否則就刪掉。</p>
+<p>通常應避免一大塊註解，程式碼應該盡量作為自身的檔案，只需要隔幾行寫幾句說明。這並不適用於那些用來生成檔案的註解。</p>
+<h3 id="init-和-dealloc"><a href="#init-和-dealloc" class="headerlink" title="init 和 dealloc"></a>init 和 dealloc</h3><p><code>dealloc</code> 方法應該放在<strong>實作檔</strong>最上面，並且剛好在 <code>@synthesize</code> 和 <code>@dynamic</code> 保留字的後面。在任何類別中，<code>init</code> 都應該直接放在 <code>dealloc</code> 方法的下方。</p>
+<p><code>init</code> 方法的結構應該像這樣：</p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line">- (<span class="keyword">instancetype</span>)init &#123;</span><br><span class="line">    <span class="keyword">self</span> = [<span class="keyword">super</span> init]; <span class="comment">// 呼叫指定的初始化方法</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>) &#123;</span><br><span class="line">        <span class="comment">// Custom initialization</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="字面變數"><a href="#字面變數" class="headerlink" title="字面變數"></a>字面變數</h3><p>當創建 <code>NSString</code>， <code>NSDictionary</code>， <code>NSArray</code>，和 <code>NSNumber</code> 物件的不可變實體時，都應該使用字面量。要注意 <code>nil</code> 值不能傳給 <code>NSArray</code> 和 <code>NSDictionary</code> 字面變數，這樣做會導致崩潰。</p>
+<p><strong>建議：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="built_in">NSArray</span> *names = @[<span class="string">@"Brian"</span>, <span class="string">@"Matt"</span>, <span class="string">@"Chris"</span>, <span class="string">@"Alex"</span>, <span class="string">@"Steve"</span>, <span class="string">@"Paul"</span>];</span><br><span class="line"><span class="built_in">NSDictionary</span> *productManagers = @&#123;<span class="string">@"iPhone"</span> : <span class="string">@"Kate"</span>, <span class="string">@"iPad"</span> : <span class="string">@"Kamal"</span>, <span class="string">@"Mobile Web"</span> : <span class="string">@"Bill"</span>&#125;;</span><br><span class="line"><span class="built_in">NSNumber</span> *shouldUseLiterals = @YES;</span><br><span class="line"><span class="built_in">NSNumber</span> *buildingZIPCode = @<span class="number">10018</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>反對：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="built_in">NSArray</span> *names = [<span class="built_in">NSArray</span> arrayWithObjects:<span class="string">@"Brian"</span>, <span class="string">@"Matt"</span>, <span class="string">@"Chris"</span>, <span class="string">@"Alex"</span>, <span class="string">@"Steve"</span>, <span class="string">@"Paul"</span>, <span class="literal">nil</span>];</span><br><span class="line"><span class="built_in">NSDictionary</span> *productManagers = [<span class="built_in">NSDictionary</span> dictionaryWithObjectsAndKeys: <span class="string">@"Kate"</span>, <span class="string">@"iPhone"</span>, <span class="string">@"Kamal"</span>, <span class="string">@"iPad"</span>, <span class="string">@"Bill"</span>, <span class="string">@"Mobile Web"</span>, <span class="literal">nil</span>];</span><br><span class="line"><span class="built_in">NSNumber</span> *shouldUseLiterals = [<span class="built_in">NSNumber</span> numberWithBool:<span class="literal">YES</span>];</span><br><span class="line"><span class="built_in">NSNumber</span> *buildingZIPCode = [<span class="built_in">NSNumber</span> numberWithInteger:<span class="number">10018</span>];</span><br></pre></td></tr></table></figure>
+
+<h3 id="CGRect函式"><a href="#CGRect函式" class="headerlink" title="CGRect函式"></a>CGRect函式</h3><p>當存取一個 <code>CGRect</code> 的 <code>x</code>， <code>y</code>， <code>width</code>， <code>height</code> 时，應該使用<a href="http://developer.apple.com/library/ios/#documentation/graphicsimaging/reference/CGGeometry/Reference/reference.html" target="_blank" rel="noopener"><code>CGGeometry</code> 函式</a>取代直接存取結構體成員。Apple的 <code>CGGeometry</code> 参考中說到：</p>
+<blockquote>
+<p>All functions described in this reference that take CGRect data structures as inputs implicitly standardize those rectangles before calculating their results. For this reason, your applications should avoid directly reading and writing the data stored in the CGRect data structure. Instead, use the functions described here to manipulate rectangles and to retrieve their characteristics.</p>
+</blockquote>
+<p><strong>建議：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="built_in">CGRect</span> frame = <span class="keyword">self</span>.view.frame;</span><br><span class="line"></span><br><span class="line"><span class="built_in">CGFloat</span> x = <span class="built_in">CGRectGetMinX</span>(frame);</span><br><span class="line"><span class="built_in">CGFloat</span> y = <span class="built_in">CGRectGetMinY</span>(frame);</span><br><span class="line"><span class="built_in">CGFloat</span> width = <span class="built_in">CGRectGetWidth</span>(frame);</span><br><span class="line"><span class="built_in">CGFloat</span> height = <span class="built_in">CGRectGetHeight</span>(frame);</span><br></pre></td></tr></table></figure>
+
+<p><strong>反對：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="built_in">CGRect</span> frame = <span class="keyword">self</span>.view.frame;</span><br><span class="line"></span><br><span class="line"><span class="built_in">CGFloat</span> x = frame.origin.x;</span><br><span class="line"><span class="built_in">CGFloat</span> y = frame.origin.y;</span><br><span class="line"><span class="built_in">CGFloat</span> width = frame.size.width;</span><br><span class="line"><span class="built_in">CGFloat</span> height = frame.size.height;</span><br></pre></td></tr></table></figure>
+
+<h3 id="常數"><a href="#常數" class="headerlink" title="常數"></a>常數</h3><p>常數使用字元、字串 字面變數或數值變數，因為常數可以輕易重用，且可以快速改變而不需要查找和替換。常數應該宣告為 <code>static</code> 常數而不是 <code>#define</code> ，除非很明確的要當做marco來使用。</p>
+<p><strong>建議：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="built_in">NSString</span> * <span class="keyword">const</span> NYTAboutViewControllerCompanyName = <span class="string">@"The New York Times Company"</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> <span class="built_in">CGFloat</span> NYTImageThumbnailHeight = <span class="number">50.0</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>反對：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="meta">#define CompanyName @<span class="meta-string">"The New York Times Company"</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#define thumbnailHeight 2</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="枚舉類型"><a href="#枚舉類型" class="headerlink" title="枚舉類型"></a>枚舉類型</h3><p>當使用 <code>enum</code> 時，建議使用新的基礎類型規範，因為它具有更强的類型檢查和程式碼補全功能。現在的SDK 包含了一個marco來建議使用者利用新的基礎類型 - <code>NS_ENUM()</code></p>
+<p><strong>建議：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="built_in">NS_ENUM</span>(<span class="built_in">NSInteger</span>, NYTAdRequestState) &#123;</span><br><span class="line">    NYTAdRequestStateInactive,</span><br><span class="line">    NYTAdRequestStateLoading</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="位元碼"><a href="#位元碼" class="headerlink" title="位元碼"></a>位元碼</h3><p>當用到位元碼時，使用 <code>NS_OPTIONS</code> marco。</p>
+<p><strong>舉例：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="built_in">NS_OPTIONS</span>(<span class="built_in">NSUInteger</span>, NYTAdCategory) &#123;</span><br><span class="line">    NYTAdCategoryAutos      = <span class="number">1</span> &lt;&lt; <span class="number">0</span>,</span><br><span class="line">    NYTAdCategoryJobs       = <span class="number">1</span> &lt;&lt; <span class="number">1</span>,</span><br><span class="line">    NYTAdCategoryRealState  = <span class="number">1</span> &lt;&lt; <span class="number">2</span>,</span><br><span class="line">    NYTAdCategoryTechnology = <span class="number">1</span> &lt;&lt; <span class="number">3</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="私有屬性"><a href="#私有屬性" class="headerlink" title="私有屬性"></a>私有屬性</h3><p>私有屬性應該宣告在類別實作檔的延展(匿名的類目)中。有名字的類目(例如 <code>NYTPrivate</code> 或 <code>private</code>) 永遠都不應該使用，除非要擴展其他類別。</p>
+<p><strong>建議：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">NYTAdvertisement</span> ()</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) GADBannerView *googleAdView;</span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) ADBannerView *iAdView;</span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">UIWebView</span> *adXWebView;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="圖片命名"><a href="#圖片命名" class="headerlink" title="圖片命名"></a>圖片命名</h3><p>圖片名稱應該被統一命名，以保持組織的完整。它們應該被命名為一個說明它們<strong>用途的駝峰式字串</strong>，其次是自定義類別或屬性的無前綴名字（如果有的話），然後進一步說明<strong>顏色</strong>與<strong>對應的解析度識別(ex:iPhone 6 and iPhone 5為@2x)</strong>或 <strong>圖片展示位置</strong>，最後是它們的<strong>狀態</strong>。</p>
+<p><strong>建議：</strong></p>
+<ul>
+<li><code>RefreshBarButtonItem</code> / <code>RefreshBarButtonItem@2x</code> 和 <code>RefreshBarButtonItemSelected</code> / <code>RefreshBarButtonItemSelected@2x</code></li>
+<li><code>ArticleNavigationBarWhite</code> / <code>ArticleNavigationBarWhite@2x</code> 和 <code>ArticleNavigationBarBlackSelected</code> / <code>ArticleNavigationBarBlackSelected@2x</code>.</li>
+</ul>
+<p><a href="https://developer.apple.com/library/ios/documentation/UserExperience/Conceptual/MobileHIG/IconMatrix.html" target="_blank" rel="noopener">對應的解析度識別</a></p>
+<p>圖片目錄中被用於類似目地的圖片應歸入各自組中。<br>最後確保圖片存放於<strong>Images.xcassets</strong>。</p>
+<h3 id="布林"><a href="#布林" class="headerlink" title="布林"></a>布林</h3><p>因為 <code>nil</code> 解析為 <code>NO</code>，所以没有必要在條件中與它進行比較。永遠不要直接和 <code>YES</code> 進行比較，因為 <code>YES</code> 被定義為 1，而 <code>BOOL</code> 可以多達八位元。</p>
+<p>這使得整個檔案有更多的一致性和更大的視覺清晰度。</p>
+<p><strong>建議：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (!someObject) &#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>反對：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (someObject == <span class="literal">nil</span>) &#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>對於 <code>BOOL</code> 來說, 這有兩種用法:</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (isAwesome)</span><br><span class="line"><span class="keyword">if</span> (![someObject boolValue])</span><br></pre></td></tr></table></figure>
+
+<p><strong>反對：</strong></p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> ([someObject boolValue] == <span class="literal">NO</span>)</span><br><span class="line"><span class="keyword">if</span> (isAwesome == <span class="literal">YES</span>) <span class="comment">// 絕對不要這麼做</span></span><br></pre></td></tr></table></figure>
+
+<p>如果一個 <code>BOOL</code> 屬性名稱是一個形容詞，屬性可以省略 “is” 前缀，但為 get 存取器指定一個慣用的名稱，例如：</p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line"><span class="keyword">@property</span> (<span class="keyword">assign</span>, <span class="keyword">getter</span>=isEditable) <span class="built_in">BOOL</span> editable;</span><br></pre></td></tr></table></figure>
+
+<p>內容和範例來自 <a href="https://developer.apple.com/library/mac/#documentation/Cocoa/Conceptual/CodingGuidelines/Articles/NamingIvarsAndTypes.html#//apple_ref/doc/uid/20001284-BAJGIIJE" target="_blank" rel="noopener">Cocoa 命名指南</a> 。</p>
+<h3 id="單一實例"><a href="#單一實例" class="headerlink" title="單一實例"></a>單一實例</h3><p>單例對象應該使用執行緒安全的模式創建共享的實例。</p>
+<figure class="highlight objc"><table><tr><td class="code"><pre><span class="line">+ (<span class="keyword">instancetype</span>)sharedInstance &#123;</span><br><span class="line">   <span class="keyword">static</span> <span class="keyword">id</span> sharedInstance = <span class="literal">nil</span>;</span><br><span class="line"></span><br><span class="line">   <span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> onceToken;</span><br><span class="line">   <span class="built_in">dispatch_once</span>(&amp;onceToken, ^&#123;</span><br><span class="line">      sharedInstance = [[<span class="keyword">self</span> alloc] init];</span><br><span class="line">   &#125;);</span><br><span class="line"></span><br><span class="line">   <span class="keyword">return</span> sharedInstance;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>這將會預防<a href="http://cocoasamurai.blogspot.com/2011/04/singletons-your-doing-them-wrong.html" target="_blank" rel="noopener">有時可能產生的許多崩潰</a>。</p>
+<h3 id="Xcode"><a href="#Xcode" class="headerlink" title="Xcode"></a>Xcode</h3><p>为了避免檔案複雜，實體檔案與目錄應該保持與Xcode同步。Xcode 建立的任何群組（group）都必须在檔案系统有相應的映射。為了更清晰，程式碼不僅應該按照<strong>類型</strong>進行分组，也可以根據<strong>功能</strong>進行分组。</p>
+<p><img src="/images/msic/code_group.png" alt></p>
+<p>如果可以的話，盡可能一直打開 target Build Settings 中 “Treat Warnings as Errors” 以及一些<a href="http://boredzo.org/blog/archives/2009-11-07/warnings" target="_blank" rel="noopener">額外的警告</a>。如果你需要忽略指定的警告,使用 <a href="http://clang.llvm.org/docs/UsersManual.html#controlling-diagnostics-via-pragmas" target="_blank" rel="noopener">Clang 的編譯特性</a> 。</p>
+<h3 id="其他Objective-C風格指南"><a href="#其他Objective-C風格指南" class="headerlink" title="其他Objective-C風格指南"></a>其他Objective-C風格指南</h3><ul>
+<li><a href="http://google-styleguide.googlecode.com/svn/trunk/objcguide.xml" target="_blank" rel="noopener">Google</a></li>
+<li><a href="https://github.com/github/objective-c-conventions" target="_blank" rel="noopener">GitHub</a></li>
+<li><a href="https://trac.adium.im/wiki/CodingStyle" target="_blank" rel="noopener">Adium</a></li>
+<li><a href="https://gist.github.com/soffes/812796" target="_blank" rel="noopener">Sam Soffes</a></li>
+<li><a href="http://cocoadevcentral.com/articles/000082.php" target="_blank" rel="noopener">CocoaDevCentral</a></li>
+<li><a href="http://lukeredpath.co.uk/blog/my-objective-c-style-guide.html" target="_blank" rel="noopener">Luke Redpath</a></li>
+<li><a href="http://www.cimgf.com/zds-code-style-guide/" target="_blank" rel="noopener">Marcus Zarra</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">NYTime Objective-C 程式規範</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2013-11-3 12:11</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2014/06/03/msic/oop/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    基本物件導向概念
+                
+            </div>
+        </a>
+    
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2013/11/03/msic/ios-code-style/" data-id="ck3ns7q6s005dwmpfm5zqauud" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2013/11/03/msic/ios-code-style/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2013/11/03/msic/ios-code-style/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#點語法"><span class="toc-number">1.</span> <span class="toc-text">點語法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#間距"><span class="toc-number">2.</span> <span class="toc-text">間距</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#條件判斷"><span class="toc-number">3.</span> <span class="toc-text">條件判斷</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#三元運算式"><span class="toc-number">3.1.</span> <span class="toc-text">三元運算式</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Switch-case"><span class="toc-number">4.</span> <span class="toc-text">Switch case</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#錯誤處理"><span class="toc-number">5.</span> <span class="toc-text">錯誤處理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#方法"><span class="toc-number">6.</span> <span class="toc-text">方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#變數"><span class="toc-number">7.</span> <span class="toc-text">變數</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#命名"><span class="toc-number">7.1.</span> <span class="toc-text">命名</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#註解"><span class="toc-number">7.2.</span> <span class="toc-text">註解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#init-和-dealloc"><span class="toc-number">7.3.</span> <span class="toc-text">init 和 dealloc</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#字面變數"><span class="toc-number">7.4.</span> <span class="toc-text">字面變數</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CGRect函式"><span class="toc-number">7.5.</span> <span class="toc-text">CGRect函式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常數"><span class="toc-number">7.6.</span> <span class="toc-text">常數</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#枚舉類型"><span class="toc-number">7.7.</span> <span class="toc-text">枚舉類型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#位元碼"><span class="toc-number">7.8.</span> <span class="toc-text">位元碼</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#私有屬性"><span class="toc-number">7.9.</span> <span class="toc-text">私有屬性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#圖片命名"><span class="toc-number">7.10.</span> <span class="toc-text">圖片命名</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#布林"><span class="toc-number">7.11.</span> <span class="toc-text">布林</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#單一實例"><span class="toc-number">7.12.</span> <span class="toc-text">單一實例</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Xcode"><span class="toc-number">7.13.</span> <span class="toc-text">Xcode</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#其他Objective-C風格指南"><span class="toc-number">7.14.</span> <span class="toc-text">其他Objective-C風格指南</span></a></li></ol></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2013/11/03/msic/ios-code-style/';
+        
+        this.page.identifier = 'msic/ios-code-style';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

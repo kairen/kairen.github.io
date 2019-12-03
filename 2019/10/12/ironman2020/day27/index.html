@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>動手實作 Kubernetes 自定義控制器 Part3 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="前言在動手實作 Kubernetes 自定義控制器 Part2 文章中，我們利用 client-go 與產生的 Client 函式庫實作了一個控制器功能。而今天想在控制器實現協調預期狀態之前，探討一下 Kubernetes 自定義控制器的高可靠(Highly Available，HA)如何實現。 在 Kubernetes 中，許多系統相關元件都是以 Controller Pattern 方式實現，">
+<meta name="keywords" content="Kubernetes">
+<meta property="og:type" content="article">
+<meta property="og:title" content="動手實作 Kubernetes 自定義控制器 Part3">
+<meta property="og:url" content="https://k2r2bai.com/2019/10/12/ironman2020/day27/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="前言在動手實作 Kubernetes 自定義控制器 Part2 文章中，我們利用 client-go 與產生的 Client 函式庫實作了一個控制器功能。而今天想在控制器實現協調預期狀態之前，探討一下 Kubernetes 自定義控制器的高可靠(Highly Available，HA)如何實現。 在 Kubernetes 中，許多系統相關元件都是以 Controller Pattern 方式實現，">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://i.imgur.com/8Kff5Gh.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.391Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="動手實作 Kubernetes 自定義控制器 Part3">
+<meta name="twitter:description" content="前言在動手實作 Kubernetes 自定義控制器 Part2 文章中，我們利用 client-go 與產生的 Client 函式庫實作了一個控制器功能。而今天想在控制器實現協調預期狀態之前，探討一下 Kubernetes 自定義控制器的高可靠(Highly Available，HA)如何實現。 在 Kubernetes 中，許多系統相關元件都是以 Controller Pattern 方式實現，">
+<meta name="twitter:image" content="https://i.imgur.com/8Kff5Gh.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-ironman2020/day27" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            動手實作 Kubernetes 自定義控制器 Part3
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2019/10/12/ironman2020/day27/">
+            <u><time datetime="2019-10-11T16:00:00.000Z" itemprop="datePublished">2019-10-12</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在<a href="https://k2r2bai.com/2019/10/11/ironman2020/day26/">動手實作 Kubernetes 自定義控制器 Part2</a> 文章中，我們利用 client-go 與產生的 Client 函式庫實作了一個控制器功能。而今天想在控制器實現協調預期狀態之前，探討一下 Kubernetes 自定義控制器的高可靠(Highly Available，HA)如何實現。</p>
+<p>在 Kubernetes 中，許多系統相關元件都是以 <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/#extension-patterns" target="_blank" rel="noopener">Controller Pattern</a> 方式實現，比如說: Scheduler 與 Controller Manager。這些元件通常負責 Kubernetes 中的某一環核心功能，像是 Scheduler 負責 Pod 的節點分配， Controller Manager 提供許多 Kubernetes API 資源的功能協調與關聯。那麼如果這些元件發生故障了，就可能造成某部分功能無法正常運行，進而影響到整個叢集的健康，這樣該如何解決呢?</p>
+<a id="more"></a>
+
+<p>如果有閱讀過<a href="https://k2r2bai.com/2019/09/19/ironman2020/day04/">淺談 Kubernetes 高可靠架構</a>與<a href="https://k2r2bai.com/2019/09/20/ironman2020/day05/">實現 Kubernetes 高可靠架構部署</a>文章的人，可以從中知道 Kubernetes 的核心元件都支援 HA 的部署實現。而其中的兩個重要控制器 Scheduler 與 Controller Manager 是以 <a href="https://en.wikipedia.org/wiki/Lease_(computer_science)" target="_blank" rel="noopener">Lease</a> 機制實現 Active-Passive 架構。這表示一個環境中，有多個相同元件運作時，只會有一個作為 Leader 負責程式的功能，而其餘則會等待 Leader 發生錯時，才接手工作。</p>
+<p>而這機制的實踐方式有很多種，比如基於 Redis、Zookeeper、Consul、etcd，或是資料庫的分散式鎖(Distributed Lock)。而 Kubernetes 則是是採用資源鎖(Resource Lock)概念來實現，基本上就是建立 Kubernetes API 資源 ConfigMap、 Endpoint 或 <a href="https://github.com/kubernetes/api/blob/master/coordination/v1/types.go#L27" target="_blank" rel="noopener">Lease</a> 來維護分散式鎖的狀態。</p>
+<blockquote>
+<p>Kubernetes 從 v1.15 版本開始推薦使用 Lease 資源實現，而 ConfigMap、 Endpoint 已經被棄用。</p>
+</blockquote>
+<p>分散式鎖最常見的實現方式就是搶資源的擁有權，搶到的人就是 Leader，接著 Leader 開始定期更新鎖狀態，以表示自己處於活躍狀態，以確保其他人沒辦法搶走擁有權。而 Kubernetes 也類似這樣概念，基本上就是搶 API 上的某個資源，當搶到時，就在該資源中標示自己是擁有者，並持續更新時間來表示自己還處於活躍狀態;而其他則持續取得資源鎖中的更新時間進行比對，以確認原擁有者是否已經死亡，若是的話，則更新資源鎖來標示自己為擁有者。</p>
+<p>這邊看一下 Kubernetes Controller Manager 實際運作狀況，當 Controller Manager 被啟動時，預設會透過<code>--leader-elect=true</code>來開啟 HA 功能。當正確啟動後，在 kube-system 底下，就會看到被新增了一個用於維護分散式鎖狀態的 Endpoint 資源:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl -n kube-system get ep kube-controller-manager -o yaml</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Endpoints</span><br><span class="line">metadata:</span><br><span class="line">  annotations:</span><br><span class="line">    control-plane.alpha.kubernetes.io/leader: <span class="string">'&#123;"holderIdentity":"k8s-m3_9f51cc32-679e-4cc3-951e-c35f8688bbc3","leaseDurationSeconds":15,"acquireTime":"2019-09-25T05:39:17Z","renewTime":"2019-10-09T09:37:48Z","leaderTransitions":6&#125;'</span></span><br><span class="line">  creationTimestamp: <span class="string">"2019-09-20T14:00:55Z"</span></span><br><span class="line">  name: kube-controller-manager</span><br><span class="line">  namespace: kube-system</span><br></pre></td></tr></table></figure>
+
+<p>然後可以在該資源的<code>metadata.annotations</code>看到用於儲存狀態的<code>control-plane.alpha.kubernetes.io/leader</code>欄位。其中<code>holderIdentity</code>用於表示當前擁有者，<code>acquireTime</code>為擁有者取得持有權的時間，<code>renewTime</code>為當前擁有者上一次活躍時間。而更換 Leader 條件是當 renewTime 與自己當下時間計算超過<code>leaseDurationSeconds</code>時進行。</p>
+<p>當確認 Leader 後，即可透過 kubectl logs 來查看元件執行結果:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Leader</span></span><br><span class="line">$ kubectl -n kube-system logs -f kube-controller-manager-k8s-m3</span><br><span class="line">I0923 14:02:27.809016       1 serving.go:319] Generated self-signed cert <span class="keyword">in</span>-memory</span><br><span class="line">I0923 14:02:28.214820       1 controllermanager.go:161] Version: v1.16.0</span><br><span class="line">I0923 14:02:28.215142       1 secure_serving.go:123] Serving securely on 127.0.0.1:10257</span><br><span class="line">I0923 14:02:28.215415       1 deprecated_insecure_serving.go:53] Serving insecurely on [::]:10252</span><br><span class="line">I0923 14:02:28.215453       1 leaderelection.go:241] attempting to acquire leader lease  kube-system/kube-controller-manager...</span><br><span class="line">I0925 05:39:17.506983       1 leaderelection.go:251] successfully acquired lease kube-system/kube-controller-manager</span><br><span class="line">I0925 05:39:17.507091       1 event.go:255] Event(v1.ObjectReference&#123;Kind:<span class="string">"Endpoints"</span>, Namespace:<span class="string">"kube-system"</span>, Name:<span class="string">"kube-controller-manager"</span>, UID:<span class="string">"b6627d30-c879-449f-99ea-f94d536f2516"</span>, APIVersion:<span class="string">"v1"</span>, ResourceVersion:<span class="string">"794261"</span>, FieldPath:<span class="string">""</span>&#125;): <span class="built_in">type</span>: <span class="string">'Normal'</span> reason: <span class="string">'LeaderElection'</span> k8s-m3_9f51cc32-679e-4cc3-951e-c35f8688bbc3 became leader</span><br><span class="line">I0925 05:39:17.766322       1 plugins.go:100] No cloud provider specified.</span><br><span class="line">I0925 05:39:17.767107       1 shared_informer.go:197] Waiting <span class="keyword">for</span> caches to sync <span class="keyword">for</span> tokens</span><br><span class="line">I0925 05:39:17.778474       1 controllermanager.go:534] Started <span class="string">"daemonset"</span></span><br><span class="line">I0925 05:39:17.778485       1 daemon_controller.go:267] Starting daemon sets controller</span><br><span class="line">I0925 05:39:17.778505       1 shared_informer.go:197] Waiting <span class="keyword">for</span> caches to sync <span class="keyword">for</span> daemon sets</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line"><span class="comment"># Not leader</span></span><br><span class="line">$ kubectl -n kube-system logs -f kube-controller-manager-k8s-m1</span><br><span class="line">I0925 05:39:06.784042       1 serving.go:319] Generated self-signed cert <span class="keyword">in</span>-memory</span><br><span class="line">I0925 05:39:07.932147       1 controllermanager.go:161] Version: v1.16.0</span><br><span class="line">I0925 05:39:07.932782       1 secure_serving.go:123] Serving securely on 127.0.0.1:10257</span><br><span class="line">I0925 05:39:07.933364       1 deprecated_insecure_serving.go:53] Serving insecurely on [::]:10252</span><br><span class="line">I0925 05:39:07.933418       1 leaderelection.go:241] attempting to acquire leader lease  kube-system/kube-controller-manager...</span><br></pre></td></tr></table></figure>
+
+<p>講了這麼多，那究竟該如何在自己的控制器實現同樣功能呢?</p>
+<p>事實上，Kubernetes client-go 提供了 <a href="https://github.com/kubernetes/client-go/tree/master/tools/leaderelection" target="_blank" rel="noopener">Leader Election</a> 功能，因此我們能夠透過這個 Package 輕易實作。 </p>
+<h2 id="Use-Leader-Election-Package"><a href="#Use-Leader-Election-Package" class="headerlink" title="Use Leader Election Package"></a>Use Leader Election Package</h2><p>在 client-go 中，以提供了 <a href="https://github.com/kubernetes/client-go/tree/master/examples/leader-election" target="_blank" rel="noopener">Leader Election Example</a> 讓大家可以了解如何實現。因此可以下載 client-go 來進行測試，或是依據範例在控制器中實作。</p>
+<h3 id="環境準備"><a href="#環境準備" class="headerlink" title="環境準備"></a>環境準備</h3><p>由於使用這個功能需要用到 Kubernetes 與 Go 語言，因此需要透過以下來完成條件:</p>
+<ul>
+<li>一座 Kubernetes v1.10+ 叢集。透過 <a href="https://github.com/kubernetes/minikube" target="_blank" rel="noopener">Minikube</a> 建立即可 <code>minikube start --kubernetes-version=v1.15.4</code>。</li>
+<li>安裝 Go 語言 v1.11+ 開發環境，由於開發中會使用到 Go mod 來管理第三方套件，因此必須符合支援版本。安裝請參考 <a href="https://golang.org/doc/install" target="_blank" rel="noopener">Go Getting Started</a>。</li>
+</ul>
+<h3 id="在控制器實作"><a href="#在控制器實作" class="headerlink" title="在控制器實作"></a>在控制器實作</h3><p>要在自定義控制器中，應用 Leader Election 機制其實不難，只要參考 client-go 的範例，在<code>OnStartedLeading()</code>函式中執行控制器程式實例的啟動函式即可，而當觸發<code>OnStoppedLeading()</code>時，就關閉控制器程式的運作。如以下程式，我們修改 <a href="https://github.com/cloud-native-taiwan/controller101" target="_blank" rel="noopener">Controller101</a> 的 main.go。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">"context"</span></span><br><span class="line">	goflag <span class="string">"flag"</span></span><br><span class="line">	<span class="string">"fmt"</span></span><br><span class="line">	<span class="string">"os"</span></span><br><span class="line">	<span class="string">"os/signal"</span></span><br><span class="line">	<span class="string">"syscall"</span></span><br><span class="line">	<span class="string">"time"</span></span><br><span class="line"></span><br><span class="line">	<span class="string">"github.com/cloud-native-taiwan/controller101/pkg/controller"</span></span><br><span class="line">	cloudnative <span class="string">"github.com/cloud-native-taiwan/controller101/pkg/generated/clientset/versioned"</span></span><br><span class="line">	cloudnativeinformer <span class="string">"github.com/cloud-native-taiwan/controller101/pkg/generated/informers/externalversions"</span></span><br><span class="line">	<span class="string">"github.com/cloud-native-taiwan/controller101/pkg/version"</span></span><br><span class="line">	flag <span class="string">"github.com/spf13/pflag"</span></span><br><span class="line">	metav1 <span class="string">"k8s.io/apimachinery/pkg/apis/meta/v1"</span></span><br><span class="line">	clientset <span class="string">"k8s.io/client-go/kubernetes"</span></span><br><span class="line">	<span class="string">"k8s.io/client-go/rest"</span></span><br><span class="line">	<span class="string">"k8s.io/client-go/tools/clientcmd"</span></span><br><span class="line">	<span class="string">"k8s.io/client-go/tools/leaderelection"</span></span><br><span class="line">	<span class="string">"k8s.io/client-go/tools/leaderelection/resourcelock"</span></span><br><span class="line">	<span class="string">"k8s.io/klog"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> defaultSyncTime = time.Second * <span class="number">30</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> (</span><br><span class="line">	kubeconfig         <span class="keyword">string</span></span><br><span class="line">	showVersion        <span class="keyword">bool</span></span><br><span class="line">	threads            <span class="keyword">int</span></span><br><span class="line">	leaderElect        <span class="keyword">bool</span></span><br><span class="line">	id                 <span class="keyword">string</span></span><br><span class="line">	leaseLockName      <span class="keyword">string</span></span><br><span class="line">	leaseLockNamespace <span class="keyword">string</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">parseFlags</span><span class="params">()</span></span> &#123;</span><br><span class="line">	flag.StringVarP(&amp;kubeconfig, <span class="string">"kubeconfig"</span>, <span class="string">""</span>, <span class="string">""</span>, <span class="string">"Absolute path to the kubeconfig file."</span>)</span><br><span class="line">	flag.IntVarP(&amp;threads, <span class="string">"threads"</span>, <span class="string">""</span>, <span class="number">2</span>, <span class="string">"Number of worker threads used by the controller."</span>)</span><br><span class="line">	flag.StringVarP(&amp;id, <span class="string">"holder-identity"</span>, <span class="string">""</span>, os.Getenv(<span class="string">"POD_NAME"</span>), <span class="string">"the holder identity name"</span>)</span><br><span class="line">	flag.BoolVarP(&amp;leaderElect, <span class="string">"leader-elect"</span>, <span class="string">""</span>, <span class="literal">true</span>, <span class="string">"Start a leader election client and gain leadership before executing the main loop. "</span>)</span><br><span class="line">	flag.StringVar(&amp;leaseLockName, <span class="string">"lease-lock-name"</span>, <span class="string">"controller101"</span>, <span class="string">"the lease lock resource name"</span>)</span><br><span class="line">	flag.StringVar(&amp;leaseLockNamespace, <span class="string">"lease-lock-namespace"</span>, <span class="string">""</span>, <span class="string">"the lease lock resource namespace"</span>)</span><br><span class="line">	flag.BoolVarP(&amp;showVersion, <span class="string">"version"</span>, <span class="string">""</span>, <span class="literal">false</span>, <span class="string">"Display the version."</span>)</span><br><span class="line">	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)</span><br><span class="line">	flag.Parse()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">restConfig</span><span class="params">(kubeconfig <span class="keyword">string</span>)</span> <span class="params">(*rest.Config, error)</span></span> &#123;</span><br><span class="line">	<span class="keyword">if</span> kubeconfig != <span class="string">""</span> &#123;</span><br><span class="line">		cfg, err := clientcmd.BuildConfigFromFlags(<span class="string">""</span>, kubeconfig)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> cfg, <span class="literal">nil</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	cfg, err := rest.InClusterConfig()</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> cfg, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	parseFlags()</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> showVersion &#123;</span><br><span class="line">		fmt.Fprintf(os.Stdout, <span class="string">"%s\n"</span>, version.GetVersion())</span><br><span class="line">		os.Exit(<span class="number">0</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	k8scfg, err := restConfig(kubeconfig)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		klog.Fatalf(<span class="string">"Error to build rest config: %s"</span>, err.Error())</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	k8sclientset := clientset.NewForConfigOrDie(k8scfg)</span><br><span class="line">	clientset, err := cloudnative.NewForConfig(k8scfg)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		klog.Fatalf(<span class="string">"Error to build cloudnative clientset: %s"</span>, err.Error())</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	informer := cloudnativeinformer.NewSharedInformerFactory(clientset, defaultSyncTime)</span><br><span class="line">	controller := controller.New(clientset, informer)</span><br><span class="line">	ctx, cancel := context.WithCancel(context.Background())</span><br><span class="line">	signalChan := <span class="built_in">make</span>(<span class="keyword">chan</span> os.Signal, <span class="number">1</span>)</span><br><span class="line">	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> leaderElect &#123;</span><br><span class="line">		lock := &amp;resourcelock.LeaseLock&#123;</span><br><span class="line">			LeaseMeta: metav1.ObjectMeta&#123;</span><br><span class="line">				Name:      leaseLockName,</span><br><span class="line">				Namespace: leaseLockNamespace,</span><br><span class="line">			&#125;,</span><br><span class="line">			Client: k8sclientset.CoordinationV1(),</span><br><span class="line">			LockConfig: resourcelock.ResourceLockConfig&#123;</span><br><span class="line">				Identity: id,</span><br><span class="line">			&#125;,</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">go</span> leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig&#123;</span><br><span class="line">			Lock:            lock,</span><br><span class="line">			ReleaseOnCancel: <span class="literal">true</span>,</span><br><span class="line">			LeaseDuration:   <span class="number">60</span> * time.Second,</span><br><span class="line">			RenewDeadline:   <span class="number">15</span> * time.Second,</span><br><span class="line">			RetryPeriod:     <span class="number">5</span> * time.Second,</span><br><span class="line">			Callbacks: leaderelection.LeaderCallbacks&#123;</span><br><span class="line">				OnStartedLeading: <span class="function"><span class="keyword">func</span><span class="params">(ctx context.Context)</span></span> &#123;</span><br><span class="line">					<span class="keyword">if</span> err := controller.Run(ctx, threads); err != <span class="literal">nil</span> &#123;</span><br><span class="line">						klog.Fatalf(<span class="string">"Error to run the controller instance: %s."</span>, err)</span><br><span class="line">					&#125;</span><br><span class="line">					klog.Infof(<span class="string">"%s: leading"</span>, id)</span><br><span class="line">				&#125;,</span><br><span class="line">				OnStoppedLeading: <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">					controller.Stop()</span><br><span class="line">					klog.Infof(<span class="string">"%s: lost"</span>, id)</span><br><span class="line">				&#125;,</span><br><span class="line">			&#125;,</span><br><span class="line">		&#125;)</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="keyword">if</span> err := controller.Run(ctx, threads); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			klog.Fatalf(<span class="string">"Error to run the controller instance: %s."</span>, err)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	&lt;-signalChan</span><br><span class="line">	cancel()</span><br><span class="line">	controller.Stop()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="執行"><a href="#執行" class="headerlink" title="執行"></a>執行</h3><p>當程式開發完成後，就可以開啟三個單獨的 Terminal 來測試，其中每個 Terminal 會輸入一個唯一的 POD Name 來驗證:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># first terminal </span></span><br><span class="line">$ POD_NAME=test1 go run cmd/main.go --kubeconfig=<span class="variable">$HOME</span>/.kube/config -v=3 --logtostderr --lease-lock-namespace=default</span><br><span class="line"></span><br><span class="line"><span class="comment"># second terminal </span></span><br><span class="line">$ POD_NAME=test2 go run cmd/main.go --kubeconfig=<span class="variable">$HOME</span>/.kube/config -v=3 --logtostderr --lease-lock-namespace=default</span><br><span class="line"></span><br><span class="line"><span class="comment"># third terminal</span></span><br><span class="line">$ POD_NAME=test1 go run cmd/main.go --kubeconfig=<span class="variable">$HOME</span>/.kube/config -v=3 --logtostderr --lease-lock-namespace=default</span><br></pre></td></tr></table></figure>
+
+<p>當三個控制器都啟動後，就會看到其中一個行程被選擇 Leader，這時如果停止該控制器，並經過一段時間後，就會發現新的 Leader 已經由其他行程接手。</p>
+<p><img src="https://i.imgur.com/8Kff5Gh.png" alt></p>
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>今天主要透過 client-go 為自定義控制器實現高可靠機制，以確保控制器在發生問題時，能由其他節點上的控制器接手處理，這樣功能很適合以 Static Pod 部署的控制器。</p>
+<blockquote>
+<p>自定義控制器其實也可以用 Kubernetes Deployment 來達到高可靠，但在一些場景下並不適用，且若 Deployment 因為一些原因同時有多個副本在執行時，有可能會發生多個控制器寫入同一個 API 資源，造成資訊不一致問題。</p>
+</blockquote>
+<p>明天我們將回到 VM 控制器程式，深入了解如何實現核心功能，以讓我們透過 API 資源管理虛擬機。</p>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li><a href="https://kubernetes.io/blog/2016/01/simple-leader-election-with-kubernetes/" target="_blank" rel="noopener">https://kubernetes.io/blog/2016/01/simple-leader-election-with-kubernetes/</a></li>
+<li><a href="https://tunein.engineering/implementing-leader-election-for-kubernetes-pods-2477deef8f13" target="_blank" rel="noopener">https://tunein.engineering/implementing-leader-election-for-kubernetes-pods-2477deef8f13</a></li>
+<li><a href="https://medium.com/michaelbi-22303/deep-dive-into-kubernetes-simple-leader-election-3712a8be3a99" target="_blank" rel="noopener">https://medium.com/michaelbi-22303/deep-dive-into-kubernetes-simple-leader-election-3712a8be3a99</a></li>
+<li><a href="http://liubin.org/blog/2018/04/28/how-to-build-controller-manager-high-available/" target="_blank" rel="noopener">http://liubin.org/blog/2018/04/28/how-to-build-controller-manager-high-available/</a></li>
+<li><a href="https://zdyxry.github.io/2019/09/12/Kubernetes-%E5%AE%9E%E6%88%98-Leader-%E9%80%89%E4%B8%BE/" target="_blank" rel="noopener">https://zdyxry.github.io/2019/09/12/Kubernetes-%E5%AE%9E%E6%88%98-Leader-%E9%80%89%E4%B8%BE/</a></li>
+<li><a href="https://mathspanda.github.io/2017/05/11/k8s-leader-election/" target="_blank" rel="noopener">https://mathspanda.github.io/2017/05/11/k8s-leader-election/</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">動手實作 Kubernetes 自定義控制器 Part3</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2019-10-12 00:10</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2019/10/13/ironman2020/day28/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    動手實作 Kubernetes 自定義控制器 Part4
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2019/10/11/ironman2020/day26/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">動手實作 Kubernetes 自定義控制器 Part2</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2019/10/12/ironman2020/day27/" data-id="ck3ns7q6i004iwmpfv7d86kr1" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2019/10/12/ironman2020/day27/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/10/12/ironman2020/day27/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Use-Leader-Election-Package"><span class="toc-number">2.</span> <span class="toc-text">Use Leader Election Package</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#環境準備"><span class="toc-number">2.1.</span> <span class="toc-text">環境準備</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#在控制器實作"><span class="toc-number">2.2.</span> <span class="toc-text">在控制器實作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#執行"><span class="toc-number">2.3.</span> <span class="toc-text">執行</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#結語"><span class="toc-number">3.</span> <span class="toc-text">結語</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Reference"><span class="toc-number">4.</span> <span class="toc-text">Reference</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2019/10/12/ironman2020/day27/';
+        
+        this.page.identifier = 'ironman2020/day27';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

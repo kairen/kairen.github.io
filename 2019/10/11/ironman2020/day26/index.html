@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>動手實作 Kubernetes 自定義控制器 Part2 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="前言在動手實作 Kubernetes 自定義控制器 Part1文章中，我們透過定義 API 資源結構，以及使用 code-generator 產生了用於開發自定義控制器的程式函式庫。今天將延續範例，利用昨天產生的函式庫(apis, clientsets)建立一個控制器程式，以監聽自定義資源VirtualMachine的 API 事件。">
+<meta name="keywords" content="Kubernetes">
+<meta property="og:type" content="article">
+<meta property="og:title" content="動手實作 Kubernetes 自定義控制器 Part2">
+<meta property="og:url" content="https://k2r2bai.com/2019/10/11/ironman2020/day26/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="前言在動手實作 Kubernetes 自定義控制器 Part1文章中，我們透過定義 API 資源結構，以及使用 code-generator 產生了用於開發自定義控制器的程式函式庫。今天將延續範例，利用昨天產生的函式庫(apis, clientsets)建立一個控制器程式，以監聽自定義資源VirtualMachine的 API 事件。">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.390Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="動手實作 Kubernetes 自定義控制器 Part2">
+<meta name="twitter:description" content="前言在動手實作 Kubernetes 自定義控制器 Part1文章中，我們透過定義 API 資源結構，以及使用 code-generator 產生了用於開發自定義控制器的程式函式庫。今天將延續範例，利用昨天產生的函式庫(apis, clientsets)建立一個控制器程式，以監聽自定義資源VirtualMachine的 API 事件。">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-ironman2020/day26" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            動手實作 Kubernetes 自定義控制器 Part2
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2019/10/11/ironman2020/day26/">
+            <u><time datetime="2019-10-10T16:00:00.000Z" itemprop="datePublished">2019-10-11</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在<a href="https://k2r2bai.com/2019/10/10/ironman2020/day25/">動手實作 Kubernetes 自定義控制器 Part1</a>文章中，我們透過定義 API 資源結構，以及使用 code-generator 產生了用於開發自定義控制器的程式函式庫。今天將延續範例，利用昨天產生的函式庫(apis, clientsets)建立一個控制器程式，以監聽自定義資源<code>VirtualMachine</code>的 API 事件。</p>
+<a id="more"></a>
+
+<h2 id="實現控制器程式"><a href="#實現控制器程式" class="headerlink" title="實現控制器程式"></a>實現控制器程式</h2><p>當有了自定義資源的 api 與 client 的函式庫後，我們就能利用這些來撰寫控制器程式。延續 <a href="https://github.com/cloud-native-taiwan/controller101" target="_blank" rel="noopener">Controller101</a>，我們將新增一些檔案來完成，如下所示:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">├── cmd</span><br><span class="line">│   └── main.go</span><br><span class="line">├── example</span><br><span class="line">│   └── <span class="built_in">test</span>-vm.yml </span><br><span class="line">└── pkg</span><br><span class="line">    ├── controller</span><br><span class="line">    │   └── controller.go</span><br><span class="line">    └── version</span><br><span class="line">        └── version.go</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>cmd/main.go</strong>: 為控制器的主程式。</li>
+<li><strong>example/test-vm.yml</strong>: 用於測試控制器的 VirtualMachine 資源的範例檔。(optional)</li>
+<li><strong>pkg/controller/controller.go</strong>: VirtualMachine 控制器核心程式。</li>
+<li><strong>pkg/version/version.go</strong>: 用於 Go build 時加入版本號。(optional)</li>
+</ul>
+<blockquote>
+<p>目前 GitHub 範例已經新增這些程式，若不想看這累死人沒排版文章，可以直接透過 git 抓下來跑。</p>
+</blockquote>
+<h3 id="pkg-controller-controller-go"><a href="#pkg-controller-controller-go" class="headerlink" title="pkg/controller/controller.go"></a>pkg/controller/controller.go</h3><p>該檔案會利用 Kubernetes client-go 函式庫，以及 code-generator 產生的程式函式庫來實現控制器核心功能。通常撰寫一個控制器時，會建立一個 Controller struct，並包含以下元素:</p>
+<ul>
+<li><strong>Clientset</strong>: 擁有 VirtualMachine 的客戶端介面，讓控制器與 Kubernetes API Server 進行互動，以操作 VirtualMachine 資源。</li>
+<li><strong>Informer</strong>: 控制器的 SharedInformer，用於接收 API 事件，並呼叫回呼函式。</li>
+<li><strong>InformerSynced</strong>: 確認 SharedInformer 的儲存是否以獲得至少一次完整 LIST 通知。</li>
+<li><strong>Lister</strong>: 用於列出或獲取快取中的 VirtualMachine 資源。</li>
+<li><strong>Workqueue</strong>: 控制器的資源處理佇列，都 Informer 收到事件時，會將物件推到這個佇列，並在協調程式取出處理。當發生錯誤時，可以用於 Requeue 當前物件。</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> controller</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">"context"</span></span><br><span class="line">	<span class="string">"encoding/json"</span></span><br><span class="line">	<span class="string">"fmt"</span></span><br><span class="line">	<span class="string">"time"</span></span><br><span class="line"></span><br><span class="line">	cloudnative <span class="string">"github.com/cloud-native-taiwan/controller101/pkg/generated/clientset/versioned"</span></span><br><span class="line">	cloudnativeinformer <span class="string">"github.com/cloud-native-taiwan/controller101/pkg/generated/informers/externalversions"</span></span><br><span class="line">	listerv1alpha1 <span class="string">"github.com/cloud-native-taiwan/controller101/pkg/generated/listers/cloudnative/v1alpha1"</span></span><br><span class="line">	<span class="string">"github.com/golang/glog"</span></span><br><span class="line">	<span class="string">"k8s.io/apimachinery/pkg/api/errors"</span></span><br><span class="line">	utilruntime <span class="string">"k8s.io/apimachinery/pkg/util/runtime"</span></span><br><span class="line">	<span class="string">"k8s.io/apimachinery/pkg/util/wait"</span></span><br><span class="line">	<span class="string">"k8s.io/client-go/tools/cache"</span></span><br><span class="line">	<span class="string">"k8s.io/client-go/util/workqueue"</span></span><br><span class="line">	<span class="string">"k8s.io/klog"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> (</span><br><span class="line">	resouceName = <span class="string">"VirtualMachine"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Controller <span class="keyword">struct</span> &#123;</span><br><span class="line">	clientset cloudnative.Interface</span><br><span class="line">	informer  cloudnativeinformer.SharedInformerFactory</span><br><span class="line">	lister    listerv1alpha1.VirtualMachineLister</span><br><span class="line">	synced    cache.InformerSynced</span><br><span class="line">	queue     workqueue.RateLimitingInterface</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">New</span><span class="params">(clientset cloudnative.Interface, informer cloudnativeinformer.SharedInformerFactory)</span> *<span class="title">Controller</span></span> &#123;</span><br><span class="line">	vmInformer := informer.Cloudnative().V1alpha1().VirtualMachines()</span><br><span class="line">	controller := &amp;Controller&#123;</span><br><span class="line">		clientset: clientset,</span><br><span class="line">		informer:  informer,</span><br><span class="line">		lister:    vmInformer.Lister(),</span><br><span class="line">		synced:    vmInformer.Informer().HasSynced,</span><br><span class="line">		queue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), resouceName),</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	vmInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs&#123;</span><br><span class="line">		AddFunc: controller.enqueue,</span><br><span class="line">		UpdateFunc: <span class="function"><span class="keyword">func</span><span class="params">(old, <span class="built_in">new</span> <span class="keyword">interface</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line">			controller.enqueue(<span class="built_in">new</span>)</span><br><span class="line">		&#125;,</span><br><span class="line">	&#125;)</span><br><span class="line">	<span class="keyword">return</span> controller</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Controller)</span> <span class="title">Run</span><span class="params">(ctx context.Context, threadiness <span class="keyword">int</span>)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="keyword">go</span> c.informer.Start(ctx.Done())</span><br><span class="line">	klog.Info(<span class="string">"Starting the controller"</span>)</span><br><span class="line">	klog.Info(<span class="string">"Waiting for the informer caches to sync"</span>)</span><br><span class="line">	<span class="keyword">if</span> ok := cache.WaitForCacheSync(ctx.Done(), c.synced); !ok &#123;</span><br><span class="line">		<span class="keyword">return</span> fmt.Errorf(<span class="string">"failed to wait for caches to sync"</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; threadiness; i++ &#123;</span><br><span class="line">		<span class="keyword">go</span> wait.Until(c.runWorker, time.Second, ctx.Done())</span><br><span class="line">	&#125;</span><br><span class="line">	klog.Info(<span class="string">"Started workers"</span>)</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Controller)</span> <span class="title">Stop</span><span class="params">()</span></span> &#123;</span><br><span class="line">	glog.Info(<span class="string">"Stopping the controller"</span>)</span><br><span class="line">	c.queue.ShutDown()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Controller)</span> <span class="title">runWorker</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">defer</span> utilruntime.HandleCrash()</span><br><span class="line">	<span class="keyword">for</span> c.processNextWorkItem() &#123;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Controller)</span> <span class="title">processNextWorkItem</span><span class="params">()</span> <span class="title">bool</span></span> &#123;</span><br><span class="line">	obj, shutdown := c.queue.Get()</span><br><span class="line">	<span class="keyword">if</span> shutdown &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	err := <span class="function"><span class="keyword">func</span><span class="params">(obj <span class="keyword">interface</span>&#123;&#125;)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">		<span class="keyword">defer</span> c.queue.Done(obj)</span><br><span class="line">		key, ok := obj.(<span class="keyword">string</span>)</span><br><span class="line">		<span class="keyword">if</span> !ok &#123;</span><br><span class="line">			c.queue.Forget(obj)</span><br><span class="line">			utilruntime.HandleError(fmt.Errorf(<span class="string">"Controller expected string in workqueue but got %#v"</span>, obj))</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> err := c.syncHandler(key); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			c.queue.AddRateLimited(key)</span><br><span class="line">			<span class="keyword">return</span> fmt.Errorf(<span class="string">"Controller error syncing '%s': %s, requeuing"</span>, key, err.Error())</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		c.queue.Forget(obj)</span><br><span class="line">		glog.Infof(<span class="string">"Controller successfully synced '%s'"</span>, key)</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">	&#125;(obj)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		utilruntime.HandleError(err)</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">true</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">true</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Controller)</span> <span class="title">enqueue</span><span class="params">(obj <span class="keyword">interface</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line">	key, err := cache.MetaNamespaceKeyFunc(obj)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		utilruntime.HandleError(err)</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	c.queue.Add(key)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Controller)</span> <span class="title">syncHandler</span><span class="params">(key <span class="keyword">string</span>)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	namespace, name, err := cache.SplitMetaNamespaceKey(key)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		utilruntime.HandleError(fmt.Errorf(<span class="string">"invalid resource key: %s"</span>, key))</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	vm, err := c.lister.VirtualMachines(namespace).Get(name)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">if</span> errors.IsNotFound(err) &#123;</span><br><span class="line">			utilruntime.HandleError(fmt.Errorf(<span class="string">"virtualmachine '%s' in work queue no longer exists"</span>, key))</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	data, err := json.Marshal(vm)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	klog.Infof(<span class="string">"Controller get %s/%s object: %s"</span>, namespace, name, <span class="keyword">string</span>(data))</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="cmd-main-go"><a href="#cmd-main-go" class="headerlink" title="cmd/main.go"></a>cmd/main.go</h3><p>該檔案為控制器主程式，主要提供 Flags 來設定控制器參數、初始化所有必要的程式功能(如 REST Client、K8s Clientset、K8s Informer 等等)，以及執行控制器核心程式。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">"context"</span></span><br><span class="line">	goflag <span class="string">"flag"</span></span><br><span class="line">	<span class="string">"fmt"</span></span><br><span class="line">	<span class="string">"os"</span></span><br><span class="line">	<span class="string">"os/signal"</span></span><br><span class="line">	<span class="string">"syscall"</span></span><br><span class="line">	<span class="string">"time"</span></span><br><span class="line"></span><br><span class="line">	<span class="string">"github.com/cloud-native-taiwan/controller101/pkg/controller"</span></span><br><span class="line">	cloudnative <span class="string">"github.com/cloud-native-taiwan/controller101/pkg/generated/clientset/versioned"</span></span><br><span class="line">	cloudnativeinformer <span class="string">"github.com/cloud-native-taiwan/controller101/pkg/generated/informers/externalversions"</span></span><br><span class="line">	<span class="string">"github.com/cloud-native-taiwan/controller101/pkg/version"</span></span><br><span class="line">	flag <span class="string">"github.com/spf13/pflag"</span></span><br><span class="line">	<span class="string">"k8s.io/client-go/rest"</span></span><br><span class="line">	<span class="string">"k8s.io/client-go/tools/clientcmd"</span></span><br><span class="line">	<span class="string">"k8s.io/klog"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> defaultSyncTime = time.Second * <span class="number">30</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> (</span><br><span class="line">	kubeconfig  <span class="keyword">string</span></span><br><span class="line">	threads     <span class="keyword">int</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">parseFlags</span><span class="params">()</span></span> &#123;</span><br><span class="line">	flag.StringVarP(&amp;kubeconfig, <span class="string">"kubeconfig"</span>, <span class="string">""</span>, <span class="string">""</span>, <span class="string">"Absolute path to the kubeconfig file."</span>)</span><br><span class="line">	flag.IntVarP(&amp;threads, <span class="string">"threads"</span>, <span class="string">""</span>, <span class="number">2</span>, <span class="string">"Number of worker threads used by the controller."</span>)</span><br><span class="line">	flag.BoolVarP(&amp;showVersion, <span class="string">"version"</span>, <span class="string">""</span>, <span class="literal">false</span>, <span class="string">"Display the version."</span>)</span><br><span class="line">	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)</span><br><span class="line">	flag.Parse()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">restConfig</span><span class="params">(kubeconfig <span class="keyword">string</span>)</span> <span class="params">(*rest.Config, error)</span></span> &#123;</span><br><span class="line">	<span class="keyword">if</span> kubeconfig != <span class="string">""</span> &#123;</span><br><span class="line">		cfg, err := clientcmd.BuildConfigFromFlags(<span class="string">""</span>, kubeconfig)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> cfg, <span class="literal">nil</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	cfg, err := rest.InClusterConfig()</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> cfg, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	parseFlags()</span><br><span class="line"></span><br><span class="line">	k8scfg, err := restConfig(kubeconfig)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		klog.Fatalf(<span class="string">"Error to build rest config: %s"</span>, err.Error())</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	clientset, err := cloudnative.NewForConfig(k8scfg)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		klog.Fatalf(<span class="string">"Error to build cloudnative clientset: %s"</span>, err.Error())</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	informer := cloudnativeinformer.NewSharedInformerFactory(clientset, defaultSyncTime)</span><br><span class="line">	controller := controller.New(clientset, informer)</span><br><span class="line">	ctx, cancel := context.WithCancel(context.Background())</span><br><span class="line">	signalChan := <span class="built_in">make</span>(<span class="keyword">chan</span> os.Signal, <span class="number">1</span>)</span><br><span class="line">	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> err := controller.Run(ctx, threads); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		klog.Fatalf(<span class="string">"Error to run the controller instance: %s."</span>, err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	&lt;-signalChan</span><br><span class="line">	cancel()</span><br><span class="line">	controller.Stop()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其中<code>restConfig()</code>函式用於建立 RESTClient Config，如果有指定 Kubeconfig 檔案時，會透過<code>client-go/tools/clientcmd</code>解析 Kubeconfig 內容以產生 Config 內容;若沒有的話，則表示該控制器可能被透過 Pod 部署在 Kubernetes 中，因此使用 <a href="https://github.com/kubernetes/client-go/blob/master/rest/config.go#L406" target="_blank" rel="noopener">InClusterConfig</a> 方式建立 Config。</p>
+<h3 id="執行"><a href="#執行" class="headerlink" title="執行"></a>執行</h3><p>當控制器程式實現完成，且已經擁有一座安裝好 VirtualMachine CRD 的 Kubernetes 時，就能透過以下指令來執行:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ go run cmd/main.go --kubeconfig=<span class="variable">$HOME</span>/.kube/config -v=2 --logtostderr</span><br><span class="line">I1008 15:38:30.350446   52017 controller.go:68] Starting the controller</span><br><span class="line">I1008 15:38:30.350543   52017 controller.go:69] Waiting <span class="keyword">for</span> the informer caches to sync</span><br><span class="line">I1008 15:38:30.454799   52017 controller.go:77] Started workers</span><br></pre></td></tr></table></figure>
+
+<p>接著開啟另一個 Terminal 來建立 VirtualMachine 實例:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cat &lt;&lt;EOF | kubectl apply -f -</span><br><span class="line">apiVersion: cloudnative.tw/v1alpha1</span><br><span class="line">kind: VirtualMachine</span><br><span class="line">metadata:</span><br><span class="line">  name: <span class="built_in">test</span>-vm</span><br><span class="line">spec:</span><br><span class="line">  resource:</span><br><span class="line">    cpu: 2</span><br><span class="line">    memory: 4G</span><br><span class="line">EOF</span><br><span class="line">virtualmachine.cloudnative.tw/<span class="built_in">test</span>-vm created</span><br></pre></td></tr></table></figure>
+
+<p>這時觀察控制器，會看到以下資訊:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ go run cmd/main.go --kubeconfig=<span class="variable">$HOME</span>/.kube/config -v=3 --logtostderr</span><br><span class="line">...</span><br><span class="line">I1008 17:28:18.775656   56945 controller.go:156] Controller get default/<span class="built_in">test</span>-vm object: &#123;<span class="string">"metadata"</span>:&#123;<span class="string">"name"</span>:<span class="string">"test-vm"</span>,<span class="string">"namespace"</span>:<span class="string">"default"</span>,<span class="string">"selfLink"</span>:<span class="string">"/apis/cloudnative.tw/v1alpha1/namespaces/default/virtualmachines/test-vm"</span>,<span class="string">"uid"</span>:<span class="string">"a1acb111-c71e-4d2b-a2f4-62605e616dfc"</span>,<span class="string">"resourceVersion"</span>:<span class="string">"52295"</span>,<span class="string">"generation"</span>:1,<span class="string">"creationTimestamp"</span>:<span class="string">"2019-10-08T09:28:18Z"</span>,<span class="string">"annotations"</span>:&#123;<span class="string">"kubectl.kubernetes.io/last-applied-configuration"</span>:<span class="string">"&#123;\"apiVersion\":\"cloudnative.tw/v1alpha1\",\"kind\":\"VirtualMachine\",\"metadata\":&#123;\"annotations\":&#123;&#125;,\"name\":\"test-vm\",\"namespace\":\"default\"&#125;,\"spec\":&#123;\"action\":\"active\",\"resource\":&#123;\"cpu\":2,\"memory\":\"4G\",\"rootDisk\":\"40G\"&#125;&#125;&#125;\n"</span>&#125;&#125;,<span class="string">"spec"</span>:&#123;<span class="string">"action"</span>:<span class="string">"active"</span>,<span class="string">"resource"</span>:&#123;<span class="string">"cpu"</span>:<span class="string">"2"</span>,<span class="string">"memory"</span>:<span class="string">"4G"</span>,<span class="string">"rootDisk"</span>:<span class="string">"40G"</span>&#125;&#125;,<span class="string">"status"</span>:&#123;<span class="string">"phase"</span>:<span class="string">""</span>,<span class="string">"server"</span>:&#123;<span class="string">"state"</span>:<span class="string">""</span>,<span class="string">"usage"</span>:&#123;<span class="string">"cpu"</span>:0,<span class="string">"memory"</span>:0&#125;&#125;,<span class="string">"lastUpdateTime"</span>:null&#125;&#125;</span><br><span class="line">I1008 17:28:18.775687   56945 controller.go:115] Controller successfully synced <span class="string">'default/test-vm'</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>透過今天的實作，可以發現使用 code-generator 產生的相關程式碼操作自定義資源，就如同 Kubernetes client-go 的原生 API clientsets 一樣簡單，只要根據 <a href="https://github.com/kubernetes/sample-controller" target="_blank" rel="noopener">sample-controller</a> 內容做些調整，就能實現特定 API 資源的控制器程式。</p>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li><a href="https://github.com/kubernetes/sample-controller" target="_blank" rel="noopener">https://github.com/kubernetes/sample-controller</a></li>
+<li><a href="https://itnext.io/how-to-create-a-kubernetes-custom-controller-using-client-go-f36a7a7536cc" target="_blank" rel="noopener">https://itnext.io/how-to-create-a-kubernetes-custom-controller-using-client-go-f36a7a7536cc</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">動手實作 Kubernetes 自定義控制器 Part2</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2019-10-11 00:10</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2019/10/12/ironman2020/day27/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    動手實作 Kubernetes 自定義控制器 Part3
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2019/10/10/ironman2020/day25/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">動手實作 Kubernetes 自定義控制器 Part1</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2019/10/11/ironman2020/day26/" data-id="ck3ns7q6h004gwmpf0e9asj1h" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2019/10/11/ironman2020/day26/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/10/11/ironman2020/day26/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#實現控制器程式"><span class="toc-number">2.</span> <span class="toc-text">實現控制器程式</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#pkg-controller-controller-go"><span class="toc-number">2.1.</span> <span class="toc-text">pkg/controller/controller.go</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#cmd-main-go"><span class="toc-number">2.2.</span> <span class="toc-text">cmd/main.go</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#執行"><span class="toc-number">2.3.</span> <span class="toc-text">執行</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#結語"><span class="toc-number">3.</span> <span class="toc-text">結語</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Reference"><span class="toc-number">4.</span> <span class="toc-text">Reference</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2019/10/11/ironman2020/day26/';
+        
+        this.page.identifier = 'ironman2020/day26';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

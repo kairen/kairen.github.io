@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>利用 Device Plugins 提供硬體加速 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="前言Device Plugins 是 Kubernetes v1.8 版本開始加入的 Alpha 功能，目標是結合 Extended Resource 來支援 GPU、FPGA、高效能 NIC、InfiniBand 等硬體設備介接的插件，這樣好處在於硬體供應商不需要修改 Kubernetes 核心程式，只需要依據 Device Plugins 介面來實作特定硬體設備插件，就能夠提供給 Kubern">
+<meta name="keywords" content="Kubernetes">
+<meta property="og:type" content="article">
+<meta property="og:title" content="利用 Device Plugins 提供硬體加速">
+<meta property="og:url" content="https://k2r2bai.com/2019/10/01/ironman2020/day16/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="前言Device Plugins 是 Kubernetes v1.8 版本開始加入的 Alpha 功能，目標是結合 Extended Resource 來支援 GPU、FPGA、高效能 NIC、InfiniBand 等硬體設備介接的插件，這樣好處在於硬體供應商不需要修改 Kubernetes 核心程式，只需要依據 Device Plugins 介面來實作特定硬體設備插件，就能夠提供給 Kubern">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.389Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="利用 Device Plugins 提供硬體加速">
+<meta name="twitter:description" content="前言Device Plugins 是 Kubernetes v1.8 版本開始加入的 Alpha 功能，目標是結合 Extended Resource 來支援 GPU、FPGA、高效能 NIC、InfiniBand 等硬體設備介接的插件，這樣好處在於硬體供應商不需要修改 Kubernetes 核心程式，只需要依據 Device Plugins 介面來實作特定硬體設備插件，就能夠提供給 Kubern">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-ironman2020/day16" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            利用 Device Plugins 提供硬體加速
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2019/10/01/ironman2020/day16/">
+            <u><time datetime="2019-09-30T16:00:00.000Z" itemprop="datePublished">2019-10-01</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><a href="https://kubernetes.io/docs/concepts/cluster-administration/device-plugins/" target="_blank" rel="noopener">Device Plugins</a> 是 Kubernetes v1.8 版本開始加入的 Alpha 功能，目標是結合 Extended Resource 來支援 GPU、FPGA、高效能 NIC、InfiniBand 等硬體設備介接的插件，這樣好處在於硬體供應商不需要修改 Kubernetes 核心程式，只需要依據 <a href="https://github.com/kubernetes/community/blob/master/contributors/design-proposals/resource-management/device-plugin.md" target="_blank" rel="noopener">Device Plugins 介面</a>來實作特定硬體設備插件，就能夠提供給 Kubernetes Pod 使用。而本篇會稍微提及 Device Plugin 原理，並說明如何使用 NVIDIA device plugin。</p>
+<p>P.S. 傳統的<code>alpha.kubernetes.io/nvidia-gpu</code>將於 1.11 版本移除，因此與 GPU 相關的排程與部署原始碼都將從 Kubernetes 核心移除。</p>
+<a id="more"></a>
+
+<h2 id="Device-Plugins-原理"><a href="#Device-Plugins-原理" class="headerlink" title="Device Plugins 原理"></a>Device Plugins 原理</h2><p>Device  Plugins 主要提供了一個 <a href="https://github.com/kubernetes/community/blob/master/contributors/design-proposals/resource-management/device-plugin.md" target="_blank" rel="noopener">gRPC 介面</a>來給廠商實現<code>ListAndWatch()</code>與<code>Allocate()</code>等 gRPC 方法，並監聽節點的<code>/var/lib/kubelet/device-plugins/</code>目錄中的 gRPC Server Unix Socket，這邊可以參考官方文件 <a href="https://kubernetes.io/docs/concepts/cluster-administration/device-plugins/" target="_blank" rel="noopener">Device Plugins</a>。一旦啟動 Device Plugins 時，透過 Kubelet Unix Socket 註冊，並提供該 plugin 的 Unix Socket 名稱、API 版本號與插件資源名稱(vendor-domain/resource，例如 nvidia.com/gpu)，接著 Kubelet 會將這些曝露到 Node 狀態以便 Scheduler 使用。</p>
+<p>Unix Socket 範例：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ls /var/lib/kubelet/device-plugins/</span><br><span class="line">kubelet_internal_checkpoint  kubelet.sock  nvidia.sock</span><br></pre></td></tr></table></figure>
+
+<p>一些 Device Plugins 列表：</p>
+<ul>
+<li><a href="https://github.com/NVIDIA/k8s-device-plugin" target="_blank" rel="noopener">NVIDIA GPU</a></li>
+<li><a href="https://github.com/hustcat/k8s-rdma-device-plugin" target="_blank" rel="noopener">RDMA</a></li>
+<li><a href="https://github.com/kubevirt/kubernetes-device-plugins" target="_blank" rel="noopener">Kubevirt</a></li>
+<li><a href="https://github.com/vikaschoudhary16/sfc-device-plugin" target="_blank" rel="noopener">SFC</a></li>
+<li><a href="https://github.com/intel/intel-device-plugins-for-kubernetes" target="_blank" rel="noopener">Intel Device Plugins</a></li>
+<li><a href="https://github.com/intel/sriov-network-device-plugin" target="_blank" rel="noopener">SR-IOV</a></li>
+</ul>
+<h2 id="節點資訊"><a href="#節點資訊" class="headerlink" title="節點資訊"></a>節點資訊</h2><p>部署沿用之前文章建置的 HA 環境進行測試，全部都採用裸機部署，作業系統為<code>Ubuntu 18.04+</code>:</p>
+<table>
+<thead>
+<tr>
+<th>IP Address</th>
+<th>Hostname</th>
+<th>CPU</th>
+<th>Memory</th>
+<th>Role</th>
+<th>Extra Device</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>172.22.132.11</td>
+<td>k8s-m1</td>
+<td>4</td>
+<td>16G</td>
+<td>Master</td>
+<td>None</td>
+</tr>
+<tr>
+<td>172.22.132.12</td>
+<td>k8s-m2</td>
+<td>4</td>
+<td>16G</td>
+<td>Master</td>
+<td>None</td>
+</tr>
+<tr>
+<td>172.22.132.13</td>
+<td>k8s-m3</td>
+<td>4</td>
+<td>16G</td>
+<td>Master</td>
+<td>None</td>
+</tr>
+<tr>
+<td>172.22.132.21</td>
+<td>k8s-n1</td>
+<td>4</td>
+<td>16G</td>
+<td>Node</td>
+<td>None</td>
+</tr>
+<tr>
+<td>172.22.132.22</td>
+<td>k8s-n2</td>
+<td>4</td>
+<td>16G</td>
+<td>Node</td>
+<td>None</td>
+</tr>
+<tr>
+<td>172.22.132.32</td>
+<td>k8s-g2</td>
+<td>4</td>
+<td>16G</td>
+<td>Node</td>
+<td>GTX 1060 3G *2</td>
+</tr>
+</tbody></table>
+<h2 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h2><p>安裝 Device Plugin 前，需要確保以下條件達成：</p>
+<ul>
+<li>所有節點需要安裝 <a href="https://docs.docker.com/v17.09/engine/installation/#cloud" target="_blank" rel="noopener">Docker</a>。</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl -fsSL <span class="string">"https://get.docker.com/"</span> | sh</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>GPU 節點需正確安裝指定版本的 NVIDIA Driver 與 CUDA。</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_9.1.85-1_amd64.deb</span><br><span class="line">$ sudo dpkg -i cuda-repo-ubuntu1604_9.1.85-1_amd64.deb</span><br><span class="line">$ sudo apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub</span><br><span class="line">$ sudo apt-get update </span><br><span class="line">$ sudo apt-get install -y linux-headers-$(uname -r)</span><br><span class="line">$ sudo apt-get -o Dpkg::Options::=<span class="string">"--force-overwrite"</span> install -y cuda-10-0 cuda-drivers</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>GPU 節點需正確安裝指定版本的 <a href="https://github.com/NVIDIA/nvidia-docker" target="_blank" rel="noopener">NVIDIA Docker 2</a>。</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ distribution=$(. /etc/os-release;<span class="built_in">echo</span> <span class="variable">$ID</span><span class="variable">$VERSION_ID</span>)</span><br><span class="line">$ curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -</span><br><span class="line">$ curl -s -L https://nvidia.github.io/nvidia-docker/<span class="variable">$distribution</span>/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list</span><br><span class="line"></span><br><span class="line">$ sudo apt-get update &amp;&amp; sudo apt-get install -y nvidia-docker2</span><br><span class="line">$ sudo systemctl restart docker</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>部署一座 Kubernetes v1.10+ 叢集。請參考 <a href="https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/" target="_blank" rel="noopener">kubeadm 部署 Kubernetes 叢集</a>。</li>
+</ul>
+<h2 id="安裝-NVIDIA-Device-Plugin"><a href="#安裝-NVIDIA-Device-Plugin" class="headerlink" title="安裝 NVIDIA Device Plugin"></a>安裝 NVIDIA Device Plugin</h2><p>若上述要求以符合，再開始前需要在<code>每台 GPU worker 節點</code>修改<code>/lib/systemd/system/docker.service</code>檔案，將 Docker default runtime 改成 nvidia，依照以下內容來修改:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">...</span><br><span class="line">ExecStart=/usr/bin/dockerd -H fd:// --default-runtime=nvidia</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊也可以修改<code>/etc/docker/daemon.json</code>檔案，請參考 <a href="https://docs.docker.com/config/daemon/" target="_blank" rel="noopener">Configure and troubleshoot the Docker daemon</a>。</p>
+</blockquote>
+<p>完成後儲存，並重新啟動 Docker：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo systemctl daemon-reload &amp;&amp; sudo systemctl restart docker</span><br></pre></td></tr></table></figure>
+
+<p>確認上述完成，接著在主節點透過 kubectl 來部署 NVIDIA Device Plugins:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl create -f https://gist.githubusercontent.com/kairen/bf967d566d35edda381edb9ba8659f7b/raw/ccc18711bf016d5b836280226785c1ad0282c035/nvidia-device-plugin.yml</span><br><span class="line">daemonset <span class="string">"nvidia-device-plugin-daemonset"</span> created</span><br><span class="line"></span><br><span class="line">$ kubectl -n kube-system get po -o wide</span><br><span class="line">NAME                                       READY     STATUS    RESTARTS   AGE       IP               NODE</span><br><span class="line">...</span><br><span class="line">nvidia-device-plugin-daemonset-nwx2s       1/1     Running   0          49s    10.244.255.80   k8s-g2   &lt;none&gt;           &lt;none&gt;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>由於目前 NVIDIA Device Plugin 的 beta3 有問題，因此以 beat1 為主。</p>
+</blockquote>
+<h2 id="測試-GPU"><a href="#測試-GPU" class="headerlink" title="測試 GPU"></a>測試 GPU</h2><p>首先執行以下指令確認是否可被分配資源:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl get nodes <span class="string">"-o=custom-columns=NAME:.metadata.name,GPU:.status.allocatable.nvidia\.com/gpu"</span></span><br><span class="line">NAME     GPU</span><br><span class="line">k8s-g2   2</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>當 NVIDIA Device Plugins 部署完成後，即可建立一個簡單範例來進行測試:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cat &lt;&lt;EOF | kubectl apply -f -</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: gpu-pod</span><br><span class="line">spec:</span><br><span class="line">  restartPolicy: Never</span><br><span class="line">  containers:</span><br><span class="line">  - image: nvidia/cuda</span><br><span class="line">    name: cuda</span><br><span class="line">    <span class="built_in">command</span>: [<span class="string">"nvidia-smi"</span>]</span><br><span class="line">    resources:</span><br><span class="line">      limits:</span><br><span class="line">        nvidia.com/gpu: 1</span><br><span class="line">EOF</span><br><span class="line">pod <span class="string">"gpu-pod"</span> created</span><br><span class="line"></span><br><span class="line">$ kubectl get po -o wide</span><br><span class="line">NAME                     READY   STATUS      RESTARTS   AGE     IP              NODE     NOMINATED NODE   READINESS GATES</span><br><span class="line">gpu-pod                  0/1     Completed   0          21m     10.244.255.81   k8s-g2   &lt;none&gt;           &lt;none&gt;</span><br><span class="line"></span><br><span class="line">$ kubectl logs gpu-pod</span><br><span class="line">Sat Oct 01 15:28:38 2019</span><br><span class="line">+-----------------------------------------------------------------------------+</span><br><span class="line">| NVIDIA-SMI 418.87.01    Driver Version: 418.87.01    CUDA Version: 10.1     |</span><br><span class="line">|-------------------------------+----------------------+----------------------+</span><br><span class="line">| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |</span><br><span class="line">| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |</span><br><span class="line">|===============================+======================+======================|</span><br><span class="line">|   0  GeForce GTX 106...  Off  | 00000000:05:00.0 Off |                  N/A |</span><br><span class="line">|  0%   38C    P8     6W / 120W |      0MiB /  3019MiB |      1%      Default |</span><br><span class="line">+-------------------------------+----------------------+----------------------+</span><br><span class="line"></span><br><span class="line">+-----------------------------------------------------------------------------+</span><br><span class="line">| Processes:                                                       GPU Memory |</span><br><span class="line">|  GPU       PID   Type   Process name                             Usage      |</span><br><span class="line">|=============================================================================|</span><br><span class="line">|  No running processes found                                                 |</span><br><span class="line">+-----------------------------------------------------------------------------+</span><br></pre></td></tr></table></figure>
+
+<p>從上面結果可以看到 Kubernetes Pod 正確的使用到 NVIDIA GPU。</p>
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>Kubernetes 提供了 Device Plugin Interface 來讓硬體供應商實現自家硬體與 Kubernetes 整合的功能，這使 Kubernetes 社區不在需要維護各種廠商的硬體整合程式，以減少核心程式碼的複雜性，一方面能更加專注在規範 Device Plugin 標準的事情。</p>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li><a href="https://medium.com/@maniac.tw/ubuntu-18-04-%E5%AE%89%E8%A3%9D-nvidia-driver-418-cuda-10-tensorflow-1-13-a4f1c71dd8e5" target="_blank" rel="noopener">https://medium.com/@maniac.tw/ubuntu-18-04-%E5%AE%89%E8%A3%9D-nvidia-driver-418-cuda-10-tensorflow-1-13-a4f1c71dd8e5</a></li>
+<li><a href="https://www.mvps.net/docs/install-nvidia-drivers-ubuntu-18-04-lts-bionic-beaver-linux/" target="_blank" rel="noopener">https://www.mvps.net/docs/install-nvidia-drivers-ubuntu-18-04-lts-bionic-beaver-linux/</a></li>
+<li><a href="https://github.com/kubernetes/community/blob/master/contributors/design-proposals/resource-management/device-plugin.md" target="_blank" rel="noopener">https://github.com/kubernetes/community/blob/master/contributors/design-proposals/resource-management/device-plugin.md</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">利用 Device Plugins 提供硬體加速</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2019-10-1 00:10</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2019/10/04/ironman2020/day19/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    淺談 Kubernetes 自定義資源(Custom Resource)與自定義控制器(Custom Controller)
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2019/09/30/ironman2020/day15/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">自建私有容器儲存庫(Container Registry)與實現內容信任(Content Trust)</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2019/10/01/ironman2020/day16/" data-id="ck3ns7q67003qwmpf13u1k7mc" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2019/10/01/ironman2020/day16/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/10/01/ironman2020/day16/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Device-Plugins-原理"><span class="toc-number">2.</span> <span class="toc-text">Device Plugins 原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#節點資訊"><span class="toc-number">3.</span> <span class="toc-text">節點資訊</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#事前準備"><span class="toc-number">4.</span> <span class="toc-text">事前準備</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安裝-NVIDIA-Device-Plugin"><span class="toc-number">5.</span> <span class="toc-text">安裝 NVIDIA Device Plugin</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#測試-GPU"><span class="toc-number">6.</span> <span class="toc-text">測試 GPU</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#結語"><span class="toc-number">7.</span> <span class="toc-text">結語</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Reference"><span class="toc-number">8.</span> <span class="toc-text">Reference</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2019/10/01/ironman2020/day16/';
+        
+        this.page.identifier = 'ironman2020/day16';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

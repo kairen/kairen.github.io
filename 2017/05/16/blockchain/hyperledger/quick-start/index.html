@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>透過 Docker 體驗 Hyperledger | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Hyperledger 專案是 IBM 與 Linux 基金會於 2015 年底共同推動的區塊鏈基礎專案，該專案吸引來自多行業巨頭的參與，並且該專案也很有可能成為未來企業級的區塊鏈技術底層架構基礎，因此該專案被受到高度關注。 以 Hyperledger 作為企業對企業(B2B)、企業對消費者(B2C)的一種交易協定，既符合規章制度，又能夠支援各種類型需求的實現。其設計的核心元素是智能合約(Smar">
+<meta name="keywords" content="Blockchain,Hyperledger">
+<meta property="og:type" content="article">
+<meta property="og:title" content="透過 Docker 體驗 Hyperledger">
+<meta property="og:url" content="https://k2r2bai.com/2017/05/16/blockchain/hyperledger/quick-start/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Hyperledger 專案是 IBM 與 Linux 基金會於 2015 年底共同推動的區塊鏈基礎專案，該專案吸引來自多行業巨頭的參與，並且該專案也很有可能成為未來企業級的區塊鏈技術底層架構基礎，因此該專案被受到高度關注。 以 Hyperledger 作為企業對企業(B2B)、企業對消費者(B2C)的一種交易協定，既符合規章制度，又能夠支援各種類型需求的實現。其設計的核心元素是智能合約(Smar">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/blockchain/hyperledger/logo.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.377Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="透過 Docker 體驗 Hyperledger">
+<meta name="twitter:description" content="Hyperledger 專案是 IBM 與 Linux 基金會於 2015 年底共同推動的區塊鏈基礎專案，該專案吸引來自多行業巨頭的參與，並且該專案也很有可能成為未來企業級的區塊鏈技術底層架構基礎，因此該專案被受到高度關注。 以 Hyperledger 作為企業對企業(B2B)、企業對消費者(B2C)的一種交易協定，既符合規章制度，又能夠支援各種類型需求的實現。其設計的核心元素是智能合約(Smar">
+<meta name="twitter:image" content="https://k2r2bai.com/images/blockchain/hyperledger/logo.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-blockchain/hyperledger/quick-start" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+            
+	
+		<img src="/images/blockchain/hyperledger/logo.png" class="article-banner" />
+	
+
+
+
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            透過 Docker 體驗 Hyperledger
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2017/05/16/blockchain/hyperledger/quick-start/">
+            <u><time datetime="2017-05-16T09:08:54.000Z" itemprop="datePublished">2017-05-16</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Blockchain/">Blockchain</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Blockchain/">Blockchain</a>, <a class="tag-link" href="/tags/Hyperledger/">Hyperledger</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>Hyperledger 專案是 IBM 與 Linux 基金會於 2015 年底共同推動的區塊鏈基礎專案，該專案吸引來自多行業巨頭的參與，並且該專案也很有可能成為未來企業級的區塊鏈技術底層架構基礎，因此該專案被受到高度關注。</p>
+<p>以 Hyperledger 作為企業對企業(B2B)、企業對消費者(B2C)的一種交易協定，既符合規章制度，又能夠支援各種類型需求的實現。其設計的核心元素是<code>智能合約(Smart Contracts)</code>、數位資產、記錄儲存庫、一致性對等網路、安全的加密與分散式總賬本等。此外，區塊鍊主要還涉及行業效能要求、身份認證與私下機密交易等。Hyperledger 基於以上建立一個對等網路的分散式總帳技術交易應用程式，透過建立信任、問責制與透明度，並同時簡化業務流程，把它看成是一個作業系統來互動，因此大大的化簡了成本與複雜性。</p>
+<a id="more"></a>
+
+<h2 id="透過-Docker-執行-Hyperledger"><a href="#透過-Docker-執行-Hyperledger" class="headerlink" title="透過 Docker 執行 Hyperledger"></a>透過 Docker 執行 Hyperledger</h2><p>本節將說明如何透過 Docker 來快速體驗 Hyperledger。</p>
+<h3 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h3><p>準備一台 Ubuntu Server 16.04 LTS 主機規格如下：</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>RAM</th>
+<th>Disk</th>
+<th>CPUs</th>
+<th>IP Address</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>hyperledger</td>
+<td>4 GB 記憶體</td>
+<td>40 GB 儲存空間</td>
+<td>兩核處理器</td>
+<td>172.16.1.78</td>
+</tr>
+</tbody></table>
+<p>然後安裝 Docker Engine 與相關套件，透過以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get install -y python-pip git</span><br><span class="line">$ curl -fsSL <span class="string">"https://get.docker.com/"</span> | sh</span><br></pre></td></tr></table></figure>
+
+<p>接著安裝 Docker-compose，透過以下指令安裝：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo pip install --upgrade pip</span><br><span class="line">$ sudo pip install docker-compose</span><br></pre></td></tr></table></figure>
+
+<h3 id="安裝-Hyperledger"><a href="#安裝-Hyperledger" class="headerlink" title="安裝 Hyperledger"></a>安裝 Hyperledger</h3><p>安裝前首先下載 Hyperledger compose 專案，透過以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://github.com/yeasy/docker-compose-files.git</span><br><span class="line">$ <span class="built_in">cd</span> docker-compose-files/hyperledger</span><br></pre></td></tr></table></figure>
+
+<p>執行以下步驟來下載與取代映像檔：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker pull openblockchain/baseimage:0.0.9</span><br><span class="line">$ docker pull yeasy/hyperledger:latest</span><br><span class="line">$ docker tag yeasy/hyperledger:latest hyperledger/fabric-baseimage:latest</span><br><span class="line">$ docker pull yeasy/hyperledger-peer:noops</span><br><span class="line">$ docker pull yeasy/hyperledger-peer:pbft</span><br><span class="line">$ docker pull yeasy/hyperledger-membersrvc:latest</span><br></pre></td></tr></table></figure>
+
+<p>接著執行 docker compose 來部署四個節點的 Hyperledger：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker-compose up</span><br><span class="line">Attaching to hyperledger_vp0_1, hyperledger_vp3_1, hyperledger_vp1_1, hyperledger_vp2_1</span><br><span class="line">vp0_1  | 07:42:07.870 [crypto] main -&gt; INFO 001 Log level recognized <span class="string">'info'</span>, <span class="built_in">set</span> to INFO</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<h3 id="驗證-Hyperledger-peer"><a href="#驗證-Hyperledger-peer" class="headerlink" title="驗證 Hyperledger peer"></a>驗證 Hyperledger peer</h3><p>進入到第一個 hyperledger 容器裡面，透過以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker <span class="built_in">exec</span> -ti hyperledger_vp0_1 bash</span><br></pre></td></tr></table></figure>
+
+<p>查看目前所有建立的節點：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ peer node status</span><br><span class="line">08:09:14.715 [crypto] main -&gt; INFO 001 Log level recognized <span class="string">'info'</span>, <span class="built_in">set</span> to INFO</span><br><span class="line">08:09:14.715 [logging] LoggingInit -&gt; DEBU 002 Setting default logging level to DEBUG <span class="keyword">for</span> <span class="built_in">command</span> <span class="string">'node'</span></span><br><span class="line">08:09:14.715 [peer] func1 -&gt; INFO 003 Auto detected peer address: 172.17.0.2:30303</span><br><span class="line">08:09:14.716 [peer] func1 -&gt; INFO 004 Auto detected peer address: 172.17.0.2:30303</span><br><span class="line">08:09:14.716 [peer] func1 -&gt; INFO 005 Auto detected peer address: 172.17.0.2:30303</span><br><span class="line">status:STARTED</span><br></pre></td></tr></table></figure>
+
+<p>進入到容器後，首先部署一個 chaincode：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ peer chaincode deploy -p github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02 \</span><br><span class="line">-c <span class="string">'&#123;"Function":"init", "Args": ["kairen","100", "pingyu", "200"]&#125;'</span></span><br><span class="line">...</span><br><span class="line">81a73fa1fabe6e385f3c609cef8915a732ee74179abde55f4ac7addf4e7c35ac4a669a7d9a17b2c9a6b3c28b45565b97dc69f4c8f53381ba13251adf5ac6d23d</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>上面會取得一組 Key。</p>
+</blockquote>
+<p>首先查詢 kairen 的金錢有多少：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ my_key=<span class="string">"81a73fa1fabe6e385f3c609cef8915a732ee74179abde55f4ac7addf4e7c35ac4a669a7d9a17b2c9a6b3c28b45565b97dc69f4c8f53381ba13251adf5ac6d23d"</span></span><br><span class="line">$ peer chaincode query -n <span class="variable">$&#123;my_key&#125;</span> \</span><br><span class="line">-c <span class="string">'&#123;"Function": "query", "Args": ["kairen"]&#125;'</span></span><br><span class="line">...</span><br><span class="line">100</span><br></pre></td></tr></table></figure>
+
+<p>接著執行一個交易，我們讓 kairen 付保護費給 pingyu：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ peer chaincode invoke -n <span class="variable">$&#123;my_key&#125;</span> \</span><br><span class="line">-c <span class="string">'&#123;"Function": "invoke", "Args": ["kairen", "pingyu", "10"]&#125;'</span></span><br></pre></td></tr></table></figure>
+
+<p>確認完成交易後，可以查看 pingyu：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ peer chaincode query -n <span class="variable">$&#123;my_key&#125;</span> \</span><br><span class="line">-c <span class="string">'&#123;"Function": "query", "Args": ["pingyu"]&#125;'</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="References"><a href="#References" class="headerlink" title="References"></a>References</h2><ul>
+<li><a href="https://github.com/yeasy/hyperledger-py" target="_blank" rel="noopener">hyperledger-py</a></li>
+<li><a href="https://github.com/hyperledger/fabric/blob/master/examples/chaincode/go/chaincode_example02/chaincode_example02.go" target="_blank" rel="noopener">hyperledger chaincode_example02</a></li>
+<li><a href="http://www.8btc.com/hyperledger" target="_blank" rel="noopener">8btc</a></li>
+<li><a href="http://www.altoros.com/blog/technical-introduction-to-hyperledger-fabric/" target="_blank" rel="noopener">Technical Introduction to Hyperledger Fabric</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">透過 Docker 體驗 Hyperledger</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2017-5-16 17:05</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2017/05/25/blockchain/ethereum/multi-node-geth/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    建立 Go Ethereum 私有網路鏈
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2017/05/10/cncf/harbor/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">Harbor: 開源 Container Registry</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2017/05/16/blockchain/hyperledger/quick-start/" data-id="ck3ns7qa900ewwmpff0zrqzp6" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2017/05/16/blockchain/hyperledger/quick-start/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2017/05/16/blockchain/hyperledger/quick-start/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#透過-Docker-執行-Hyperledger"><span class="toc-number">1.</span> <span class="toc-text">透過 Docker 執行 Hyperledger</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#事前準備"><span class="toc-number">1.1.</span> <span class="toc-text">事前準備</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#安裝-Hyperledger"><span class="toc-number">1.2.</span> <span class="toc-text">安裝 Hyperledger</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#驗證-Hyperledger-peer"><span class="toc-number">1.3.</span> <span class="toc-text">驗證 Hyperledger peer</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#References"><span class="toc-number">2.</span> <span class="toc-text">References</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2017/05/16/blockchain/hyperledger/quick-start/';
+        
+        this.page.identifier = 'blockchain/hyperledger/quick-start';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>Ansible Inventory | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Ansible 在同一時間能夠工作於多個系統，透過在 inventory file 所列舉的主機與群組來執行對應的指令，該檔案預設存於/etc/ansible/hosts。 IT 人員不只能夠使用預設的檔案，也能夠在同一時間使用多個檔案，甚至來抓取來至雲端的 inventory 檔案，這是一個是動態的 inventory ，這部分可以參考 Dynamic Inventory。">
+<meta name="keywords" content="Ansible,DevOps,Automation Engine">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Ansible Inventory">
+<meta property="og:url" content="https://k2r2bai.com/2016/02/17/devops/cm/ansible-inventory/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Ansible 在同一時間能夠工作於多個系統，透過在 inventory file 所列舉的主機與群組來執行對應的指令，該檔案預設存於/etc/ansible/hosts。 IT 人員不只能夠使用預設的檔案，也能夠在同一時間使用多個檔案，甚至來抓取來至雲端的 inventory 檔案，這是一個是動態的 inventory ，這部分可以參考 Dynamic Inventory。">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.384Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Ansible Inventory">
+<meta name="twitter:description" content="Ansible 在同一時間能夠工作於多個系統，透過在 inventory file 所列舉的主機與群組來執行對應的指令，該檔案預設存於/etc/ansible/hosts。 IT 人員不只能夠使用預設的檔案，也能夠在同一時間使用多個檔案，甚至來抓取來至雲端的 inventory 檔案，這是一個是動態的 inventory ，這部分可以參考 Dynamic Inventory。">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-devops/cm/ansible-inventory" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            Ansible Inventory
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2016/02/17/devops/cm/ansible-inventory/">
+            <u><time datetime="2016-02-17T04:23:01.000Z" itemprop="datePublished">2016-02-17</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/DevOps/">DevOps</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Ansible/">Ansible</a>, <a class="tag-link" href="/tags/Automation-Engine/">Automation Engine</a>, <a class="tag-link" href="/tags/DevOps/">DevOps</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>Ansible 在同一時間能夠工作於多個系統，透過在 inventory file 所列舉的主機與群組來執行對應的指令，該檔案預設存於<code>/etc/ansible/hosts</code>。</p>
+<p>IT 人員不只能夠使用預設的檔案，也能夠在同一時間使用多個檔案，甚至來抓取來至雲端的 inventory 檔案，這是一個是動態的 inventory ，這部分可以參考 <a href="http://docs.ansible.com/ansible/intro_dynamic_inventory.html" target="_blank" rel="noopener">Dynamic Inventory</a>。</p>
+<a id="more"></a>
+
+<h3 id="Hosts-and-Groups"><a href="#Hosts-and-Groups" class="headerlink" title="Hosts and Groups"></a>Hosts and Groups</h3><p>Inventory 是一個<code>INI-like</code>格式的檔案，如以下範例所示：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mail.example.com</span><br><span class="line"></span><br><span class="line">[webservers]</span><br><span class="line">foo.example.com</span><br><span class="line">bar.example.com</span><br><span class="line"></span><br><span class="line">[dbservers]</span><br><span class="line">one.example.com</span><br><span class="line">two.example.com</span><br><span class="line">three.example.com</span><br></pre></td></tr></table></figure>
+
+<p>如果 SSH 不是標準 Port 的話，可以使用<code>:</code>來對應要使用的 Port。但在 SSH config 檔案所列出來的主機將不會與 paramiko 進行連線，但是會與 OpenSSH 進行連接使用。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">badwolf.example.com:5309</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>雖然可以使用以上方式達到不同 Port 連接，但是還是建議使用預設 Port。</p>
+</blockquote>
+<p>假設只有靜態 IP，但又希望透過一些別名（aliases）來表示主機，或透過不同 Port 連接的話，可以表示如以下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">jumper ansible_port=5555 ansible_host=192.168.1.50</span><br></pre></td></tr></table></figure>
+
+<p>若要一次列出多個主機可以使用以下 Pattern：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[webservers]</span><br><span class="line">www[01:50].example.com</span><br></pre></td></tr></table></figure>
+
+<p>在數字 Pattern，前導的 0 可以根據需求刪除或加入。不只可以定義數字型，還能定義英文字母範圍：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[databases]</span><br><span class="line">db-[a:f].example.com</span><br></pre></td></tr></table></figure>
+
+<p>也可以為每台主機的設定基礎連線類型與使用者資訊：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[targets]</span><br><span class="line">localhost           ansible_connection=local</span><br><span class="line">other1.example.com  ansible_connection=ssh  ansible_user=mpdehaan</span><br><span class="line">other2.example.com  ansible_connection=ssh  ansible_user=mdehaan</span><br></pre></td></tr></table></figure>
+
+<h3 id="Host-Variables"><a href="#Host-Variables" class="headerlink" title="Host Variables"></a>Host Variables</h3><p>如上述範例，我們可以很容易將變數分配給將在 Playbooks 使用的主機：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[atlanta]</span><br><span class="line">host1   http_port=80    maxRequestsPerChild=808</span><br><span class="line">host2   http_port=303   maxRequestsPerChild=909</span><br></pre></td></tr></table></figure>
+
+<h3 id="Group-Variables"><a href="#Group-Variables" class="headerlink" title="Group Variables"></a>Group Variables</h3><p>變數也能夠被應用到整個群組裡：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[atlanta]</span><br><span class="line">host1</span><br><span class="line">host2</span><br><span class="line"></span><br><span class="line">[atlanta:vars]</span><br><span class="line">ntp_server=ntp.atlanta.example.com</span><br><span class="line">proxy=proxy.atlanta.example.com</span><br></pre></td></tr></table></figure>
+
+<h3 id="Groups-of-Groups-and-Group-Variables"><a href="#Groups-of-Groups-and-Group-Variables" class="headerlink" title="Groups of Groups, and Group Variables"></a>Groups of Groups, and Group Variables</h3><p>另外，也可以用<code>:children</code> 來建立群組中的群組，並使用<code>:vars</code>來設定變數：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[atlanta]</span><br><span class="line">host1</span><br><span class="line">host2</span><br><span class="line"></span><br><span class="line">[raleigh]</span><br><span class="line">host2</span><br><span class="line">host3</span><br><span class="line"></span><br><span class="line">[southeast:children]</span><br><span class="line">atlanta</span><br><span class="line">raleigh</span><br><span class="line"></span><br><span class="line">[southeast:vars]</span><br><span class="line">some_server=foo.southeast.example.com</span><br><span class="line">halon_system_timeout=30</span><br><span class="line">self_destruct_countdown=60</span><br><span class="line">escape_pods=2</span><br><span class="line"></span><br><span class="line">[usa:children]</span><br><span class="line">southeast</span><br><span class="line">northeast</span><br><span class="line">southwest</span><br><span class="line">northwest</span><br></pre></td></tr></table></figure>
+
+<h3 id="Splitting-Out-Host-and-Group-Specific-Data"><a href="#Splitting-Out-Host-and-Group-Specific-Data" class="headerlink" title="Splitting Out Host and Group Specific Data"></a>Splitting Out Host and Group Specific Data</h3><p>該部分說明想要儲存 list 與 hash table 資料，或者從 Inventory 檔案保持分離主機與群組的特定變數。在 Ansible 的第一優先作法實際上是不儲存變數於主 Inventort 檔案。</p>
+<p>除了直接在 INI 檔案儲存變數外，主機與群組變數也可以儲存在個人相對的 Inventory 檔案。這些變數檔案格式為 YAML。有效的副檔名如<code>.yml</code>、<code>.yaml</code>，以及<code>.json</code>或<code>沒有副檔名</code>。</p>
+<p>一般當 remote host 數量不多時，把變數定義在 inventory 中是 ok 的；但若 remote host 的數量越來越多時，將變數的宣告定義在外部的檔案中會是比較好的方式。</p>
+<p>假設 Inventory 檔案路徑為：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">/etc/ansible/hosts</span><br></pre></td></tr></table></figure>
+
+<p>如果主機被命名為<code>foosball</code>以及在<code>raleigh</code>與<code>webservers</code>的群組，以下位置的 YAML 檔案變數將提供給主機使用：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># can optionally end in '.yml', '.yaml', or '.json'</span></span><br><span class="line">/etc/ansible/group_vars/raleigh</span><br><span class="line">/etc/ansible/group_vars/webservers</span><br><span class="line">/etc/ansible/host_vars/foosball</span><br></pre></td></tr></table></figure>
+
+<p>ansible 會自動尋找 playbook 所在的目錄中的<code>host_vars</code>目錄 以及<code>group_vars</code>目錄 中所包含的檔案，並使用定義在這兩個目錄中的變數資訊。</p>
+<p>舉例來說，inventory / playbook / host_vars / group_vars 可以用類似以下的方式進行配置：</p>
+<ul>
+<li><strong>inventory</strong>：/home/vagrant/ansible/playbooks/inventory</li>
+<li><strong>playbook</strong>：/home/vagrant/ansible/playbooks/myplaybook</li>
+<li><strong>host_vars</strong>：/home/vagrant/ansible/playbooks/host_vars/prod1.example.com.tw</li>
+<li><strong>group_vars</strong>：/home/vagrant/ansible/playbooks/group_vars/production</li>
+</ul>
+<p>變數定義的方式有兩種方式：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">db_primary_host: prod1.example.com.tw</span><br><span class="line">db_replica_host: prod2.example.com.tw</span><br><span class="line">db_name: widget_production</span><br><span class="line">db_user: widgetuser</span><br><span class="line">db_password: lastpassword</span><br><span class="line">redis_host: redis_stag.example.com.tw</span><br></pre></td></tr></table></figure>
+
+<p>也可以用 YAML 的方式定義：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">---</span><br><span class="line">db:</span><br><span class="line">    user: widgetuser</span><br><span class="line">    password: lastpassword</span><br><span class="line">    name: widget_production</span><br><span class="line">    primary:</span><br><span class="line">        host: prod1.example.com.tw</span><br><span class="line">        port: 5432</span><br><span class="line">    replica:</span><br><span class="line">        host: prod2.example.com.tw</span><br><span class="line">        port: 5432</span><br><span class="line">redis:</span><br><span class="line">    host: redis_stag.example.com.tw</span><br><span class="line">    port: 6379</span><br></pre></td></tr></table></figure>
+
+<p>甚至可以在繼續細分，定義檔案<code>../playbooks/group_vars/production/db</code>：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">---</span><br><span class="line">db:</span><br><span class="line">    user: widgetuser</span><br><span class="line">    password: lastpassword</span><br><span class="line">    name: widget_production</span><br><span class="line">    primary:</span><br><span class="line">        host: prod1.example.com.tw</span><br><span class="line">        port: 5432</span><br><span class="line">    replica:</span><br><span class="line">        host: prod2.example.com.tw</span><br><span class="line">        port: 5432</span><br></pre></td></tr></table></figure>
+
+<h3 id="List-of-Behavioral-Inventory-Parameters"><a href="#List-of-Behavioral-Inventory-Parameters" class="headerlink" title="List of Behavioral Inventory Parameters"></a>List of Behavioral Inventory Parameters</h3><p>正如上述提到，設定以下變數可以定義 Ansible 該如何控制以及遠端主機。如主機連線：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">ansible_connection</span><br><span class="line">  Connection <span class="built_in">type</span> to the host. Candidates are <span class="built_in">local</span>, smart, ssh or paramiko.  The default is smart.</span><br></pre></td></tr></table></figure>
+
+<p>SSH connection：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ansible_host</span><br><span class="line">  The name of the host to connect to, if different from the alias you wish to give to it.</span><br><span class="line">ansible_port</span><br><span class="line">  The ssh port number, if not 22</span><br><span class="line">ansible_user</span><br><span class="line">  The default ssh user name to use.</span><br><span class="line">ansible_ssh_pass</span><br><span class="line">  The ssh password to use (this is insecure, we strongly recommend using --ask-pass or SSH keys)</span><br><span class="line">ansible_ssh_private_key_file</span><br><span class="line">  Private key file used by ssh.  Useful if using multiple keys and you don&apos;t want to use SSH agent.</span><br><span class="line">ansible_ssh_common_args</span><br><span class="line">  This setting is always appended to the default command line for</span><br><span class="line">  sftp, scp, and ssh. Useful to configure a ``ProxyCommand`` for a</span><br><span class="line">  certain host (or group).</span><br><span class="line">ansible_sftp_extra_args</span><br><span class="line">  This setting is always appended to the default sftp command line.</span><br><span class="line">ansible_scp_extra_args</span><br><span class="line">  This setting is always appended to the default scp command line.</span><br><span class="line">ansible_ssh_extra_args</span><br><span class="line">  This setting is always appended to the default ssh command line.</span><br><span class="line">ansible_ssh_pipelining</span><br><span class="line">  Determines whether or not to use SSH pipelining. This can override the</span><br><span class="line">  ``pipelining`` setting in ``ansible.cfg``.</span><br></pre></td></tr></table></figure>
+
+<p>權限提升（可參閱<a href="http://docs.ansible.com/ansible/become.html" target="_blank" rel="noopener">Ansible Privilege Escalation</a>）：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ansible_become</span><br><span class="line">  Equivalent to ansible_sudo or ansible_su, allows to force privilege escalation</span><br><span class="line">ansible_become_method</span><br><span class="line">  Allows to set privilege escalation method</span><br><span class="line">ansible_become_user</span><br><span class="line">  Equivalent to ansible_sudo_user or ansible_su_user, allows to set the user you become through privilege escalation</span><br><span class="line">ansible_become_pass</span><br><span class="line">  Equivalent to ansible_sudo_pass or ansible_su_pass, allows you to set the privilege escalation password</span><br></pre></td></tr></table></figure>
+
+<p>遠端主機環境參數：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ansible_shell_type</span><br><span class="line">  The shell type of the target system. Commands are formatted using &apos;sh&apos;-style syntax by default. Setting this to &apos;csh&apos; or &apos;fish&apos; will cause commands executed on target systems to follow those shell&apos;s syntax instead.</span><br><span class="line">ansible_python_interpreter</span><br><span class="line">  The target host python path. This is useful for systems with more</span><br><span class="line">  than one Python or not located at &quot;/usr/bin/python&quot; such as \*BSD, or where /usr/bin/python</span><br><span class="line">  is not a 2.X series Python.  We do not use the &quot;/usr/bin/env&quot; mechanism as that requires the remote user&apos;s</span><br><span class="line">  path to be set right and also assumes the &quot;python&quot; executable is named python, where the executable might</span><br><span class="line">  be named something like &quot;python26&quot;.</span><br><span class="line">ansible\_\*\_interpreter</span><br><span class="line">  Works for anything such as ruby or perl and works just like ansible_python_interpreter.</span><br><span class="line">  This replaces shebang of modules which will run on that host.</span><br></pre></td></tr></table></figure>
+
+<p>一個主機檔案範例：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">some_host         ansible_port=2222     ansible_user=manager</span><br><span class="line">aws_host          ansible_ssh_private_key_file=/home/example/.ssh/aws.pem</span><br><span class="line">freebsd_host      ansible_python_interpreter=/usr/local/bin/python</span><br><span class="line">ruby_module_host  ansible_ruby_interpreter=/usr/bin/ruby.1.9.3</span><br></pre></td></tr></table></figure>
+
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">Ansible Inventory</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2016-2-17 12:02</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2016/02/17/devops/cm/ansible-adhoc/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    Ansible Ad-Hoc 指令與 Modules
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2016/02/16/devops/cm/ansible-basic/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">Ansible 介紹與使用</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2016/02/17/devops/cm/ansible-inventory/" data-id="ck3ns7qam00fnwmpfbop99dfj" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2016/02/17/devops/cm/ansible-inventory/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2016/02/17/devops/cm/ansible-inventory/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#Hosts-and-Groups"><span class="toc-number">1.</span> <span class="toc-text">Hosts and Groups</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Host-Variables"><span class="toc-number">2.</span> <span class="toc-text">Host Variables</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Group-Variables"><span class="toc-number">3.</span> <span class="toc-text">Group Variables</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Groups-of-Groups-and-Group-Variables"><span class="toc-number">4.</span> <span class="toc-text">Groups of Groups, and Group Variables</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Splitting-Out-Host-and-Group-Specific-Data"><span class="toc-number">5.</span> <span class="toc-text">Splitting Out Host and Group Specific Data</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#List-of-Behavioral-Inventory-Parameters"><span class="toc-number">6.</span> <span class="toc-text">List of Behavioral Inventory Parameters</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2016/02/17/devops/cm/ansible-inventory/';
+        
+        this.page.identifier = 'devops/cm/ansible-inventory';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

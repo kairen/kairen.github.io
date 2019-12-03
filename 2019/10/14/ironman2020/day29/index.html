@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>動手實作 Kubernetes 自定義控制器 Part5 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="前言在動手實作 Kubernetes 自定義控制器 Part4 文章結語部分，我有提到目前實作的自定義控制器還存在著問題(如下圖)，其中就是自定義資源 VirtualMachine 的實例被刪除前，未正確透過 VM Driver 刪除實際管理的虛擬機，這樣情況下的虛擬機都會變成失去控制器管理的殭屍(或孤兒)。基於此問題，今天將說明該如何修改程式以解決這樣問題。">
+<meta name="keywords" content="Kubernetes">
+<meta property="og:type" content="article">
+<meta property="og:title" content="動手實作 Kubernetes 自定義控制器 Part5">
+<meta property="og:url" content="https://k2r2bai.com/2019/10/14/ironman2020/day29/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="前言在動手實作 Kubernetes 自定義控制器 Part4 文章結語部分，我有提到目前實作的自定義控制器還存在著問題(如下圖)，其中就是自定義資源 VirtualMachine 的實例被刪除前，未正確透過 VM Driver 刪除實際管理的虛擬機，這樣情況下的虛擬機都會變成失去控制器管理的殭屍(或孤兒)。基於此問題，今天將說明該如何修改程式以解決這樣問題。">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.391Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="動手實作 Kubernetes 自定義控制器 Part5">
+<meta name="twitter:description" content="前言在動手實作 Kubernetes 自定義控制器 Part4 文章結語部分，我有提到目前實作的自定義控制器還存在著問題(如下圖)，其中就是自定義資源 VirtualMachine 的實例被刪除前，未正確透過 VM Driver 刪除實際管理的虛擬機，這樣情況下的虛擬機都會變成失去控制器管理的殭屍(或孤兒)。基於此問題，今天將說明該如何修改程式以解決這樣問題。">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-ironman2020/day29" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            動手實作 Kubernetes 自定義控制器 Part5
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2019/10/14/ironman2020/day29/">
+            <u><time datetime="2019-10-13T16:00:00.000Z" itemprop="datePublished">2019-10-14</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在<a href="https://k2r2bai.com/2019/10/13/ironman2020/day28/">動手實作 Kubernetes 自定義控制器 Part4</a> 文章結語部分，我有提到目前實作的自定義控制器還存在著問題(如下圖)，其中就是自定義資源 VirtualMachine 的實例被刪除前，未正確透過 VM Driver 刪除實際管理的虛擬機，這樣情況下的虛擬機都會變成失去控制器管理的殭屍(或孤兒)。基於此問題，今天將說明該如何修改程式以解決這樣問題。</p>
+<a id="more"></a>
+
+<p>在開始實作前，我們先來探討一些概念。在接觸 Kubernetes 時，相信大家都玩過 Deployment、Job 與 DaemonSet 等功能，這些功能有個共同點，那就是都管理著一個或多個 Pod 的生命週期，這表示當一個實例(比如 Deployment)被執行刪除時，其相關聯的 Pod 都會接著被刪除。而這種機制正是 Kubernetes <a href="https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/" target="_blank" rel="noopener">垃圾收集器</a>，在 v1.6+ 開始，Kubernetes 會自動對一些 API 資源物件(如 Deployment、ReplicaSet)引入<code>ownerReferences</code>欄位，這個欄位用來標示相依 API 資源物件的 Owner 是誰，而自己則為 Owner 的 Dependent，因此當 Owner 被刪除時，所有關聯的 API 資源物件就會被垃圾收集器回收(從叢集中刪除)，而這過程又稱<code>級聯刪除(Cascading deletion)</code>。</p>
+<blockquote>
+<p>雖然命名為垃圾收集器，但實際上它也是以控制器模式(Controller Pattern)的形式實作。</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl run nginx --image nginx --port 80</span><br><span class="line">$ kubectl get po nginx-7c45b84548-gj999 -o yaml</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  creationTimestamp: <span class="string">"2019-10-14T14:43:07Z"</span></span><br><span class="line">  generateName: nginx-7c45b84548-</span><br><span class="line">  labels:</span><br><span class="line">    pod-template-hash: 7c45b84548</span><br><span class="line">    run: nginx</span><br><span class="line">  name: nginx-7c45b84548-gj999</span><br><span class="line">  namespace: default</span><br><span class="line">  ownerReferences: <span class="comment"># Deployment 管理著 ReplicaSet，而 ReplicaSet 管理著 Pod</span></span><br><span class="line">  - apiVersion: apps/v1</span><br><span class="line">    blockOwnerDeletion: <span class="literal">true</span></span><br><span class="line">    controller: <span class="literal">true</span></span><br><span class="line">    kind: ReplicaSet</span><br><span class="line">    name: nginx-7c45b84548</span><br><span class="line">    uid: 426961f6-b94d-49d2-a110-db17b3c50008</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>值得一提的是，<code>ownerReferences</code>是可以手動設定與修改的。比如說上述指令建立了一個 NGINX Pod，這時我們用 kubectl 刪除 Pod 的<code>ownerReferences</code>，就可以讓 Kubernetes 垃圾收集器無法處理到該 Pod。只是這個 Pod 也變成殭屍(或孤兒)，不會因為 Deployment 刪除而被殺掉，因此必須手動殺掉才能。</p>
+</blockquote>
+<p>那麼這樣的方式是否可以用來解決我們遇到的問題呢?</p>
+<p>不幸的是，Kubernetes 垃圾收集器僅能用於刪除 Kubernetes API 資源，因此無法讓我們達到 VirtualMachine 資源實例被刪除前，確保所關聯的虛擬機已被刪除。那這樣該如何實現呢?</p>
+<p>事實上 Kubernetes 也考慮到這樣問題，因此對於 API 資源的級聯刪除提供了兩種模式:</p>
+<ul>
+<li><strong>Background</strong>:在這模式下，Kubernetes 會直接刪除 Owner 資源物件，然後再由垃圾收集器在後台刪除相關的 API 資源物件。</li>
+<li><strong>Foreground</strong>:在這模式下，Owner 資源物件會透過設定<code>metadta.deletionTimestamp</code>欄位來表示『正在刪除中』。這時 Owner 資源物件依然存在於叢集中，並且能透過 REST API 查看到相關資訊。該資源被刪除條件是當移除了<code>metadata.finalizers</code>欄位後，才會真正的從叢集中移除。這樣機制形成了預刪除掛鉤(Pre-delete hook)，因此我們能在正在刪除的期間，開始回收相關的資源(如虛擬機或其他 Kubernetes API 資源等等)，當回收完後，再將該物件刪除。</li>
+</ul>
+<p>其中 Foreground 模式能透過 Kubernetes Finalizers 機制與 OwnerReferences 機制完成。不過 OwnerReferences 只能用於內部 API 資源物件，當想要處理外部資源時，就必須利用 Finalizers 來達成。</p>
+<p>而 Finalizers 機制只需要在 API 資源物件中的<code>metadata.finalizers</code>欄位塞入一個字串值即可，比如說以下範例:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cat &lt;&lt;EOF | kubectl apply -f -</span><br><span class="line">apiVersion: cloudnative.tw/v1alpha1</span><br><span class="line">kind: VirtualMachine</span><br><span class="line">metadata:</span><br><span class="line">  name: <span class="built_in">test</span>-vm-finalizer</span><br><span class="line">  finalizers:</span><br><span class="line">  - finalizer.cloudnative.tw</span><br><span class="line">spec:</span><br><span class="line">  resource:</span><br><span class="line">    cpu: 2</span><br><span class="line">    memory: 4G</span><br><span class="line">EOF</span><br><span class="line">virtualmachine.cloudnative.tw/<span class="built_in">test</span>-vm-finalizer created</span><br></pre></td></tr></table></figure>
+
+<p>當建立時，接著透過 kubectl 來刪除這個資源實例:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl delete vms <span class="built_in">test</span>-vm-finalizer</span><br><span class="line">virtualmachine.cloudnative.tw <span class="string">"test-vm-finalizer"</span> deleted</span><br></pre></td></tr></table></figure>
+
+<p>這時會發現 kubectl 卡在刪除指令，且不管怎麼執行都無法刪除。因為這樣情況，我們開啟另一個 Terminal 查看後，發現資源物件依然存在，但<code>metadata.deletionTimestamp</code>被下了時間，這表示該資源已經處於預刪除階段:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl get vms <span class="built_in">test</span>-vm-finalizer -o yaml</span><br><span class="line">apiVersion: cloudnative.tw/v1alpha1</span><br><span class="line">kind: VirtualMachine</span><br><span class="line">metadata:</span><br><span class="line">  ...</span><br><span class="line">  deletionGracePeriodSeconds: 0</span><br><span class="line">  deletionTimestamp: <span class="string">"2019-10-14T16:28:58Z"</span></span><br><span class="line">  finalizers:</span><br><span class="line">  - finalizer.cloudnative.tw</span><br><span class="line">  name: <span class="built_in">test</span>-vm-finalizer</span><br></pre></td></tr></table></figure>
+
+<p>那麼該怎麼讓這個資源物件被刪除呢? 我們只要透過<code>kubectl edit</code>把<code>metadata.finalizers</code>欄位拔掉即可。不過這樣做法都是透過 kubectl 來達成，那麼我們該如何在自定義控制器程式中實現呢? 接下來將針對這部份進行說明。</p>
+<h2 id="使用-Finalizer"><a href="#使用-Finalizer" class="headerlink" title="使用 Finalizer"></a>使用 Finalizer</h2><p>本部分將修改<code>controller.go</code>程式，以加入 Finalizers 機制來確保虛擬機被正確刪除。</p>
+<h3 id="環境準備"><a href="#環境準備" class="headerlink" title="環境準備"></a>環境準備</h3><p>由於使用這個功能需要用到 Kubernetes 與 Go 語言，因此需要透過以下來完成條件:</p>
+<ul>
+<li>一座 Kubernetes v1.10+ 叢集。透過 <a href="https://github.com/kubernetes/minikube" target="_blank" rel="noopener">Minikube</a> 建立即可 <code>minikube start --kubernetes-version=v1.15.4</code>。</li>
+<li>一個 Docker 環境，可以直接 Minikube 執行<code>eval $(minikube docker-env)</code>來取的 Docker 參數，並遠端操作。</li>
+<li>安裝 Go 語言 v1.11+ 開發環境，由於開發中會使用到 Go mod 來管理第三方套件，因此必須符合支援版本。安裝請參考 <a href="https://golang.org/doc/install" target="_blank" rel="noopener">Go Getting Started</a>。</li>
+</ul>
+<h3 id="Implementation"><a href="#Implementation" class="headerlink" title="Implementation"></a>Implementation</h3><p>從前言的過程中，可以發現 Finalizers 能在<code>metadata.finalizers</code>欄位手動加入來實現預刪除掛鉤。而在程式的實作中，要加入 Finalizers 機制以避免虛擬機變成殭屍(或孤兒)並不難，只要在 <a href="https://github.com/cloud-native-taiwan/controller101/blob/master/pkg/controller/controller.go" target="_blank" rel="noopener">controller.go</a> 的<code>createServer()</code>函式中，對 VirtualMachine 物件設定<code>metadata.finalizers</code>即可，只不過加入前提需要確保虛擬機已被正確建立，且 VirtualMachine 一定會進入 Active 狀態下進行。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Controller)</span> <span class="title">createServer</span><span class="params">(vm *v1alpha1.VirtualMachine)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	vmCopy := vm.DeepCopy()</span><br><span class="line">	ok, _ := c.vm.IsServerExist(vm.Name)</span><br><span class="line">	<span class="keyword">if</span> !ok &#123;</span><br><span class="line">		...</span><br><span class="line">		addFinalizer(&amp;vmCopy.ObjectMeta, finalizerName)</span><br><span class="line">		<span class="keyword">if</span> err := c.updateStatus(vmCopy, v1alpha1.VirtualMachineActive, <span class="literal">nil</span>); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li><code>...</code> 表示不更改內容。完整程式請參考 <a href="https://github.com/cloud-native-taiwan/controller101/blob/34bcecb2ae43e3eb9a981da17c76e21f001f06b0/pkg/controller/controller.go#L187-L214" target="_blank" rel="noopener">controller.go L187-L214</a></li>
+<li>其中<code>finalizerName</code>被定義在成 const 變數，其內容為<code>finalizer.cloudnative.tw</code>。</li>
+<li>而<code>addFinalizer()</code>函式而在 <a href="https://github.com/cloud-native-taiwan/controller101/blob/master/pkg/controller/util.go" target="_blank" rel="noopener">util.go</a> 中被實作。基本上就是傳入 API 物件的 ObjectMeta(metadata) 與 Finalizer 名稱來設定。</li>
+</ul>
+</blockquote>
+<p>修改完成後，當控制器依據 VirtualMachine 資源實例正確建立虛擬機時，就會自動塞入 Finalizers。而當擁有 Finalizers 的資源實例被執行刪除時，Kubernetes API Server 會透過 Update 操作修改<code>metadata.deletionTimestamp</code>欄位，但不會執行 Delete 操作，因此 Informer 實際上收到會是 Update 事件。基於此改變，我們必須在 controller.go 中修改一些流程與內容。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Controller)</span> <span class="title">syncHandler</span><span class="params">(key <span class="keyword">string</span>)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="keyword">switch</span> vm.Status.Phase &#123;</span><br><span class="line">	...</span><br><span class="line">	<span class="keyword">case</span> v1alpha1.VirtualMachineActive:</span><br><span class="line">		<span class="keyword">if</span> !vm.ObjectMeta.DeletionTimestamp.IsZero() &#123;</span><br><span class="line">			<span class="keyword">if</span> err := c.makeTerminatingPhase(vm); err != <span class="literal">nil</span> &#123;</span><br><span class="line">				<span class="keyword">return</span> err</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> err := c.updateUsage(vm); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line">	<span class="keyword">case</span> v1alpha1.VirtualMachineTerminating:</span><br><span class="line">		<span class="keyword">if</span> err := c.deleteServer(vm); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>...</code> 表示不更改內容。完整程式請參考 <a href="https://github.com/cloud-native-taiwan/controller101/blob/master/pkg/controller/controller.go" target="_blank" rel="noopener">controller.go</a>。</p>
+</blockquote>
+<p>當 VirtualMachine 實例 Active，且被執行刪除時，可以透過判斷<code>metadata.deletionTimestamp</code>來確認是否進入預刪除階段，若是的話，則將 VirtualMachine 資源實例更新成 Terminating 階段，若不是的話，則持續更新狀態。其中<code>makeTerminatingPhase()</code>的程式實現如下:</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Controller)</span> <span class="title">makeTerminatingPhase</span><span class="params">(vm *v1alpha1.VirtualMachine)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	vmCopy := vm.DeepCopy()</span><br><span class="line">	<span class="keyword">return</span> c.updateStatus(vmCopy, v1alpha1.VirtualMachineTerminating, <span class="literal">nil</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接著當控制器接收到一個處於<code>Terminating</code>的資源物件時，就會執行<code>deleteServer()</code>來刪除虛擬機，並且直到刪除成功後，才將 Finalizers 從資源實例中移除。一但被 Finalizers 時，Kubernetes 就會在經過<code>deletionGracePeriodSeconds</code>設定的秒數後，將該資源實例從叢集中刪除。<code>deleteServer()</code>的程式實現如下:</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Controller)</span> <span class="title">deleteServer</span><span class="params">(vm *v1alpha1.VirtualMachine)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	vmCopy := vm.DeepCopy()</span><br><span class="line">	<span class="keyword">if</span> err := c.vm.DeleteServer(vmCopy.Name); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="comment">// Requeuing object to workqueue for retrying</span></span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	removeFinalizer(&amp;vmCopy.ObjectMeta, finalizerName)</span><br><span class="line">	<span class="keyword">if</span> err := c.updateStatus(vmCopy, v1alpha1.VirtualMachineTerminating, <span class="literal">nil</span>); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>最後由於採用 Finalizers 機制，因此 Informer 並不會觸發<code>DeleteFunc</code>對應的<code>deleteObject()</code>函式，因此我們可以在 Controller 的建構子中註解掉。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">New</span><span class="params">(clientset cloudnative.Interface, informer cloudnativeinformer.SharedInformerFactory, vm driver.Interface)</span> *<span class="title">Controller</span></span> &#123;</span><br><span class="line">	...</span><br><span class="line">	vmInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs&#123;</span><br><span class="line">		AddFunc: controller.enqueue,</span><br><span class="line">		UpdateFunc: <span class="function"><span class="keyword">func</span><span class="params">(old, <span class="built_in">new</span> <span class="keyword">interface</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line">			controller.enqueue(<span class="built_in">new</span>)</span><br><span class="line">		&#125;,</span><br><span class="line">		<span class="comment">// DeleteFunc: controller.deleteObject,</span></span><br><span class="line">	&#125;)</span><br><span class="line">	<span class="keyword">return</span> controller</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>...</code> 表示不更改內容。完整程式請參考 <a href="https://github.com/cloud-native-taiwan/controller101/blob/master/pkg/controller/controller.go" target="_blank" rel="noopener">controller.go</a></p>
+</blockquote>
+<h3 id="Running"><a href="#Running" class="headerlink" title="Running"></a>Running</h3><p>當上述功能實現後，且已有新增完 VirtualMachine CRD 的 Kubernetes 環境時，就能執行以下指令啟動控制器:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">eval</span> $(minikube docker-env)</span><br><span class="line">$ go run cmd/main.go --kubeconfig=<span class="variable">$HOME</span>/.kube/config \</span><br><span class="line">    -v=3 --logtostderr \</span><br><span class="line">    --leader-elect=<span class="literal">false</span> \</span><br><span class="line">    --vm-driver=docker</span><br><span class="line">...</span><br><span class="line">I1015 16:02:57.180484   62884 controller.go:77] Starting the controller</span><br><span class="line">I1015 16:02:57.180665   62884 controller.go:78] Waiting <span class="keyword">for</span> the informer caches to sync</span><br><span class="line">I1015 16:02:57.285693   62884 controller.go:86] Started workers</span><br></pre></td></tr></table></figure>
+
+<p>接著開啟另一個 Terminal 來建立 VirtualMachine 資源實例。當建立時，會發現控制器更新了 test-vm 資源實例，這時可以利用 kubectl 與 docker 查看狀態:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cat &lt;&lt;EOF | kubectl apply -f -</span><br><span class="line">apiVersion: cloudnative.tw/v1alpha1</span><br><span class="line">kind: VirtualMachine</span><br><span class="line">metadata:</span><br><span class="line">  name: <span class="built_in">test</span>-vm</span><br><span class="line">spec:</span><br><span class="line">  resource:</span><br><span class="line">    cpu: 2</span><br><span class="line">    memory: 4G</span><br><span class="line">EOF</span><br><span class="line">virtualmachine.cloudnative.tw/<span class="built_in">test</span>-vm created</span><br><span class="line"></span><br><span class="line">$ kubectl get vms</span><br><span class="line">NAME      STATUS   CPU   MEMORY                AGE</span><br><span class="line"><span class="built_in">test</span>-vm   Active   0     0.10977787071142493   44s</span><br><span class="line"></span><br><span class="line">$ docker ps --filter <span class="string">"name=test-vm"</span></span><br><span class="line">CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES</span><br><span class="line">347f8626f36a        nginx:1.17.4        <span class="string">"nginx -g 'daemon of…"</span>   4 seconds ago       Up 3 seconds        80/tcp              <span class="built_in">test</span>-vm</span><br></pre></td></tr></table></figure>
+
+<p>接著我們利用 kubectl 觀察 test-vm 的<code>metadata</code>變化:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl get vms <span class="built_in">test</span>-vm -o=jsonpath=<span class="string">'&#123;.metadata.finalizers&#125;'</span></span><br><span class="line">[finalizer.cloudnative.tw]</span><br></pre></td></tr></table></figure>
+
+<p>而當執行<code>kubectl delete vm test-vm</code>時，就會發現這樣變化:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ kubectl get vms -w</span><br><span class="line">NAME      STATUS   CPU   MEMORY                AGE</span><br><span class="line">test-vm   Active   0     0.10595776165736437   4m4s</span><br><span class="line">test-vm   Terminating   0     0.10595776165736437   4m6s</span><br></pre></td></tr></table></figure>
+
+<p>這時查看 API 資源與 Container 時，都會被正確移除。另外也可以嘗試把控制器暫時關閉，並執行刪除一個 VirtualMachine 資源實例的操作，這時會看到該操作卡在刪除指令下，並且資源實例還存在於叢集中。而當重新啟動控制器時，才會停止這樣狀況。</p>
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>今天簡單認識 Kubernetes 的垃圾收集器與 Finalizers 的機制，並且在自定義控制器實作 Finalizers 來確保外部資源能夠在 Kubernetes 內部關聯的 API 資源被刪除時，優先被回收。</p>
+<p>到這邊一個自定義控制器大致上已完成，而接下來我們將說明如何讓控制器部署到 Kubernetes 叢集中，並且能夠實現哪些功能來加強這個控制器(Expose Metrics、Admission Controller 與 Fake client testing)。</p>
+<blockquote>
+<p>由於鐵人賽文章不夠用，因此之後都會以 <a href="http://k2r2bai.com">KaiRen’s Blog</a> 來新增這些內容。</p>
+</blockquote>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li><a href="https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/" target="_blank" rel="noopener">https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/</a></li>
+<li><a href="https://book.kubebuilder.io/reference/using-finalizers.html" target="_blank" rel="noopener">https://book.kubebuilder.io/reference/using-finalizers.html</a></li>
+<li><a href="https://draveness.me/kubernetes-garbage-collector" target="_blank" rel="noopener">https://draveness.me/kubernetes-garbage-collector</a></li>
+<li><a href="https://blog.openshift.com/garbage-collection-custom-resources-available-kubernetes-1-8/" target="_blank" rel="noopener">https://blog.openshift.com/garbage-collection-custom-resources-available-kubernetes-1-8/</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">動手實作 Kubernetes 自定義控制器 Part5</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2019-10-14 00:10</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2019/10/15/ironman2020/day30/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    動手實作 Kubernetes 自定義控制器 Part6
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2019/10/13/ironman2020/day28/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">動手實作 Kubernetes 自定義控制器 Part4</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2019/10/14/ironman2020/day29/" data-id="ck3ns7q6j004lwmpft3qwytpv" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2019/10/14/ironman2020/day29/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/10/14/ironman2020/day29/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#使用-Finalizer"><span class="toc-number">2.</span> <span class="toc-text">使用 Finalizer</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#環境準備"><span class="toc-number">2.1.</span> <span class="toc-text">環境準備</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation"><span class="toc-number">2.2.</span> <span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Running"><span class="toc-number">2.3.</span> <span class="toc-text">Running</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#結語"><span class="toc-number">3.</span> <span class="toc-text">結語</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Reference"><span class="toc-number">4.</span> <span class="toc-text">Reference</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2019/10/14/ironman2020/day29/';
+        
+        this.page.identifier = 'ironman2020/day29';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

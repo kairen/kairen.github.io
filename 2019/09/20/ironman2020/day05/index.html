@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>實現 Kubernetes 高可靠架構部署 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="前言隨著團隊越來越多地在生產環境使用 Kubernetes 管理雲原生應用程式，我們必須考量在各種故障下，Kubernetes 能正常運行的情況，比如說:在流量高峰期間，將工作負載分散到更多節點或轉往公有雲、跨多個 Availability Zones/Regions 部署、建構高可靠(Highly Available，HA)架構等等要求。其中高可靠架構在昨天的淺談 Kubernetes 高可靠架">
+<meta name="keywords" content="Kubernetes">
+<meta property="og:type" content="article">
+<meta property="og:title" content="實現 Kubernetes 高可靠架構部署">
+<meta property="og:url" content="https://k2r2bai.com/2019/09/20/ironman2020/day05/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="前言隨著團隊越來越多地在生產環境使用 Kubernetes 管理雲原生應用程式，我們必須考量在各種故障下，Kubernetes 能正常運行的情況，比如說:在流量高峰期間，將工作負載分散到更多節點或轉往公有雲、跨多個 Availability Zones/Regions 部署、建構高可靠(Highly Available，HA)架構等等要求。其中高可靠架構在昨天的淺談 Kubernetes 高可靠架">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://i.imgur.com/Bj2a2MW.png">
+<meta property="og:image" content="https://i.imgur.com/LHjRbcx.png">
+<meta property="og:image" content="https://i.imgur.com/SbhdAd3.png">
+<meta property="og:image" content="https://i.imgur.com/KCaiB8o.png">
+<meta property="og:image" content="https://i.imgur.com/WXkQuqj.png">
+<meta property="og:image" content="https://i.imgur.com/PqMd0Iz.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.387Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="實現 Kubernetes 高可靠架構部署">
+<meta name="twitter:description" content="前言隨著團隊越來越多地在生產環境使用 Kubernetes 管理雲原生應用程式，我們必須考量在各種故障下，Kubernetes 能正常運行的情況，比如說:在流量高峰期間，將工作負載分散到更多節點或轉往公有雲、跨多個 Availability Zones/Regions 部署、建構高可靠(Highly Available，HA)架構等等要求。其中高可靠架構在昨天的淺談 Kubernetes 高可靠架">
+<meta name="twitter:image" content="https://i.imgur.com/Bj2a2MW.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-ironman2020/day05" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            實現 Kubernetes 高可靠架構部署
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2019/09/20/ironman2020/day05/">
+            <u><time datetime="2019-09-19T16:00:00.000Z" itemprop="datePublished">2019-09-20</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>隨著團隊越來越多地在生產環境使用 Kubernetes 管理雲原生應用程式，我們必須考量在各種故障下，Kubernetes 能正常運行的情況，比如說:在流量高峰期間，將工作負載分散到更多節點或轉往公有雲、跨多個 Availability Zones/Regions 部署、建構高可靠(Highly Available，HA)架構等等要求。其中高可靠架構在昨天的<a href="https://k2r2bai.com/2019/09/19/ironman2020/day04/">淺談 Kubernetes 高可靠架構</a>文章中，簡單地複習了高可靠架構。而今天將說明如何實現與利用 kubeadm 建立一座架構大致如下圖所示的 HA 叢集。</p>
+<p><img src="https://i.imgur.com/Bj2a2MW.png" alt></p>
+<a id="more"></a>
+
+<p>在開始建立前，我們先簡單瞭解每個主節點要執行元件，以及這些元件如何完成高可靠架構。</p>
+<ul>
+<li><strong>etcd</strong>: 透過多節點的 etcd 實例組成叢集，並利用 <a href="https://raft.github.io/" target="_blank" rel="noopener">Raft</a> 演算法，來選取一個領導者(Leader)處理需要叢集共識的所有客戶端的請求(Request)，如下圖所示。另外由於 Raft 演算法關析，還需要注意叢集的故障容許度(Failure Tolerance)。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">Cluster Size</th>
+<th align="center">Majority</th>
+<th align="center">Failure Tolerance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">1</td>
+<td align="center">1</td>
+<td align="center">0</td>
+</tr>
+<tr>
+<td align="center">2</td>
+<td align="center">2</td>
+<td align="center">0</td>
+</tr>
+<tr>
+<td align="center">3</td>
+<td align="center">2</td>
+<td align="center">1</td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td align="center">3</td>
+<td align="center">1</td>
+</tr>
+<tr>
+<td align="center">5</td>
+<td align="center">3</td>
+<td align="center">2</td>
+</tr>
+<tr>
+<td align="center">6</td>
+<td align="center">4</td>
+<td align="center">2</td>
+</tr>
+<tr>
+<td align="center">7</td>
+<td align="center">4</td>
+<td align="center">3</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>計算故障容許節點數為<code>(N/2)+1</code>，其中 N 為叢集大小。</p>
+</blockquote>
+<p><img src="https://i.imgur.com/LHjRbcx.png" alt="Quorum with etcd"><br>(圖片擷取自：<a href="https://static.sched.com/hosted_files/kccna18/8b/Highly%20Available%20Kubernetes%20Clusters%20-%20Best%20Practices%20-%20Kubecon%20NA%202018.pdf" target="_blank" rel="noopener"> Kubecon NA 2018 - Highly Available Kubernetes Clusters - Best Practices</a>)</p>
+<ul>
+<li><strong>API server:</strong>: 每個 API server 會與本地端的 etcd 溝通，並接收來至客戶端與其他元件的 API 請求。由於 API server 屬於 Active-Active 架構，因此每個 API server 在叢集中都處於可用狀態。</li>
+</ul>
+<p><img src="https://i.imgur.com/SbhdAd3.png" alt="Active-Active for API server"><br>(圖片擷取自：<a href="https://static.sched.com/hosted_files/kccna18/8b/Highly%20Available%20Kubernetes%20Clusters%20-%20Best%20Practices%20-%20Kubecon%20NA%202018.pdf" target="_blank" rel="noopener"> Kubecon NA 2018 - Highly Available Kubernetes Clusters - Best Practices</a>)</p>
+<ul>
+<li><strong>controllers, scheduler</strong>: 這些元件採用 <a href="https://en.wikipedia.org/wiki/Lease_(computer_science)" target="_blank" rel="noopener">Lease</a> 機制來從所有實例中選取一個作為領導者，並由領導者處理監聽對應的 API 資源來完成功能，因此整個叢集只會有一個擁有完整功能，除非原本領導的節點發生故障，才會尤其它接手。</li>
+</ul>
+<p><img src="https://i.imgur.com/KCaiB8o.png" alt="Active-Passive for controllers and scheduler"><br>(圖片擷取自：<a href="https://static.sched.com/hosted_files/kccna18/8b/Highly%20Available%20Kubernetes%20Clusters%20-%20Best%20Practices%20-%20Kubecon%20NA%202018.pdf" target="_blank" rel="noopener"> Kubecon NA 2018 - Highly Available Kubernetes Clusters - Best Practices</a>)</p>
+<ul>
+<li><strong>kubelet</strong>: 由於 kubelet 只能設定跟一個 API server 的端點(Endpoint)，但為了達到某個 API server 故障時，還能夠繼續正常執行的需求，我們需要提供一個虛擬 IP(VIP, Virtual IP)，以及負載平衡器(Load Balancer)來讓 kubelet 能夠存取多個 API server，一方面利用負載平衡器的機制來分散工作負載到所有 API server 上。</li>
+</ul>
+<p>另外由於 API servers 需要提供 VIP 與負載平衡器，因此必須在所有主節點上額外安裝以下元件來達到需求。</p>
+<ul>
+<li><strong>Keepalived</strong>: 基於 <a href="https://en.wikipedia.org/wiki/Virtual_Router_Redundancy_Protocol" target="_blank" rel="noopener">VRRP</a> 協定來實現高可靠架構，所有主節點會基於此元件舉出一個 VIP 來作為存取 API 的端點，這主要是確保其他元件連接 API 時，不會因為某個主節點中斷而無法存取。</li>
+<li><strong>HAProxy</strong>: 與 API server 一樣，為 Active-Active 架構，因此每個主節點都可以存取作為 Proxy 的 IP 與 Port。</li>
+</ul>
+<p>簡單了解完實現方式後，下一小節將說明如何利用 kubeadm 來建構 Kubernetes HA 叢集。</p>
+<blockquote>
+<p>選用 kubeadm 是因為方便手動做測試，且 kubeadm HA 功能在 v1.15 版本進入了 Beta 階段，因此值得大家嘗試看看。當然過程中，若節點數過多的話，建議搭配 Ansible(or Puppet, SaltStack) 這類工具進行。</p>
+</blockquote>
+<h2 id="Set-up-HA-cluster-using-kubeadm"><a href="#Set-up-HA-cluster-using-kubeadm" class="headerlink" title="Set up HA cluster using kubeadm"></a>Set up HA cluster using kubeadm</h2><p>本部分將透過 <a href="https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm/" target="_blank" rel="noopener">Kubeadm</a> 來部署 Kubernetes v1.15 版本的 High Availability 叢集，而本安裝主要是參考官方文件中的 <a href="https://kubernetes.io/docs/setup/independent/high-availability/" target="_blank" rel="noopener">Creating Highly Available Clusters with kubeadm</a> 內容來進行，這邊將透過 HAProxy 與 Keepalived 的結合來實現控制面的 Load Balancer 與 VIP。</p>
+<p>Kubernetes 部署的版本資訊：</p>
+<ul>
+<li>kubeadm: v1.15.4</li>
+<li>Kubernetes: v1.15.4</li>
+<li>CNI: v0.7.5</li>
+<li>etcd: v3.2.18</li>
+<li>Docker CE: 19.03.2</li>
+<li>Calico: v3.8</li>
+</ul>
+<p>Kubernetes 部署的網路資訊：</p>
+<ul>
+<li><strong>Cluster IP CIDR</strong>: 10.244.0.0/16</li>
+<li><strong>Service Cluster IP CIDR</strong>: 10.96.0.0/12</li>
+<li><strong>Service DNS IP</strong>: 10.96.0.10</li>
+<li><strong>DNS DN</strong>: cluster.local</li>
+<li><strong>Kubernetes API Virtual IP</strong>: 172.22.132.10</li>
+</ul>
+<h3 id="節點資訊"><a href="#節點資訊" class="headerlink" title="節點資訊"></a>節點資訊</h3><p>本文採用以下節點數進行裸機部署，作業系統採用<code>Ubuntu 18.04+</code>進行測試:</p>
+<table>
+<thead>
+<tr>
+<th>IP Address</th>
+<th>Hostname</th>
+<th>CPU</th>
+<th>Memory</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>172.22.132.11</td>
+<td>k8s-m1</td>
+<td>4</td>
+<td>16G</td>
+<td>Master</td>
+</tr>
+<tr>
+<td>172.22.132.12</td>
+<td>k8s-m2</td>
+<td>4</td>
+<td>16G</td>
+<td>Master</td>
+</tr>
+<tr>
+<td>172.22.132.13</td>
+<td>k8s-m3</td>
+<td>4</td>
+<td>16G</td>
+<td>Master</td>
+</tr>
+<tr>
+<td>172.22.132.21</td>
+<td>k8s-n1</td>
+<td>4</td>
+<td>16G</td>
+<td>Node</td>
+</tr>
+<tr>
+<td>172.22.132.22</td>
+<td>k8s-n2</td>
+<td>4</td>
+<td>16G</td>
+<td>Node</td>
+</tr>
+<tr>
+<td>172.22.132.31</td>
+<td>k8s-g1</td>
+<td>4</td>
+<td>16G</td>
+<td>Node</td>
+</tr>
+<tr>
+<td>172.22.132.32</td>
+<td>k8s-g2</td>
+<td>4</td>
+<td>16G</td>
+<td>Node</td>
+</tr>
+</tbody></table>
+<p>另外所有 Master 節點將透過 Keepalived 提供一個 Virtual IP <code>172.22.132.10</code> 作為使用。</p>
+<blockquote>
+<ul>
+<li>所有操作全部用<code>root</code>使用者進行，主要方便部署用。</li>
+</ul>
+</blockquote>
+<h3 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h3><p>開始部署叢集前需先確保以下條件已達成：</p>
+<ul>
+<li><code>所有節點</code>彼此網路互通，並且<code>k8s-m1</code> SSH 登入其他節點為 passwdless，由於過程中很多會在某台節點(<code>k8s-m1</code>)上以 SSH 複製與操作其他節點。</li>
+<li>確認所有防火牆與 SELinux 已關閉。如 CentOS：</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ systemctl stop firewalld &amp;&amp; systemctl <span class="built_in">disable</span> firewalld</span><br><span class="line">$ setenforce 0</span><br><span class="line">$ vim /etc/selinux/config</span><br><span class="line">SELINUX=disabled</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>關閉是為了方便安裝使用，若有需要防火牆可以參考 <a href="https://kubernetes.io/docs/tasks/tools/install-kubeadm/#check-required-ports" target="_blank" rel="noopener">Required ports</a> 來設定。</p>
+</blockquote>
+<ul>
+<li><code>所有節點</code>需要安裝 Docker CE 版本的容器引擎：</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl -fsSL https://get.docker.com/ | sh</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>所有節點需要加入 APT Kubernetes package 來源：</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">echo</span> <span class="string">'deb http://apt.kubernetes.io/ kubernetes-xenial main'</span> | tee /etc/apt/sources.list.d/kubernetes.list</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>所有節點</code>需要設定以下系統參數。</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cat &lt;&lt;EOF | tee /etc/sysctl.d/k8s.conf</span><br><span class="line">net.ipv4.ip_forward = 1</span><br><span class="line">net.bridge.bridge-nf-call-ip6tables = 1</span><br><span class="line">net.bridge.bridge-nf-call-iptables = 1</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line">$ sysctl -p /etc/sysctl.d/k8s.conf</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>關於<code>bridge-nf-call-iptables</code>的啟用，主要取決於是否將容器連接到<code>Linux bridge</code>或使用其他一些機制(如 SDN vSwitch)。</p>
+</blockquote>
+<ul>
+<li>Kubernetes v1.8+ 要求關閉系統 Swap，請在<code>所有節點</code>利用以下指令關閉：</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ swapoff -a &amp;&amp; sysctl -w vm.swappiness=0</span><br><span class="line"></span><br><span class="line"><span class="comment"># 不同機器會有差異</span></span><br><span class="line">$ sed <span class="string">'/swap.img/d'</span> -i /etc/fstab</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li>記得<code>/etc/fstab</code>也要註解掉<code>SWAP</code>掛載。</li>
+<li>關閉 Swap 是避免 Kubernetes Pod 不會因為使用到 Swap 而影響效能，另一方面可以讓 OOM Killer 正常運作。</li>
+</ul>
+</blockquote>
+<h3 id="Kubernetes-Master-建立"><a href="#Kubernetes-Master-建立" class="headerlink" title="Kubernetes Master 建立"></a>Kubernetes Master 建立</h3><p>本節將說明如何部署與設定 Kubernetes Master 節點中的各元件。</p>
+<p>在開始部署<code>master</code>節點元件前，請先安裝好 kubeadm、kubelet 等套件，並建立<code>/etc/kubernetes/manifests/</code>目錄存放 Static Pod 的 YAML 檔：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">export</span> KUBE_VERSION=<span class="string">"1.15.4"</span></span><br><span class="line">$ apt-get update &amp;&amp; apt-get install -y kubelet=<span class="variable">$&#123;KUBE_VERSION&#125;</span>-00 kubeadm=<span class="variable">$&#123;KUBE_VERSION&#125;</span>-00 kubectl=<span class="variable">$&#123;KUBE_VERSION&#125;</span>-00</span><br><span class="line">$ apt-mark hold kubeadm kubectl kubelet</span><br><span class="line">$ mkdir -p /etc/kubernetes/manifests/</span><br></pre></td></tr></table></figure>
+
+<p>完成後，依照下面小節完成部署。</p>
+<h4 id="HAProxy"><a href="#HAProxy" class="headerlink" title="HAProxy"></a>HAProxy</h4><p>本節將說明如何建立 HAProxy 來提供 Kubernetes API Server 的負載平衡。在所有<code>master</code>節點的<code>/etc/haproxy/</code>目錄：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ mkdir -p /etc/haproxy/</span><br></pre></td></tr></table></figure>
+
+<p>接著在所有<code>master</code>節點新增<code>/etc/haproxy/haproxy.cfg</code>設定檔，並加入以下內容：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cat &lt;&lt;EOF &gt; /etc/haproxy/haproxy.cfg</span><br><span class="line">global</span><br><span class="line">  <span class="built_in">log</span> 127.0.0.1 local0</span><br><span class="line">  <span class="built_in">log</span> 127.0.0.1 local1 notice</span><br><span class="line">  tune.ssl.default-dh-param 2048</span><br><span class="line"></span><br><span class="line">defaults</span><br><span class="line">  <span class="built_in">log</span> global</span><br><span class="line">  mode http</span><br><span class="line">  option dontlognull</span><br><span class="line">  timeout connect 5000ms</span><br><span class="line">  timeout client 600000ms</span><br><span class="line">  timeout server 600000ms</span><br><span class="line"></span><br><span class="line">listen stats</span><br><span class="line">    <span class="built_in">bind</span> :9090</span><br><span class="line">    mode http</span><br><span class="line">    balance</span><br><span class="line">    stats uri /haproxy_stats</span><br><span class="line">    stats auth admin:admin123</span><br><span class="line">    stats admin <span class="keyword">if</span> TRUE</span><br><span class="line"></span><br><span class="line">frontend kube-apiserver-https</span><br><span class="line">   mode tcp</span><br><span class="line">   <span class="built_in">bind</span> :8443</span><br><span class="line">   default_backend kube-apiserver-backend</span><br><span class="line"></span><br><span class="line">backend kube-apiserver-backend</span><br><span class="line">    mode tcp</span><br><span class="line">    balance roundrobin</span><br><span class="line">    stick-table <span class="built_in">type</span> ip size 200k expire 30m</span><br><span class="line">    stick on src</span><br><span class="line">    server apiserver1 172.22.132.11:6443 check</span><br><span class="line">    server apiserver2 172.22.132.12:6443 check</span><br><span class="line">    server apiserver3 172.22.132.13:6443 check</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊會綁定<code>8443</code>作為 API Server 的 Proxy。</p>
+</blockquote>
+<p>接著在新增一個路徑為<code>/etc/kubernetes/manifests/haproxy.yaml</code>的 YAML 檔來提供 HAProxy 的 Static Pod 部署，其內容如下：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cat &lt;&lt;EOF &gt; /etc/kubernetes/manifests/haproxy.yaml</span><br><span class="line">kind: Pod</span><br><span class="line">apiVersion: v1</span><br><span class="line">metadata:</span><br><span class="line">  annotations:</span><br><span class="line">    scheduler.alpha.kubernetes.io/critical-pod: <span class="string">""</span></span><br><span class="line">  labels:</span><br><span class="line">    component: haproxy</span><br><span class="line">    tier: control-plane</span><br><span class="line">  name: kube-haproxy</span><br><span class="line">  namespace: kube-system</span><br><span class="line">spec:</span><br><span class="line">  hostNetwork: <span class="literal">true</span></span><br><span class="line">  priorityClassName: system-cluster-critical</span><br><span class="line">  containers:</span><br><span class="line">  - name: kube-haproxy</span><br><span class="line">    image: docker.io/haproxy:1.7-alpine</span><br><span class="line">    resources:</span><br><span class="line">      requests:</span><br><span class="line">        cpu: 100m</span><br><span class="line">    volumeMounts:</span><br><span class="line">    - name: haproxy-cfg</span><br><span class="line">      readOnly: <span class="literal">true</span></span><br><span class="line">      mountPath: /usr/<span class="built_in">local</span>/etc/haproxy/haproxy.cfg</span><br><span class="line">  volumes:</span><br><span class="line">  - name: haproxy-cfg</span><br><span class="line">    hostPath:</span><br><span class="line">      path: /etc/haproxy/haproxy.cfg</span><br><span class="line">      <span class="built_in">type</span>: FileOrCreate</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<p>接下來將新增另一個 YAML 來提供部署 Keepalived。</p>
+<h4 id="Keepalived"><a href="#Keepalived" class="headerlink" title="Keepalived"></a>Keepalived</h4><p>本節將說明如何建立 Keepalived 來提供 Kubernetes API Server 的 VIP。在所有<code>master</code>節點新增一個路徑為<code>/etc/kubernetes/manifests/keepalived.yaml</code>的 YAML 檔來提供 HAProxy 的 Static Pod 部署，其內容如下：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cat &lt;&lt;EOF &gt; /etc/kubernetes/manifests/keepalived.yaml</span><br><span class="line">kind: Pod</span><br><span class="line">apiVersion: v1</span><br><span class="line">metadata:</span><br><span class="line">  annotations:</span><br><span class="line">    scheduler.alpha.kubernetes.io/critical-pod: <span class="string">""</span></span><br><span class="line">  labels:</span><br><span class="line">    component: keepalived</span><br><span class="line">    tier: control-plane</span><br><span class="line">  name: kube-keepalived</span><br><span class="line">  namespace: kube-system</span><br><span class="line">spec:</span><br><span class="line">  hostNetwork: <span class="literal">true</span></span><br><span class="line">  priorityClassName: system-cluster-critical</span><br><span class="line">  containers:</span><br><span class="line">  - name: kube-keepalived</span><br><span class="line">    image: docker.io/osixia/keepalived:2.0.17</span><br><span class="line">    env:</span><br><span class="line">    - name: KEEPALIVED_VIRTUAL_IPS</span><br><span class="line">      value: 172.22.132.10</span><br><span class="line">    - name: KEEPALIVED_INTERFACE</span><br><span class="line">      value: enp3s0</span><br><span class="line">    - name: KEEPALIVED_UNICAST_PEERS</span><br><span class="line">      value: <span class="string">"#PYTHON2BASH:['172.22.132.11', '172.22.132.12', '172.22.132.13']"</span></span><br><span class="line">    - name: KEEPALIVED_PASSWORD</span><br><span class="line">      value: d0cker</span><br><span class="line">    - name: KEEPALIVED_PRIORITY</span><br><span class="line">      value: <span class="string">"100"</span></span><br><span class="line">    - name: KEEPALIVED_ROUTER_ID</span><br><span class="line">      value: <span class="string">"51"</span></span><br><span class="line">    resources:</span><br><span class="line">      requests:</span><br><span class="line">        cpu: 100m</span><br><span class="line">    securityContext:</span><br><span class="line">      privileged: <span class="literal">true</span></span><br><span class="line">      capabilities:</span><br><span class="line">        add:</span><br><span class="line">        - NET_ADMIN</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li><code>KEEPALIVED_VIRTUAL_IPS</code>：Keepalived 提供的 VIPs。</li>
+<li><code>KEEPALIVED_INTERFACE</code>：VIPs 綁定的網卡。</li>
+<li><code>KEEPALIVED_UNICAST_PEERS</code>：其他 Keepalived 節點的單點傳播 IP。</li>
+<li><code>KEEPALIVED_PASSWORD</code>： Keepalived auth_type 的 Password。</li>
+<li><code>KEEPALIVED_PRIORITY</code>：指定了備援發生時，接手的介面之順序，數字越小，優先順序越高。這邊<code>k8s-m1</code>設為 100，其餘為<code>150</code>。</li>
+<li><code>KEEPALIVED_ROUTER_ID</code>：一組 Keepalived instance 的數字識別子。</li>
+</ul>
+</blockquote>
+<h4 id="First-control-plane-node"><a href="#First-control-plane-node" class="headerlink" title="First control plane node"></a>First control plane node</h4><p>首先在<code>k8s-m1</code>節點建立<code>kubeadm-config.yaml</code>的 Kubeadm Master Configuration 檔：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cat &lt;&lt;EOF &gt; kubeadm-config.yaml</span><br><span class="line">apiVersion: kubeadm.k8s.io/v1beta2</span><br><span class="line">kind: ClusterConfiguration</span><br><span class="line">kubernetesVersion: v1.15.4</span><br><span class="line">controlPlaneEndpoint: <span class="string">"172.22.132.10:8443"</span></span><br><span class="line">networking:</span><br><span class="line">  podSubnet: <span class="string">"10.244.0.0/16"</span></span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>controlPlaneEndpoint</code>填入 VIPs 與 bind port。</p>
+</blockquote>
+<p>新增完後，透過 kubeadm 來初始化 control plane：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubeadm init --config=kubeadm-config.yaml --upload-certs</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line">You can now join any number of the control-plane node running the following <span class="built_in">command</span> on each as root:</span><br><span class="line"></span><br><span class="line">  kubeadm join 172.22.132.10:8443 --token qawtjn.l0bpc3o12fef33t5 \</span><br><span class="line">    --discovery-token-ca-cert-hash sha256:7310e2e34b47214eba2be7a44375ea588a1d59d3126ac11759853d59fa76fadc \</span><br><span class="line">    --control-plane --certificate-key 6b9fbbac56a7af8576d8c7f98e44d5d78984c7331ca6d41a066d05c3d3795cc7</span><br><span class="line"></span><br><span class="line">Please note that the certificate-key gives access to cluster sensitive data, keep it secret!</span><br><span class="line">As a safeguard, uploaded-certs will be deleted <span class="keyword">in</span> two hours; If necessary, you can use</span><br><span class="line"><span class="string">"kubeadm init phase upload-certs --upload-certs"</span> to reload certs afterward.</span><br><span class="line"></span><br><span class="line">Then you can join any number of worker nodes by running the following on each as root:</span><br><span class="line"></span><br><span class="line">kubeadm join 172.22.132.10:8443 --token qawtjn.l0bpc3o12fef33t5 \</span><br><span class="line">    --discovery-token-ca-cert-hash sha256:7310e2e34b47214eba2be7a44375ea588a1d59d3126ac11759853d59fa76fadc</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>請記下來 join 節點資訊，方便後面使用。若忘記的話，可以用 <code>kubeadm token</code> 指令重新取得。</p>
+</blockquote>
+<p>經過一段時間完成後，接著透過 netstat 檢查是否正常啟動服務：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ netstat -ntlp</span><br><span class="line">Active Internet connections (only servers)</span><br><span class="line">Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name</span><br><span class="line">tcp        0      0 172.22.132.10:8443      0.0.0.0:*               LISTEN      11218/haproxy</span><br><span class="line">tcp        0      0 0.0.0.0:9090            0.0.0.0:*               LISTEN      11218/haproxy</span><br><span class="line">tcp        0      0 127.0.0.1:44551         0.0.0.0:*               LISTEN      9237/kubelet</span><br><span class="line">tcp        0      0 127.0.0.1:10248         0.0.0.0:*               LISTEN      9237/kubelet</span><br><span class="line">tcp        0      0 127.0.0.1:10249         0.0.0.0:*               LISTEN      11669/kube-proxy</span><br><span class="line">tcp        0      0 172.22.132.11:2379      0.0.0.0:*               LISTEN      10367/etcd</span><br><span class="line">tcp        0      0 172.22.132.11:2380      0.0.0.0:*               LISTEN      10367/etcd</span><br><span class="line">tcp        0      0 127.0.0.1:10257         0.0.0.0:*               LISTEN      10460/kube-controll</span><br><span class="line">tcp        0      0 127.0.0.1:10259         0.0.0.0:*               LISTEN      10615/kube-schedule</span><br></pre></td></tr></table></figure>
+
+<p>經過一段時間完成後，執行以下指令來使用 kubeconfig：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ mkdir -p <span class="variable">$HOME</span>/.kube</span><br><span class="line">$ cp -rp /etc/kubernetes/admin.conf <span class="variable">$HOME</span>/.kube/config</span><br><span class="line">$ chown $(id -u):$(id -g) <span class="variable">$HOME</span>/.kube/config</span><br></pre></td></tr></table></figure>
+
+<p>透過 kubectl 檢查 Kubernetes 叢集狀況：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl get no</span><br><span class="line">NAME     STATUS     ROLES    AGE   VERSION</span><br><span class="line">k8s-m1   NotReady   master   31s   v1.15.4</span><br><span class="line"></span><br><span class="line">$ kubectl get cs</span><br><span class="line">NAME                 STATUS    MESSAGE             ERROR</span><br><span class="line">scheduler            Healthy   ok</span><br><span class="line">controller-manager   Healthy   ok</span><br><span class="line">etcd-0               Healthy   &#123;<span class="string">"health"</span>:<span class="string">"true"</span>&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接著部署 Calico CNI plugin:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ wget https://docs.projectcalico.org/v3.8/manifests/calico.yaml</span><br><span class="line">$ sed -i <span class="string">'s/192.168.0.0\/16/10.244.0.0\/16/g'</span> calico.yaml</span><br><span class="line">$ kubectl apply -f calico.yaml</span><br></pre></td></tr></table></figure>
+
+<p>完成後，透過 kubectl 來查看 kube-system 的 Pod 建立狀況:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl -n kube-system get po</span><br><span class="line">NAME                                       READY   STATUS    RESTARTS   AGE</span><br><span class="line">calico-kube-controllers-65b8787765-ckd7b   1/1     Running   0          8m8s</span><br><span class="line">calico-node-l9wh9                          1/1     Running   0          8m8s</span><br><span class="line">coredns-5c98db65d4-89wq5                   1/1     Running   0          9m14s</span><br><span class="line">coredns-5c98db65d4-lmvvn                   1/1     Running   0          9m14s</span><br><span class="line">etcd-k8s-m1                                1/1     Running   0          8m24s</span><br><span class="line">kube-apiserver-k8s-m1                      1/1     Running   0          8m17s</span><br><span class="line">kube-controller-manager-k8s-m1             1/1     Running   0          8m26s</span><br><span class="line">kube-haproxy-k8s-m1                        1/1     Running   0          9m30s</span><br><span class="line">kube-keepalived-k8s-m1                     1/1     Running   0          8m13s</span><br><span class="line">kube-proxy-g7clj                           1/1     Running   0          9m14s</span><br><span class="line">kube-scheduler-k8s-m1                      1/1     Running   0          8m41s</span><br></pre></td></tr></table></figure>
+
+<p>到這邊<code>k8s-m1</code>就完成部署了，接著我們要將<code>k8s-m2</code>與<code>k8s-m3</code>以控制平面節點加入現有叢集。</p>
+<h4 id="Other-control-plane-nodes"><a href="#Other-control-plane-nodes" class="headerlink" title="Other control plane nodes"></a>Other control plane nodes</h4><p>在 kubeadm v1.15 版本中，提供了自動配置 HA 的機制，因此只需要在其他主節點執行以下指令即可:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubeadm join 172.22.132.10:8443 --token qawtjn.l0bpc3o12fef33t5 \</span><br><span class="line">  --discovery-token-ca-cert-hash sha256:7310e2e34b47214eba2be7a44375ea588a1d59d3126ac11759853d59fa76fadc \</span><br><span class="line">  --control-plane \</span><br><span class="line">  --certificate-key 6b9fbbac56a7af8576d8c7f98e44d5d78984c7331ca6d41a066d05c3d3795cc7 \</span><br><span class="line">  --ignore-preflight-errors=DirAvailable--etc-kubernetes-manifests</span><br></pre></td></tr></table></figure>
+
+<p>經過一段時間完成後，執行以下指令來使用 kubeconfig：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ mkdir -p <span class="variable">$HOME</span>/.kube</span><br><span class="line">$ cp -rp /etc/kubernetes/admin.conf <span class="variable">$HOME</span>/.kube/config</span><br><span class="line">$ chown $(id -u):$(id -g) <span class="variable">$HOME</span>/.kube/config</span><br></pre></td></tr></table></figure>
+
+<p>透過 kubectl 檢查 Kubernetes 叢集狀況：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl get node</span><br><span class="line">NAME     STATUS   ROLES    AGE   VERSION</span><br><span class="line">k8s-m1   Ready    master   10m   v1.15.4</span><br><span class="line">k8s-m2   Ready    master   3m    v1.15.4</span><br><span class="line">k8s-m3   Ready    master   74s   v1.15.4</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>由於其他主節點加入方式一樣，所以<code>k8s-m3</code>節點請重複執行本節過程來加入。</p>
+</blockquote>
+<h3 id="Kubernetes-Nodes-建立"><a href="#Kubernetes-Nodes-建立" class="headerlink" title="Kubernetes Nodes 建立"></a>Kubernetes Nodes 建立</h3><p>本節將說明如何部署與設定 Kubernetes Node 節點中。在開始部署<code>node</code>節點元件前，請先安裝好 kubeadm、kubelet 等套件：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">export</span> KUBE_VERSION=<span class="string">"1.15.4"</span></span><br><span class="line">$ apt-get update &amp;&amp; apt-get install -y kubelet=<span class="variable">$&#123;KUBE_VERSION&#125;</span>-00 kubeadm=<span class="variable">$&#123;KUBE_VERSION&#125;</span>-00</span><br><span class="line">$ apt-mark hold kubeadm kubelet</span><br></pre></td></tr></table></figure>
+
+<p>安裝好後，在所有<code>node</code>節點透過 kubeadm 來加入節點：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubeadm join 172.22.132.10:8443 \</span><br><span class="line">  --token qawtjn.l0bpc3o12fef33t5 \</span><br><span class="line">  --discovery-token-ca-cert-hash sha256:7310e2e34b47214eba2be7a44375ea588a1d59d3126ac11759853d59fa76fadc</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line">This node has joined the cluster:</span><br><span class="line">* Certificate signing request was sent to apiserver and a response was received.</span><br><span class="line">* The Kubelet was informed of the new secure connection details.</span><br><span class="line"></span><br><span class="line">Run <span class="string">'kubectl get nodes'</span> on the control-plane to see this node join the cluster.</span><br></pre></td></tr></table></figure>
+
+<h3 id="測試部署結果"><a href="#測試部署結果" class="headerlink" title="測試部署結果"></a>測試部署結果</h3><p>當節點都完成後，進入任一台<code>master</code>節點透過 kubectl 來檢查：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl get no</span><br><span class="line">NAME     STATUS   ROLES    AGE     VERSION</span><br><span class="line">k8s-g1   Ready    &lt;none&gt;   92s     v1.15.4</span><br><span class="line">k8s-g2   Ready    &lt;none&gt;   3m33s   v1.15.4</span><br><span class="line">k8s-m1   Ready    master   20m     v1.15.4</span><br><span class="line">k8s-m2   Ready    master   13m     v1.15.4</span><br><span class="line">k8s-m3   Ready    master   8m32s   v1.15.4</span><br><span class="line">k8s-n1   Ready    &lt;none&gt;   3m30s   v1.15.4</span><br><span class="line">k8s-n2   Ready    &lt;none&gt;   3m35s   v1.15.4</span><br><span class="line"></span><br><span class="line">$  kubectl get cs</span><br><span class="line">NAME                 STATUS    MESSAGE              ERROR</span><br><span class="line">scheduler            Healthy   ok</span><br><span class="line">controller-manager   Healthy   ok</span><br><span class="line">etcd-0               Healthy   &#123;<span class="string">"health"</span>: <span class="string">"true"</span>&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>kubeadm 的方式會讓狀態只顯示 etcd-0。</p>
+</blockquote>
+<p>接著進入<code>k8s-m1</code>節點測試叢集 HA 功能，這邊先關閉該節點：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo poweroff</span><br></pre></td></tr></table></figure>
+
+<p>接著進入到<code>k8s-m2</code>節點，透過 kubectl 來檢查叢集是否能夠正常執行：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 先檢查元件狀態</span></span><br><span class="line">$ kubectl get cs</span><br><span class="line">NAME                 STATUS    MESSAGE             ERROR</span><br><span class="line">controller-manager   Healthy   ok</span><br><span class="line">scheduler            Healthy   ok</span><br><span class="line">etcd-0               Healthy   &#123;<span class="string">"health"</span>:<span class="string">"true"</span>&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 檢查 nodes 狀態</span></span><br><span class="line">$ kubectl get no</span><br><span class="line">NAME     STATUS     ROLES    AGE     VERSION</span><br><span class="line">k8s-g1   Ready      &lt;none&gt;   4m54s   v1.15.4</span><br><span class="line">k8s-g2   Ready      &lt;none&gt;   6m55s   v1.15.4</span><br><span class="line">k8s-m1   NotReady   master   55m     v1.15.4</span><br><span class="line">k8s-m2   Ready      master   33m     v1.15.4</span><br><span class="line">k8s-m3   Ready      master   11m     v1.15.4</span><br><span class="line">k8s-n1   Ready      &lt;none&gt;   6m52s   v1.15.4</span><br><span class="line">k8s-n2   Ready      &lt;none&gt;   6m57s   v1.15.4</span><br><span class="line"></span><br><span class="line"><span class="comment"># 測試是否可以建立 Pod</span></span><br><span class="line">$ kubectl run nginx --image nginx --restart=Never --port 80</span><br><span class="line">$ kubectl expose pod nginx --port 80 --<span class="built_in">type</span> NodePort</span><br><span class="line">$ kubectl get po,svc</span><br><span class="line">NAME        READY   STATUS    RESTARTS   AGE</span><br><span class="line">pod/nginx   1/1     Running   0          27s</span><br><span class="line"></span><br><span class="line">NAME                 TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE</span><br><span class="line">service/kubernetes   ClusterIP   10.96.0.1       &lt;none&gt;        443/TCP        56m</span><br><span class="line">service/nginx        NodePort    10.106.25.118   &lt;none&gt;        80:30461/TCP   21s</span><br></pre></td></tr></table></figure>
+
+<p>透過 cURL 檢查 NGINX 服務是否正常：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl 172.22.132.10:30461</span><br><span class="line">&lt;!DOCTYPE html&gt;</span><br><span class="line">&lt;html&gt;</span><br><span class="line">&lt;head&gt;</span><br><span class="line">&lt;title&gt;Welcome to nginx!&lt;/title&gt;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>今天簡單透過 kubeadm 來實現 Kubernetes HA 架構，但大家肯定會發現這樣手動操作非常累，若要建立大量裸機節點時，將會有很多重複指令需要執行，因此這邊推薦結合 Ansible 這類工具進行，或者直接使用 <a href="https://github.com/kubernetes-sigs/kubespray" target="_blank" rel="noopener">Kubespray</a> 來自動化部署 Kubernetes HA 環境。</p>
+<p>但是這樣就能確保服務執行在 Kubernetes 上後，就都不會出事了嗎?</p>
+<p><img src="https://i.imgur.com/WXkQuqj.png" alt="Karan Goel, Meaghan Kjelland @ Google"></p>
+<p>事實上，不光要針對 Kubernetes 做 HA 架構，我們還要對許多層面進行處理。</p>
+<p><img src="https://i.imgur.com/PqMd0Iz.png" alt></p>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li><a href="https://kubernetes.io/docs/tasks/administer-cluster/highly-available-master/" target="_blank" rel="noopener">https://kubernetes.io/docs/tasks/administer-cluster/highly-available-master/</a></li>
+<li><a href="https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/" target="_blank" rel="noopener">https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/</a></li>
+<li><a href="https://medium.com/velotio-perspectives/demystifying-high-availability-in-kubernetes-using-kubeadm-3d83ed8c458b" target="_blank" rel="noopener">https://medium.com/velotio-perspectives/demystifying-high-availability-in-kubernetes-using-kubeadm-3d83ed8c458b</a></li>
+<li><a href="http://www.haproxy.org/" target="_blank" rel="noopener">http://www.haproxy.org/</a></li>
+<li><a href="https://www.keepalived.org/" target="_blank" rel="noopener">https://www.keepalived.org/</a></li>
+<li><a href="https://github.com/etcd-io/etcd/blob/master/Documentation/faq.md" target="_blank" rel="noopener">https://github.com/etcd-io/etcd/blob/master/Documentation/faq.md</a></li>
+<li><a href="https://kccna18.sched.com/event/GrWQ" target="_blank" rel="noopener">https://kccna18.sched.com/event/GrWQ</a></li>
+<li><a href="https://kubernetes.io/blog/2019/06/24/automated-high-availability-in-kubeadm-v1.15-batteries-included-but-swappable/" target="_blank" rel="noopener">https://kubernetes.io/blog/2019/06/24/automated-high-availability-in-kubeadm-v1.15-batteries-included-but-swappable/</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">實現 Kubernetes 高可靠架構部署</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2019-9-20 00:09</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2019/09/21/ironman2020/day06/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    淺談 Kubernetes 叢集元件更新
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2019/09/19/ironman2020/day04/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">淺談 Kubernetes 高可靠架構</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2019/09/20/ironman2020/day05/" data-id="ck3ns7q5t002pwmpf3w1yg26j" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2019/09/20/ironman2020/day05/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/09/20/ironman2020/day05/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Set-up-HA-cluster-using-kubeadm"><span class="toc-number">2.</span> <span class="toc-text">Set up HA cluster using kubeadm</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#節點資訊"><span class="toc-number">2.1.</span> <span class="toc-text">節點資訊</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#事前準備"><span class="toc-number">2.2.</span> <span class="toc-text">事前準備</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Kubernetes-Master-建立"><span class="toc-number">2.3.</span> <span class="toc-text">Kubernetes Master 建立</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Kubernetes-Nodes-建立"><span class="toc-number">2.4.</span> <span class="toc-text">Kubernetes Nodes 建立</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#測試部署結果"><span class="toc-number">2.5.</span> <span class="toc-text">測試部署結果</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#結語"><span class="toc-number">3.</span> <span class="toc-text">結語</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Reference"><span class="toc-number">4.</span> <span class="toc-text">Reference</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2019/09/20/ironman2020/day05/';
+        
+        this.page.identifier = 'ironman2020/day05';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

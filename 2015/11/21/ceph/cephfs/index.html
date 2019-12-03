@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>Ceph FS 基本操作 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Ceph FS 底層的部分同樣是由 RADOS(OSDs + Monitors + MDSs) 提供，在上一層同樣與 librados 溝通，最上層則是有不同的 library 將其轉換成標準的 POSIX 檔案系統供使用。">
+<meta name="keywords" content="Ceph,Storage,File System">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Ceph FS 基本操作">
+<meta property="og:url" content="https://k2r2bai.com/2015/11/21/ceph/cephfs/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Ceph FS 底層的部分同樣是由 RADOS(OSDs + Monitors + MDSs) 提供，在上一層同樣與 librados 溝通，最上層則是有不同的 library 將其轉換成標準的 POSIX 檔案系統供使用。">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/ceph/cephfs.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.377Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Ceph FS 基本操作">
+<meta name="twitter:description" content="Ceph FS 底層的部分同樣是由 RADOS(OSDs + Monitors + MDSs) 提供，在上一層同樣與 librados 溝通，最上層則是有不同的 library 將其轉換成標準的 POSIX 檔案系統供使用。">
+<meta name="twitter:image" content="https://k2r2bai.com/images/ceph/cephfs.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-ceph/cephfs" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            Ceph FS 基本操作
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2015/11/21/ceph/cephfs/">
+            <u><time datetime="2015-11-21T09:08:54.000Z" itemprop="datePublished">2015-11-21</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Ceph/">Ceph</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Ceph/">Ceph</a>, <a class="tag-link" href="/tags/File-System/">File System</a>, <a class="tag-link" href="/tags/Storage/">Storage</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>Ceph FS 底層的部分同樣是由 RADOS(OSDs + Monitors + MDSs) 提供，在上一層同樣與 librados 溝通，最上層則是有不同的 library 將其轉換成標準的 POSIX 檔案系統供使用。</p>
+<p><img src="/images/ceph/cephfs.png" alt></p>
+<a id="more"></a>
+
+<h2 id="建立一個-Ceph-File-System"><a href="#建立一個-Ceph-File-System" class="headerlink" title="建立一個 Ceph File System"></a>建立一個 Ceph File System</h2><p>首先將一個叢集建立完成，並提供 Metadata Server Node 與 Client，建立 Client 可以透過以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ceph-deploy install &lt;myceph-client&gt;</span><br></pre></td></tr></table></figure>
+
+<p>建立 MDS 節點可以透過以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ceph-deploy mds create mds-node</span><br></pre></td></tr></table></figure>
+
+<p>當 Ceph 叢集已經提供了MDS後，可以建立 Data Pool 與 Metadata Pool：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ceph osd pool create cephfs_data 128</span><br><span class="line">$ ceph osd pool create cephfs_metadata 128</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>How to judge PG number</strong>：</p>
+<ul>
+<li>Less than 5 OSDs set pg_num to 128</li>
+<li>Between 5 and 10 OSDs set pg_num to 512</li>
+<li>Between 10 and 50 OSDs set pg_num to 4096</li>
+<li>If you have more than 50 OSDs, you need to understand the tradeoffs and how to calculate the pg_num value by yourself</li>
+</ul>
+</blockquote>
+<p>完成 Pool 建立後，我們將儲存池拿來給 File System 使用，並建立檔案系統：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ceph fs new cephfs cephfs_metadata cephfs_data</span><br></pre></td></tr></table></figure>
+
+<p>取得 Client 驗證金鑰：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cat /etc/ceph/ceph.client.admin.keyring</span><br><span class="line">[client.admin]</span><br><span class="line">	key = AQC/mo9VxqsXDBAAQ/LQtTmR+GTPs65KBsEPrw==</span><br></pre></td></tr></table></figure>
+
+<p>建立，並儲存到檔案<code>admin.secret</code>：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">AQC/mo9VxqsXDBAAQ/LQtTmR+GTPs65KBsEPrw==</span><br></pre></td></tr></table></figure>
+
+<p>檢查 MDS 與 FS：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ceph fs ls</span><br><span class="line">$ ceph mds <span class="built_in">stat</span></span><br></pre></td></tr></table></figure>
+
+<p>建立 Mount 用目錄，並且 Mount File System：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo mkdir /mnt/mycephfs</span><br><span class="line">$ sudo mount -t ceph &#123;ip-address-of-monitor&#125;:6789:/ /mnt/mycephfs/ -o name=admin,secretfile=admin.secret</span><br></pre></td></tr></table></figure>
+
+<p>檢查系統 DF 與 Mount 結果：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo df -l</span><br><span class="line">$ sudo mount</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>使用CEPH檔案系統時，要注意是否安裝了元資料伺服器(Metadata Server)。且請確認CEPH版本為是<code>0.84</code>之後的版本。</p>
+</blockquote>
+<h2 id="Ceph-Filesystem-FUSE-File-System-in-User-Space"><a href="#Ceph-Filesystem-FUSE-File-System-in-User-Space" class="headerlink" title="Ceph Filesystem FUSE (File System in User Space)"></a>Ceph Filesystem FUSE (File System in User Space)</h2><p>首先在MDS節點上安裝ceph-fuse 套件：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get install -y ceph-fuse</span><br></pre></td></tr></table></figure>
+
+<p>完成後，我們就可以Mount起來使用：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo mkdir /mnt/myceph-fuse</span><br><span class="line">$ sudo ceph-fuse -m &#123;ip-address-of-monitor&#125;:6789 /mnt/myceph-fuse</span><br></pre></td></tr></table></figure>
+
+<p>當 Mount 成功後，就可以到該目錄檢查檔案。</p>
+<blockquote>
+<p><strong>FUSE</strong>：使用者空間檔案系統（Filesystem in Userspace，簡稱FUSE）是作業系統中的概念，指完全在使用者態實作的檔案系統。目前Linux通過內核模組對此進行支援。一些檔案系統如ZFS，glusterfs和lustre使用FUSE實作。</p>
+</blockquote>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">Ceph FS 基本操作</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2015-11-21 17:11</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2015/11/24/linux/ubuntu/nfs/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    NFS 簡單安裝與使用
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2015/11/20/ceph/deploy/ceph-deploy/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">使用 ceph-deploy 工具部署 Ceph 叢集</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2015/11/21/ceph/cephfs/" data-id="ck3ns7q4q0006wmpfdcq8kezz" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2015/11/21/ceph/cephfs/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2015/11/21/ceph/cephfs/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#建立一個-Ceph-File-System"><span class="toc-number">1.</span> <span class="toc-text">建立一個 Ceph File System</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Ceph-Filesystem-FUSE-File-System-in-User-Space"><span class="toc-number">2.</span> <span class="toc-text">Ceph Filesystem FUSE (File System in User Space)</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2015/11/21/ceph/cephfs/';
+        
+        this.page.identifier = 'ceph/cephfs';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

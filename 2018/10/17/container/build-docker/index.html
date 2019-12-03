@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>透過原始碼建構 Docker 與 NVIDIA Docker | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="本文說明如何從 GitHub 上的原始碼專案，來建構 Docker 與 NVIDIA Docker Package。由於過程需要修改多個專案，因此開始前需要先了解一下將修改的 GitHub repos：  Moby: 建構 Docker server side 的開源專案，前身為 Docker Engine 專案。 Docker CE: 建構 Docker CE 整套工具的專案，最上層沒下 Lic">
+<meta name="keywords" content="Container,Docker,GPU">
+<meta property="og:type" content="article">
+<meta property="og:title" content="透過原始碼建構 Docker 與 NVIDIA Docker">
+<meta property="og:url" content="https://k2r2bai.com/2018/10/17/container/build-docker/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="本文說明如何從 GitHub 上的原始碼專案，來建構 Docker 與 NVIDIA Docker Package。由於過程需要修改多個專案，因此開始前需要先了解一下將修改的 GitHub repos：  Moby: 建構 Docker server side 的開源專案，前身為 Docker Engine 專案。 Docker CE: 建構 Docker CE 整套工具的專案，最上層沒下 Lic">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://i.imgur.com/fkPmYnE.png">
+<meta property="og:image" content="https://i.imgur.com/M1YLMzD.png">
+<meta property="og:image" content="https://i.imgur.com/qnm8gdC.png">
+<meta property="og:image" content="https://i.imgur.com/Fy9Q92t.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.380Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="透過原始碼建構 Docker 與 NVIDIA Docker">
+<meta name="twitter:description" content="本文說明如何從 GitHub 上的原始碼專案，來建構 Docker 與 NVIDIA Docker Package。由於過程需要修改多個專案，因此開始前需要先了解一下將修改的 GitHub repos：  Moby: 建構 Docker server side 的開源專案，前身為 Docker Engine 專案。 Docker CE: 建構 Docker CE 整套工具的專案，最上層沒下 Lic">
+<meta name="twitter:image" content="https://i.imgur.com/fkPmYnE.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-container/build-docker" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            透過原始碼建構 Docker 與 NVIDIA Docker
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2018/10/17/container/build-docker/">
+            <u><time datetime="2018-10-17T09:08:54.000Z" itemprop="datePublished">2018-10-17</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Container/">Container</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Container/">Container</a>, <a class="tag-link" href="/tags/Docker/">Docker</a>, <a class="tag-link" href="/tags/GPU/">GPU</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>本文說明如何從 GitHub 上的原始碼專案，來建構 Docker 與 NVIDIA Docker Package。由於過程需要修改多個專案，因此開始前需要先了解一下將修改的 GitHub repos：</p>
+<ul>
+<li><a href="https://github.com/moby/moby" target="_blank" rel="noopener">Moby</a>: 建構 Docker server side 的開源專案，前身為 Docker Engine 專案。</li>
+<li><a href="https://github.com/docker/docker-ce" target="_blank" rel="noopener">Docker CE</a>: 建構 Docker CE 整套工具的專案，最上層沒下 License，屬於 Docker 官方產品，因此受到 EULA 限制，但該專案底下的 Engine 與 CLI 都是 Apache v2，故這邊只拿 CLI 來使用。</li>
+<li><a href="https://github.com/NVIDIA/nvidia-docker" target="_blank" rel="noopener">NVIDIA Docker</a>: 用以建構 NVIDIA Docker 工具。</li>
+<li><a href="https://github.com/NVIDIA/nvidia-container-runtime" target="_blank" rel="noopener">NVIDIA Container Runtime</a>: 提供 NVIDIA 的 Container runtime。</li>
+<li><a href="https://github.com/NVIDIA/libnvidia-container" target="_blank" rel="noopener">Libnvidia Container</a>: Container runtime 的底層函式庫。</li>
+</ul>
+<a id="more"></a>
+
+<h2 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h2><p>開始建構前需要確保以下條件已達成：</p>
+<ul>
+<li><code>Host</code>節點需要安裝 Docker 容器引擎：</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> curl -fsSL <span class="string">"https://get.docker.com/"</span> | sh</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Ubuntu"><a href="#Ubuntu" class="headerlink" title="Ubuntu"></a>Ubuntu</h2><h3 id="建構-Docker-Server-與-Client"><a href="#建構-Docker-Server-與-Client" class="headerlink" title="建構 Docker Server 與 Client"></a>建構 Docker Server 與 Client</h3><p>本節將分別透過 Moby 與 Docker CE 建構 Server 與 Client 二進制執行檔，並透過簡單 dpkg 來封裝成 deb packages。 </p>
+<h4 id="Moby"><a href="#Moby" class="headerlink" title="Moby"></a>Moby</h4><p>首先透過 Git 取得 Moby 最新版本專案，並透過 Make tool 編譯：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">cd</span> ~/</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> git <span class="built_in">clone</span> https://github.com/moby/moby</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">cd</span> moby</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> VERSION=1.0.0-terran make binary</span></span><br><span class="line">...</span><br><span class="line">Created binary: bundles/binary-daemon/dockerd-1.0.0-terran</span><br><span class="line">Copying nested executables into bundles/binary-daemon</span><br></pre></td></tr></table></figure>
+
+<p>當完成後，可以在<code>bundles/binary-daemon</code>看到建構的檔案：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> rm -rf bundles/binary-daemon/*.sha256 bundles/binary-daemon/*.md5 bundles/binary-daemon/dockerd</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> mv bundles/binary-daemon/dockerd-1.0.0-terran bundles/binary-daemon/dockerd</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ls bundles/binary-daemon</span></span><br><span class="line">docker-containerd  docker-containerd-ctr  docker-containerd-shim  docker-init  docker-proxy  docker-runc  dockerd</span><br></pre></td></tr></table></figure>
+
+<h4 id="Docker-CE"><a href="#Docker-CE" class="headerlink" title="Docker CE"></a>Docker CE</h4><p>首先透過 Git 取得 Docker CE 最新版本專案：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">cd</span> ~/</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> git <span class="built_in">clone</span> https://github.com/docker/docker-ce.git</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">cd</span> docker-ce</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">echo</span> <span class="string">"1.0.0-terran"</span> &gt; VERSION</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> make static</span></span><br><span class="line">...</span><br><span class="line">make[2]: Leaving directory '/root/docker-ce/components/packaging/static'</span><br><span class="line">make[1]: Leaving directory '/root/docker-ce/components/packaging'</span><br></pre></td></tr></table></figure>
+
+<p>當完成後，可查看<code>components/packaging/static/build/linux/docker</code>底下檔案：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ls components/packaging/static/build/linux/docker</span></span><br><span class="line">docker  docker-containerd  docker-containerd-ctr  docker-containerd-shim  docker-init  docker-proxy  docker-runc  dockerd</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊 dockerd 等檔案如 Moby 一樣，但為了避免被哭哭所以只拿 docker client 來用。</p>
+</blockquote>
+<h4 id="建構-deb-檔案"><a href="#建構-deb-檔案" class="headerlink" title="建構 deb 檔案"></a>建構 deb 檔案</h4><p>首先建立一個資料夾<code>terran-docker</code>，並建立下列目錄結構：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">cd</span> ~/</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> mkdir terran-docker</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> mkdir -p terran-docker/DEBIAN \</span></span><br><span class="line">    terran-docker/lib/systemd/system \</span><br><span class="line">    terran-docker/usr/local/bin</span><br></pre></td></tr></table></figure>
+
+<p>結果如下所示：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> tree terran-docker/</span></span><br><span class="line">terran-docker/</span><br><span class="line">|-- DEBIAN</span><br><span class="line">|-- lib</span><br><span class="line">|   `-- systemd</span><br><span class="line">|       `-- system</span><br><span class="line">`-- usr</span><br><span class="line">    `-- local</span><br><span class="line">        `-- bin</span><br></pre></td></tr></table></figure>
+
+<p>在<code>terran-docker/DEBIAN</code>新增檔案<code>control</code>來描述 deb packages：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">Package: docker</span><br><span class="line">Version: 1.0.0-terran</span><br><span class="line">Architecture: amd64</span><br><span class="line">Description: This is the terran project docker packages.</span><br><span class="line">Maintainer: Kyle Bai &lt;kyle.b@inwinstack.com&gt;</span><br><span class="line">Depends: iptables, init-system-helpers (&gt;= 1.18~), lsb-base (&gt;= 4.1+Debian11ubuntu7), libc6 (&gt;= 2.17), libdevmapper1.02.1 (&gt;= 2:1.02.97), libltdl7 (&gt;= 2.4.6), libseccomp2 (&gt;= 2.3.0), libsystemd0</span><br><span class="line">Recommends: aufs-tools, ca-certificates, cgroupfs-mount | cgroup-lite, git, pigz, xz-utils, apparmor</span><br></pre></td></tr></table></figure>
+
+<p>接著在<code>terran-docker/DEBIAN</code>新增檔案<code>postinst</code>，加入以下內容：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">!/bin/sh</span></span><br><span class="line"><span class="meta">#</span><span class="bash"></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> Preinstall scripts</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> Release May 15, 2018. Kyle Bai &lt;kyle.b@inwinstack.com&gt;</span></span><br><span class="line"></span><br><span class="line">set -e</span><br><span class="line"></span><br><span class="line">case "$1" in</span><br><span class="line">	configure)</span><br><span class="line">		if [ -z "$2" ]; then</span><br><span class="line">			if ! getent group docker &gt; /dev/null; then</span><br><span class="line">				groupadd --system docker</span><br><span class="line">			fi</span><br><span class="line">		fi</span><br><span class="line">        systemctl enable docker.socket</span><br><span class="line">        systemctl enable docker.service</span><br><span class="line">		;;</span><br><span class="line">	abort-*)</span><br><span class="line"><span class="meta">		#</span><span class="bash"> How<span class="string">'d we get here??</span></span></span><br><span class="line">		exit 1</span><br><span class="line">		;;</span><br><span class="line">	*)</span><br><span class="line">		;;</span><br><span class="line">esac</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash">DEBHELPER<span class="comment">#</span></span></span><br></pre></td></tr></table></figure>
+
+<p>修改<code>terran-docker/DEBAIN/postinst</code>腳本權限：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> chmod 755 terran-docker/DEBIAN/postinst</span></span><br></pre></td></tr></table></figure>
+
+<p>在<code>terran-docker/lib/systemd/system</code> 新增檔案<code>docker.socket</code>，並加入以下內容：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">[Unit]</span><br><span class="line">Description=Terran Docker Socket for the API</span><br><span class="line">PartOf=docker.service</span><br><span class="line"></span><br><span class="line">[Socket]</span><br><span class="line">ListenStream=/var/run/docker.sock</span><br><span class="line">SocketMode=0660</span><br><span class="line">SocketUser=root</span><br><span class="line">SocketGroup=docker</span><br><span class="line"></span><br><span class="line">[Install]</span><br><span class="line">WantedBy=sockets.target</span><br></pre></td></tr></table></figure>
+
+<p>在<code>terran-docker/lib/systemd/system</code> 新增檔案<code>docker.service</code>，並加入以下內容：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">[Unit]</span><br><span class="line">Description=Terran Docker Container Engine</span><br><span class="line">After=network-online.target docker.socket firewalld.service</span><br><span class="line">Wants=network-online.target</span><br><span class="line">Requires=docker.socket</span><br><span class="line"></span><br><span class="line">[Service]</span><br><span class="line">Type=notify</span><br><span class="line">ExecStart=/usr/local/bin/dockerd -H fd://</span><br><span class="line">ExecReload=/bin/kill -s HUP $MAINPID</span><br><span class="line">LimitNOFILE=1048576</span><br><span class="line">LimitNPROC=infinity</span><br><span class="line">LimitCORE=infinity</span><br><span class="line">TasksMax=infinity</span><br><span class="line">TimeoutStartSec=0</span><br><span class="line">Delegate=yes</span><br><span class="line">KillMode=process</span><br><span class="line">Restart=on-failure</span><br><span class="line">StartLimitBurst=3</span><br><span class="line">StartLimitInterval=60s</span><br><span class="line"></span><br><span class="line">[Install]</span><br><span class="line">WantedBy=multi-user.target</span><br></pre></td></tr></table></figure>
+
+<p>複製 Binaries 檔案到<code>usr/local/bin</code>，如下指令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> cp -rp moby/bundles/binary-daemon/* terran-docker/usr/<span class="built_in">local</span>/bin</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> cp -rp docker-ce/components/packaging/static/build/linux/docker/docker terran-docker/usr/<span class="built_in">local</span>/bin</span></span><br></pre></td></tr></table></figure>
+
+<p>確認檔案如以下結構：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> tree terran-docker/</span></span><br><span class="line">terran-docker/</span><br><span class="line">|-- DEBIAN</span><br><span class="line">|   |-- control</span><br><span class="line">|   `-- postinst</span><br><span class="line">|-- lib</span><br><span class="line">|   `-- systemd</span><br><span class="line">|       `-- system</span><br><span class="line">|           |-- docker.service</span><br><span class="line">|           `-- docker.socket</span><br><span class="line">`-- usr</span><br><span class="line">    `-- local</span><br><span class="line">        `-- bin</span><br><span class="line">            |-- docker</span><br><span class="line">            |-- docker-containerd</span><br><span class="line">            |-- docker-containerd-ctr</span><br><span class="line">            |-- docker-containerd-shim</span><br><span class="line">            |-- dockerd</span><br><span class="line">            |-- docker-init</span><br><span class="line">            |-- docker-proxy</span><br><span class="line">            `-- docker-runc</span><br></pre></td></tr></table></figure>
+
+<p>完成後透過 dpkg 指令來建置 Debain package 檔：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> dpkg -b terran-docker</span></span><br><span class="line">dpkg-deb: building package 'terran-docker' in 'terran-docker.deb'.</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> ls *.deb</span></span><br><span class="line">terran-docker.deb</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> dpkg -f terran-docker.deb</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="建構-NVIDIA-Docker-工具"><a href="#建構-NVIDIA-Docker-工具" class="headerlink" title="建構 NVIDIA Docker 工具"></a>建構 NVIDIA Docker 工具</h3><p>本步驟將需要分別建構三個專案來才能完整的使用 NVIDIA Docker。</p>
+<h4 id="Libnvidia-Container"><a href="#Libnvidia-Container" class="headerlink" title="Libnvidia Container"></a>Libnvidia Container</h4><p>首先透過 Git 取得 Libnvidia 最新版本專案原始碼，並進行建構：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git <span class="built_in">clone</span> https://github.com/NVIDIA/libnvidia-container.git</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">cd</span> libnvidia-container</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> make docker-ubuntu:16.04 TAG=rc.1</span></span><br></pre></td></tr></table></figure>
+
+<p>完成後，可以查看<code>dist/ubuntu16.04/</code>底下的檔案：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ls dist/ubuntu16.04/</span></span><br><span class="line">libnvidia-container-dev_1.0.0~rc.1-1_amd64.deb    libnvidia-container1_1.0.0~rc.1-1_amd64.deb </span><br><span class="line">libnvidia-container-tools_1.0.0~rc.1-1_amd64.deb  libnvidia-container1-dbg_1.0.0~rc.1-1_amd64.deb</span><br></pre></td></tr></table></figure>
+
+<h4 id="NVIDIA-Container-Runtime"><a href="#NVIDIA-Container-Runtime" class="headerlink" title="NVIDIA Container Runtime"></a>NVIDIA Container Runtime</h4><p>首先透過 Git 取得 Container Runtime 最新版本專案原始碼：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git <span class="built_in">clone</span> https://github.com/NVIDIA/nvidia-container-runtime.git</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">cd</span> nvidia-container-runtime</span></span><br></pre></td></tr></table></figure>
+
+<p>編輯<code>runtime/Makefile</code>修改以下內容：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> line 17</span></span><br><span class="line">ubuntu16.04: $(addsuffix -ubuntu16.04, 1.0.0-terran)</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> line 31</span></span><br><span class="line">1.0.0-terran-%-runc:</span><br><span class="line">    echo "4fc53a81fb7c994640722ac585fa9ca548971871"</span><br></pre></td></tr></table></figure>
+
+<p>接著執行以下指令建構 deb packages 檔案：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> make ubuntu16.04</span></span><br><span class="line">...</span><br><span class="line">dpkg-buildpackage: binary-only upload (no source included)</span><br><span class="line">make[1]: Leaving directory '/root/nvidia-container-runtime/hook'</span><br></pre></td></tr></table></figure>
+
+<p>完成後查看<code>dist/ubuntu16.04/</code>目錄底下檔案：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ls dist/ubuntu16.04/</span></span><br><span class="line">nvidia-container-runtime-hook_1.3.0-1_amd64.deb  nvidia-container-runtime_2.0.0+docker1.0.0-terran-1_amd64.deb</span><br></pre></td></tr></table></figure>
+
+<h4 id="NVIDIA-Docker"><a href="#NVIDIA-Docker" class="headerlink" title="NVIDIA Docker"></a>NVIDIA Docker</h4><p>首先透過 Git 取得 NVIDIA Docker 最新版本專案原始碼：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git <span class="built_in">clone</span> https://github.com/NVIDIA/nvidia-docker.git</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">cd</span> nvidia-docker</span></span><br></pre></td></tr></table></figure>
+
+<p>編輯<code>Makefile</code>，並修改以下內容：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">...</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> line 18</span></span><br><span class="line">ubuntu16.04: $(addsuffix -ubuntu16.04, 1.0.0-terran)</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> line 50</span></span><br><span class="line"><span class="meta">%</span><span class="bash">-ubuntu16.04:</span></span><br><span class="line">    $(DOCKER) build --build-arg VERSION_ID="16.04" \</span><br><span class="line">                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)+docker$*-1" \</span><br><span class="line">                        --build-arg DOCKER_VERSION="docker (= $*)" \</span><br><span class="line">                        --build-arg PKG_VERS="$(VERSION)+docker$*" \</span><br><span class="line">                        --build-arg PKG_REV="$(PKG_REV)" \</span><br><span class="line">                        -t "nvidia/nvidia-docker2/ubuntu:16.04-docker$*" -f Dockerfile.ubuntu .</span><br><span class="line">    $(DOCKER) run --rm -v $(DIST_DIR)/ubuntu16.04:/dist:Z "nvidia/nvidia-docker2/ubuntu:16.04-docker$*"</span><br></pre></td></tr></table></figure>
+
+<p>完成後透過<code>make</code>來建構：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> make ubuntu16.04</span></span><br><span class="line">...</span><br><span class="line">dpkg-source -i --after-build nvidia-docker2-2.0.3+docker1.0.0-terran</span><br><span class="line">dpkg-buildpackage: binary-only upload (no source included)</span><br></pre></td></tr></table></figure>
+
+<p>查看<code>dist/ubuntu16.04/</code>目錄底下檔案：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ls dist/ubuntu16.04/</span></span><br><span class="line">nvidia-docker2_2.0.3+docker1.0.0-terran-1_all.deb</span><br></pre></td></tr></table></figure>
+
+<h4 id="集合-Debain-Packages"><a href="#集合-Debain-Packages" class="headerlink" title="集合 Debain Packages"></a>集合 Debain Packages</h4><p>最後把所有建構的 Debain Packages 複製到一個目錄底下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">cd</span> </span></span><br><span class="line"><span class="meta">$</span><span class="bash"> mkdir nvidia-debs</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> cp -rp libnvidia-container/dist/ubuntu16.04/*.deb nvidia-debs/</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> cp -rp nvidia-container-runtime/dist/ubuntu16.04/*.deb nvidia-debs/</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> cp -rp nvidia-docker/dist/ubuntu16.04/*.deb nvidia-debs/</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ls nvidia-debs</span></span><br><span class="line">libnvidia-container-dev_1.0.0~rc.1-1_amd64.deb    libnvidia-container1_1.0.0~rc.1-1_amd64.deb                    nvidia-docker2_2.0.3+docker1.0.0-terran-1_all.deb</span><br><span class="line">libnvidia-container-tools_1.0.0~rc.1-1_amd64.deb  nvidia-container-runtime-hook_1.3.0-1_amd64.deb</span><br><span class="line">libnvidia-container1-dbg_1.0.0~rc.1-1_amd64.deb   nvidia-container-runtime_2.0.0+docker1.0.0-terran-1_amd64.deb</span><br></pre></td></tr></table></figure>
+
+<h3 id="測試建構檔案"><a href="#測試建構檔案" class="headerlink" title="測試建構檔案"></a>測試建構檔案</h3><p>找一台空的 Ubuntu 16.04 機器，然後複製檔案到該節點。然後先安裝 Terran Docker：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> sudo dpkg -i terran-docker.deb</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若發生缺少 dep 檔案則下以下指令：</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> sudo apt-get install -y -f</span></span><br></pre></td></tr></table></figure>
+
+<p>接著安裝 NVIDIA Docker 與相關套件：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> sudo dpkg -i nvidia-debs/*.deb</span></span><br></pre></td></tr></table></figure>
+
+<p>Docker 測試結果：<br><img src="https://i.imgur.com/fkPmYnE.png" alt></p>
+<p>Kubernetes 測試結果：<br><img src="https://i.imgur.com/M1YLMzD.png" alt></p>
+<h2 id="CentOS"><a href="#CentOS" class="headerlink" title="CentOS"></a>CentOS</h2><h3 id="建構-Docker-Server-與-Client-1"><a href="#建構-Docker-Server-與-Client-1" class="headerlink" title="建構 Docker Server 與 Client"></a>建構 Docker Server 與 Client</h3><p>本節將透過 Docker CE 建構 Server 與 Client 二進制執行檔。 </p>
+<h4 id="Build-from-Docker-CE"><a href="#Build-from-Docker-CE" class="headerlink" title="Build from Docker CE"></a>Build from Docker CE</h4><p>首先透過 Git 取得 Docker CE 最新版本專案：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git <span class="built_in">clone</span> https://github.com/docker/docker-ce.git</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">cd</span> docker-ce/components/packaging/rpm</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> VERSION=18.05.0-terran make centos</span></span><br><span class="line">...</span><br><span class="line">+ /usr/bin/rm -rf /root/rpmbuild/BUILDROOT/docker-ce-18.05.0.terran-3.el7.x86_64</span><br><span class="line">+ exit 0</span><br></pre></td></tr></table></figure>
+
+<p>當完成後，可查看<code>rpmbuild/RPMS/x86_64</code>底下檔案：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ls rpmbuild/RPMS/x86_64</span></span><br><span class="line">docker-ce-18.05.0.terran-3.el7.x86_64.rpm  docker-ce-debuginfo-18.05.0.terran-3.el7.x86_64.rpm</span><br></pre></td></tr></table></figure>
+
+<p>複製到測試用節點：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ssh centos@<span class="variable">$NODE_IP</span> <span class="string">"mkdir ~/docker"</span></span></span><br><span class="line"><span class="meta">$</span><span class="bash"> scp rpmbuild/RPMS/x86_64/*.rpm centos@<span class="variable">$NODE_IP</span>:~/docker</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="建構-NVIDIA-Docker-工具-1"><a href="#建構-NVIDIA-Docker-工具-1" class="headerlink" title="建構 NVIDIA Docker 工具"></a>建構 NVIDIA Docker 工具</h3><p>本步驟將需要分別建構三個專案來才能完整的使用 NVIDIA Docker。</p>
+<h4 id="Libnvidia-Container-1"><a href="#Libnvidia-Container-1" class="headerlink" title="Libnvidia Container"></a>Libnvidia Container</h4><p>首先透過 Git 取得 Libnvidia 最新版本專案原始碼，並進行建構：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git <span class="built_in">clone</span> https://github.com/NVIDIA/libnvidia-container.git</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">cd</span> libnvidia-container</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> make docker-centos:7 TAG=rc.2</span></span><br></pre></td></tr></table></figure>
+
+<p>完成後，可以查看<code>dist/centos7</code>底下的檔案：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ls dist/centos7/</span></span><br><span class="line">libnvidia-container_1.0.0-rc.2_x86_64.tar.xz    libnvidia-container1-debuginfo-1.0.0-0.1.rc.2.x86_64.rpm  libnvidia-container-static-1.0.0-0.1.rc.2.x86_64.rpm</span><br><span class="line">libnvidia-container1-1.0.0-0.1.rc.2.x86_64.rpm  libnvidia-container-devel-1.0.0-0.1.rc.2.x86_64.rpm       libnvidia-container-tools-1.0.0-0.1.rc.2.x86_64.rpm</span><br></pre></td></tr></table></figure>
+
+<p>複製到測試用節點：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ssh centos@<span class="variable">$NODE_IP</span> <span class="string">"mkdir ~/libnvidia-container"</span></span></span><br><span class="line"><span class="meta">$</span><span class="bash"> scp dist/centos7/*.rpm centos@<span class="variable">$NODE_IP</span>:~/libnvidia-container</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="NVIDIA-Container-Runtime-1"><a href="#NVIDIA-Container-Runtime-1" class="headerlink" title="NVIDIA Container Runtime"></a>NVIDIA Container Runtime</h4><p>首先透過 Git 取得 Container Runtime 最新版本專案原始碼：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git <span class="built_in">clone</span> https://github.com/NVIDIA/nvidia-container-runtime.git</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">cd</span> nvidia-container-runtime</span></span><br></pre></td></tr></table></figure>
+
+<p>編輯<code>runtime/Makefile</code>修改以下內容：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> line 25</span></span><br><span class="line">centos7: $(addsuffix -centos7, 18.05.0-terran)</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Add new lines <span class="keyword">in</span> line 31(runc v1.0-rc5)</span></span><br><span class="line">18.05.0-terran-%-runc:</span><br><span class="line">    echo "4fc53a81fb7c994640722ac585fa9ca548971871"</span><br><span class="line">	</span><br><span class="line"><span class="meta">#</span><span class="bash"> Modify line 109</span></span><br><span class="line"><span class="meta">%</span><span class="bash">-terran-centos7:</span></span><br></pre></td></tr></table></figure>
+
+<p>接著執行以下指令建構 rpm packages 檔案：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> make centos7</span></span><br><span class="line">...</span><br><span class="line">+ exit 0</span><br><span class="line">make[1]: Leaving directory '/home/k2r2bai/Desktop/build-docker/nvidia-container-runtime/hook'</span><br></pre></td></tr></table></figure>
+
+<p>完成後查看<code>dist/centos7/</code>目錄底下檔案：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ls dist/centos7/</span></span><br><span class="line">nvidia-container-runtime-2.0.0-1.docker18.05.0.x86_64.rpm  nvidia-container-runtime-hook-1.3.0-1.x86_64.rpm</span><br></pre></td></tr></table></figure>
+
+<p>複製到測試用節點：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ssh centos@<span class="variable">$NODE_IP</span> <span class="string">"mkdir ~/nvidia-container-runtime"</span></span></span><br><span class="line"><span class="meta">$</span><span class="bash"> scp dist/centos7/*.rpm centos@<span class="variable">$NODE_IP</span>:~/nvidia-container-runtime</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="NVIDIA-Docker-1"><a href="#NVIDIA-Docker-1" class="headerlink" title="NVIDIA Docker"></a>NVIDIA Docker</h4><p>首先透過 Git 取得 NVIDIA Docker 最新版本專案原始碼：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git <span class="built_in">clone</span> https://github.com/NVIDIA/nvidia-docker.git</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">cd</span> nvidia-docker</span></span><br></pre></td></tr></table></figure>
+
+<p>編輯<code>Makefile</code>，並修改以下內容：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> line 26</span></span><br><span class="line">centos7: $(addsuffix -centos7, 18.05.0.terran)</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Modify line 122</span></span><br><span class="line"><span class="meta">%</span><span class="bash">.terran-centos7:</span></span><br><span class="line">        $(DOCKER) build --build-arg VERSION_ID="7" \</span><br><span class="line">                        --build-arg RUNTIME_VERSION="$(RUNTIME_VERSION)-1.docker$*" \</span><br><span class="line">                        --build-arg DOCKER_VERSION="docker-ce = $*.terran" \</span><br><span class="line">                        --build-arg PKG_VERS="$(VERSION)" \</span><br><span class="line">                        --build-arg PKG_REV="$(PKG_REV).docker$*.terran" \</span><br><span class="line">                        -t "nvidia/nvidia-docker2/centos:7-docker$*.terran" -f Dockerfile.centos .</span><br><span class="line">        $(DOCKER) run --rm -v $(DIST_DIR)/centos7:/dist:Z "nvidia/nvidia-docker2/centos:7-docker$*.terran"</span><br></pre></td></tr></table></figure>
+
+<p>完成後透過<code>make</code>來建構：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> make centos7</span></span><br><span class="line">...</span><br><span class="line">+ cd /tmp/nvidia-container-runtime-2.0.3/BUILD</span><br><span class="line">+ exit 0</span><br></pre></td></tr></table></figure>
+
+<p>查看<code>dist/centos7/</code>目錄底下檔案：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ls dist/centos7</span></span><br><span class="line">nvidia-docker2-2.0.3-1.docker18.05.0.terran.noarch.rpm</span><br></pre></td></tr></table></figure>
+
+<p>複製到測試用節點：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ssh centos@<span class="variable">$NODE_IP</span> <span class="string">"mkdir ~/nvidia-docker"</span></span></span><br><span class="line"><span class="meta">$</span><span class="bash"> scp dist/centos7/*.rpm centos@<span class="variable">$NODE_IP</span>:~/nvidia-docker</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="測試建構檔案-1"><a href="#測試建構檔案-1" class="headerlink" title="測試建構檔案"></a>測試建構檔案</h3><p>首先在 CentOS 7 測試機器上安裝 NVIDIA Driver 與一些套件：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">echo</span> -e <span class="string">"blacklist nouveau\noptions nouveau modeset=0"</span> | sudo tee /etc/modprobe.d/blacklist-nouveau.conf</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo yum -y install gcc kernel-devel <span class="string">"kernel-devel-uname-r == <span class="variable">$(uname -r)</span>"</span> dkms</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo rpm -Uvh http://www.elrepo.org/elrepo-release-7.0-3.el7.elrepo.noarch.rpm</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo yum -y install kmod-nvidia libtool-ltdl container-selinux</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo reboot</span></span><br></pre></td></tr></table></figure>
+
+<p>重新啟動後，該節點的 Home 目錄必須存在以下檔案:</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> tree ~/</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://i.imgur.com/qnm8gdC.png" alt></p>
+<p>確認沒問題後，透過 RPM 來進行安裝：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> sudo rpm -ivh docker/*.rpm</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo rpm -ivh libnvidia-container/*.rpm</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo rpm -ivh nvidia-container-runtime/*.rpm</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo rpm -ivh nvidia-docker/*.rpm</span></span><br></pre></td></tr></table></figure>
+
+<p>啟動 Dockerd，並設定開啟啟動 systemd：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> sudo systemctl <span class="built_in">enable</span> docker &amp;&amp; sudo systemctl start docker</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo docker version</span></span><br><span class="line">Client:</span><br><span class="line"> Version:      18.05.0-terran</span><br><span class="line"> API version:  1.38</span><br><span class="line"> Go version:   go1.10.3</span><br><span class="line"> Git commit:   ccbd518</span><br><span class="line"> Built:        Wed Jun 13 03:19:43 2018</span><br><span class="line"> OS/Arch:      linux/amd64</span><br><span class="line"> Experimental: false</span><br><span class="line"> Orchestrator: swarm</span><br><span class="line"></span><br><span class="line">Server:</span><br><span class="line"> Engine:</span><br><span class="line">  Version:      18.05.0-terran</span><br><span class="line">  API version:  1.38 (minimum version 1.12)</span><br><span class="line">  Go version:   go1.10.3</span><br><span class="line">  Git commit:   ccbd518</span><br><span class="line">  Built:        Wed Jun 13 03:20:54 2018</span><br><span class="line">  OS/Arch:      linux/amd64</span><br><span class="line">  Experimental: false</span><br></pre></td></tr></table></figure>
+
+<p>測試 NVIDIA Docker:</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> sudo docker run --runtime=nvidia --rm nvidia/cuda nvidia-smi</span></span><br><span class="line">Wed Jun 13 06:28:25 2018</span><br><span class="line">+-----------------------------------------------------------------------------+</span><br><span class="line">| NVIDIA-SMI 390.67                 Driver Version: 390.67                    |</span><br><span class="line">|-------------------------------+----------------------+----------------------+</span><br><span class="line">| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |</span><br><span class="line">| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |</span><br><span class="line">|===============================+======================+======================|</span><br><span class="line">|   0  GeForce GTX 106...  Off  | 00000000:01:00.0 Off |                  N/A |</span><br><span class="line">|  0%   34C    P5    26W / 120W |      0MiB /  3019MiB |      2%      Default |</span><br><span class="line">+-------------------------------+----------------------+----------------------+</span><br><span class="line"></span><br><span class="line">+-----------------------------------------------------------------------------+</span><br><span class="line">| Processes:                                                       GPU Memory |</span><br><span class="line">|  GPU       PID   Type   Process name                             Usage      |</span><br><span class="line">|=============================================================================|</span><br><span class="line">|  No running processes found                                                 |</span><br><span class="line">+-----------------------------------------------------------------------------+</span><br></pre></td></tr></table></figure>
+
+<p>Kubernetes v1.11 測試結果：</p>
+<p><img src="https://i.imgur.com/Fy9Q92t.png" alt></p>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">透過原始碼建構 Docker 與 NVIDIA Docker</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2018-10-17 17:10</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2019/01/22/kubernetes/deploy/minikube-multi-node/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    利用 Minikube 快速建立測試用多節點 Kubernetes 叢集
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2018/09/12/kubernetes/deploy/kube-ansible/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">開發 Ansible Playbooks 部署 Kubernetes v1.11.x HA 叢集</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2018/10/17/container/build-docker/" data-id="ck3ns7q52000lwmpfcwbt3mbu" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2018/10/17/container/build-docker/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2018/10/17/container/build-docker/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#事前準備"><span class="toc-number">1.</span> <span class="toc-text">事前準備</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Ubuntu"><span class="toc-number">2.</span> <span class="toc-text">Ubuntu</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#建構-Docker-Server-與-Client"><span class="toc-number">2.1.</span> <span class="toc-text">建構 Docker Server 與 Client</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#建構-NVIDIA-Docker-工具"><span class="toc-number">2.2.</span> <span class="toc-text">建構 NVIDIA Docker 工具</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#測試建構檔案"><span class="toc-number">2.3.</span> <span class="toc-text">測試建構檔案</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CentOS"><span class="toc-number">3.</span> <span class="toc-text">CentOS</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#建構-Docker-Server-與-Client-1"><span class="toc-number">3.1.</span> <span class="toc-text">建構 Docker Server 與 Client</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#建構-NVIDIA-Docker-工具-1"><span class="toc-number">3.2.</span> <span class="toc-text">建構 NVIDIA Docker 工具</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#測試建構檔案-1"><span class="toc-number">3.3.</span> <span class="toc-text">測試建構檔案</span></a></li></ol></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2018/10/17/container/build-docker/';
+        
+        this.page.identifier = 'container/build-docker';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

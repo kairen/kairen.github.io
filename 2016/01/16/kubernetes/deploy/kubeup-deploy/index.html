@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>kube-up 腳本部署 Kubernetes 叢集(Deprecated) | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="本文章已被棄用，請不要參考。(This post is being deprecated. Don’t refer it.)   Kubernetes 提供了許多雲端平台與作業系統的安裝方式，本篇將使用官方腳本kube-up.sh來部署 Kubernetes 到 Ubuntu 14.04 系統上。其他更多平台的部署可以參考 Creating a Kubernetes Cluster。 本環境安裝">
+<meta name="keywords" content="Kubernetes,Docker,Ubuntu">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kube-up 腳本部署 Kubernetes 叢集(Deprecated)">
+<meta property="og:url" content="https://k2r2bai.com/2016/01/16/kubernetes/deploy/kubeup-deploy/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="本文章已被棄用，請不要參考。(This post is being deprecated. Don’t refer it.)   Kubernetes 提供了許多雲端平台與作業系統的安裝方式，本篇將使用官方腳本kube-up.sh來部署 Kubernetes 到 Ubuntu 14.04 系統上。其他更多平台的部署可以參考 Creating a Kubernetes Cluster。 本環境安裝">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.393Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="kube-up 腳本部署 Kubernetes 叢集(Deprecated)">
+<meta name="twitter:description" content="本文章已被棄用，請不要參考。(This post is being deprecated. Don’t refer it.)   Kubernetes 提供了許多雲端平台與作業系統的安裝方式，本篇將使用官方腳本kube-up.sh來部署 Kubernetes 到 Ubuntu 14.04 系統上。其他更多平台的部署可以參考 Creating a Kubernetes Cluster。 本環境安裝">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-kubernetes/deploy/kubeup-deploy" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            kube-up 腳本部署 Kubernetes 叢集(Deprecated)
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2016/01/16/kubernetes/deploy/kubeup-deploy/">
+            <u><time datetime="2016-01-16T09:08:54.000Z" itemprop="datePublished">2016-01-16</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Docker/">Docker</a>, <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>, <a class="tag-link" href="/tags/Ubuntu/">Ubuntu</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <hr>
+<blockquote class="colorquote danger"><p>本文章已被棄用，請不要參考。<br>(This post is being deprecated. Don’t refer it.)</p>
+</blockquote>
+
+<p>Kubernetes 提供了許多雲端平台與作業系統的安裝方式，本篇將使用官方腳本<code>kube-up.sh</code>來部署 Kubernetes 到 Ubuntu 14.04 系統上。其他更多平台的部署可以參考 <a href="https://kubernetes.io/docs/getting-started-guides/" target="_blank" rel="noopener">Creating a Kubernetes Cluster</a>。</p>
+<p>本環境安裝資訊：</p>
+<ul>
+<li>Kubernetes v1.5.4</li>
+<li>Etcd v2.3.0</li>
+<li>Flannel v0.5.5</li>
+<li>Docker v1.13.1</li>
+</ul>
+<a id="more"></a>
+
+<h2 id="節點資訊"><a href="#節點資訊" class="headerlink" title="節點資訊"></a>節點資訊</h2><p>本次安裝作業系統採用<code>Ubuntu 14.04 Server</code>，測試環境為 OpenStack VM 與實體主機：</p>
+<table>
+<thead>
+<tr>
+<th>IP Address</th>
+<th>Role</th>
+<th>CPU</th>
+<th>Memory</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>172.16.35.12</td>
+<td>master1</td>
+<td>2</td>
+<td>4G</td>
+</tr>
+<tr>
+<td>172.16.35.10</td>
+<td>node1</td>
+<td>2</td>
+<td>4G</td>
+</tr>
+<tr>
+<td>172.16.35.11</td>
+<td>node2</td>
+<td>2</td>
+<td>4G</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>這邊 master 為主要控制節點，node 為應用程式工作節點。</p>
+</blockquote>
+<h2 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h2><p>安裝前需要確認叢集滿足以下幾點：</p>
+<ul>
+<li>目前官方只測試過 <code>Ubuntu 14.04</code>，官方說法是 15.x 也沒問題，但 16.04 上我測試無法自動完成，要自己補上各種服務的 Systemd 腳本。</li>
+<li>部署節點可以透過 SSH 與其他節點溝通，並且是無密碼登入，以及有 Sudoer 權限。</li>
+<li>所有節點需要安裝<code>Docker</code>或<code>rtk</code>引擎。安裝方式為以下：</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl -fsSL <span class="string">"https://get.docker.com/"</span> | sh</span><br><span class="line">$ sudo iptables -P FORWARD ACCEPT</span><br></pre></td></tr></table></figure>
+
+<h2 id="部署-Kubernetes-叢集"><a href="#部署-Kubernetes-叢集" class="headerlink" title="部署 Kubernetes 叢集"></a>部署 Kubernetes 叢集</h2><p>首先下載官方 Release 的原始碼程式：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl -sSL <span class="string">"https://github.com/kubernetes/kubernetes/archive/v1.5.4.tar.gz"</span> | tar zx</span><br><span class="line">$ mv kubernetes-1.5.4 kubernetes</span><br></pre></td></tr></table></figure>
+
+<p>接著編輯<code>kubernetes/cluster/ubuntu/config-default.sh</code>設定檔，修改以下內容：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="built_in">export</span> nodes=<span class="variable">$&#123;nodes:-"ubuntu@172.16.35.12 ubuntu@172.16.35.10 ubuntu@172.16.35.11"&#125;</span></span><br><span class="line"><span class="built_in">export</span> role=<span class="string">"ai i i"</span></span><br><span class="line"><span class="built_in">export</span> NUM_NODES=<span class="variable">$&#123;NUM_NODES:-3&#125;</span></span><br><span class="line"><span class="built_in">export</span> SERVICE_CLUSTER_IP_RANGE=192.168.3.0/24</span><br><span class="line"><span class="built_in">export</span> FLANNEL_NET=172.16.0.0/16</span><br><span class="line">SERVICE_NODE_PORT_RANGE=<span class="variable">$&#123;SERVICE_NODE_PORT_RANGE:-"30000-32767"&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>設定要部署的 Kubernetes 版本環境參數：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="built_in">export</span> KUBE_VERSION=1.5.4</span><br><span class="line"><span class="built_in">export</span> FLANNEL_VERSION=0.5.5</span><br><span class="line"><span class="built_in">export</span> ETCD_VERSION=2.3.0</span><br><span class="line"><span class="built_in">export</span> KUBERNETES_PROVIDER=ubuntu</span><br></pre></td></tr></table></figure>
+
+<p>然後進入到<code>kubernetes/cluster</code>目錄，並執行以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo sed -i <span class="string">'s/verify-kube-binaries//g'</span> kube-up.sh</span><br><span class="line">$ ./kube-up.sh</span><br><span class="line">...</span><br><span class="line">Cluster validation succeeded</span><br><span class="line">Done, listing cluster services:</span><br><span class="line"></span><br><span class="line">Kubernetes master is running at http://172.16.35.12:8080</span><br></pre></td></tr></table></figure>
+
+<p>當看到上述資訊即表示成功部署，這時候進入到<code>cluster/ubuntu/binaries</code>目錄複製 kubectl 工具：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo cp kubectl /usr/<span class="built_in">local</span>/bin/</span><br></pre></td></tr></table></figure>
+
+<p>最後透過 kubectl 工具來查看叢集節點是否成功加入：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl get nodes</span><br><span class="line"></span><br><span class="line">NAME           STATUS    AGE</span><br><span class="line">172.16.35.12   Ready     2m</span><br><span class="line">172.16.35.10   Ready     2m</span><br><span class="line">172.16.35.11   Ready     2m</span><br></pre></td></tr></table></figure>
+
+<h2 id="Option-部署-Add-ons"><a href="#Option-部署-Add-ons" class="headerlink" title="(Option)部署 Add-ons"></a>(Option)部署 Add-ons</h2><p>若要部署 kubernetes Dashboard 與 DNS 等額外服務的話，要修改<code>kubernetes/cluster/ubuntu/config-default.sh</code>設定檔，修改一下內容：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">ENABLE_CLUSTER_MONITORING=<span class="string">"<span class="variable">$&#123;KUBE_ENABLE_CLUSTER_MONITORING:-true&#125;</span>"</span></span><br><span class="line">ENABLE_CLUSTER_UI=<span class="string">"<span class="variable">$&#123;KUBE_ENABLE_CLUSTER_UI:-true&#125;</span>"</span></span><br><span class="line">ENABLE_CLUSTER_DNS=<span class="string">"<span class="variable">$&#123;KUBE_ENABLE_CLUSTER_DNS:-true&#125;</span>"</span></span><br><span class="line">DNS_SERVER_IP=<span class="variable">$&#123;DNS_SERVER_IP:-"192.168.3.10"&#125;</span></span><br><span class="line">DNS_DOMAIN=<span class="variable">$&#123;DNS_DOMAIN:-"cluster.local"&#125;</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>通常基本款大概為 Dashboard、DNS、Monitoring 與 Logging，。</p>
+</blockquote>
+<p>修改完成後，進入到<code>kubernetes/cluster/ubuntu</code>目錄，並執行以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ KUBERNETES_PROVIDER=ubuntu ./deployAddons.sh</span><br></pre></td></tr></table></figure>
+
+<p>透過 kubectl 查看資訊，這邊服務屬於系統的，所以預設會被分到<code>kube-system</code>命名空間：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl get pods --namespace=kube-system</span><br></pre></td></tr></table></figure>
+
+<p>最後就可以透過瀏覽器查看 <a href="http://172.16.35.12:8080/ui" target="_blank" rel="noopener">Dashboard</a>。</p>
+<h2 id="建立-Nginx-應用程式"><a href="#建立-Nginx-應用程式" class="headerlink" title="建立 Nginx 應用程式"></a>建立 Nginx 應用程式</h2><p>Kubernetes 可以選擇使用指令直接建立應用程式與服務，或者撰寫 YAML 與 JSON 檔案來描述部署應用程式的配置，以下將使用兩種方式建立一個簡單的 Nginx 服務。</p>
+<h3 id="利用-ad-hoc-指令建立"><a href="#利用-ad-hoc-指令建立" class="headerlink" title="利用 ad-hoc 指令建立"></a>利用 ad-hoc 指令建立</h3><p>kubectl 提供了 run 指令來快速建立應用程式部署，如下建立 Nginx 應用程式：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl run nginx --image=nginx</span><br><span class="line">$ kubectl get pods -o wide</span><br><span class="line"></span><br><span class="line">NAME                    READY     STATUS    RESTARTS   AGE       IP            NODE</span><br><span class="line">nginx-701339712-w5wlq   1/1       Running   0          26m       172.16.86.2   172.16.35.11</span><br></pre></td></tr></table></figure>
+
+<p>而當應用程式(deploy)被建立後，我們還需要透過 Kubernetes Service 來提供給外部網路存取應用程式，如下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl expose deploy nginx --port 80 --<span class="built_in">type</span> NodePort</span><br><span class="line">$ kubectl get svc -o wide</span><br></pre></td></tr></table></figure>
+
+<p>完成後要接著建立 svc（Service）來提供外部網路存取應用程式，使用以下指令建立：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl expose rc nginx --port=80 --<span class="built_in">type</span>=NodePort</span><br><span class="line">$ kubectl get svc</span><br><span class="line"></span><br><span class="line">NAME         CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE</span><br><span class="line">kubernetes   192.168.3.1     &lt;none&gt;        443/TCP        37m</span><br><span class="line">nginx        192.168.3.199   &lt;nodes&gt;       80:31764/TCP   30m</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊採用<code>NodePort</code>，即表示任何節點 IP 位址的<code>31764</code> Port 都會 Forward 到 Nginx container 的<code>80</code> Port。</p>
+</blockquote>
+<p>若想刪除應用程式與服務的話，可以透過以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl delete deploy nginx</span><br><span class="line">$ kubectl delete svc nginx</span><br></pre></td></tr></table></figure>
+
+<h3 id="撰寫-YAML-檔案建立"><a href="#撰寫-YAML-檔案建立" class="headerlink" title="撰寫 YAML 檔案建立"></a>撰寫 YAML 檔案建立</h3><p>Kubernetes 支援了 JSON 與 YAML 來描述要部署的應用程式資訊，這邊撰寫<code>nginx-dp.yaml</code>來部署 Nginx 應用：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">apiVersion: extensions/v1beta1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: nginx</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: nginx</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: nginx</span><br><span class="line">        image: nginx:1.7.9</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 80</span><br></pre></td></tr></table></figure>
+
+<p>接著建立 Service 來提供存取服務，這邊撰寫<code>nginx-svc.yaml</code>來建立服務：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: nginx-service</span><br><span class="line">spec:</span><br><span class="line">  type: NodePort</span><br><span class="line">  ports:</span><br><span class="line">  - port: 80</span><br><span class="line">    targetPort: 80</span><br><span class="line">    protocol: TCP</span><br><span class="line">    nodePort: 30000</span><br><span class="line">  selector:</span><br><span class="line">    app: nginx</span><br></pre></td></tr></table></figure>
+
+<p>然後透過 kubectl 指令來指定檔案建立：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl create -f nginx-dp.yaml</span><br><span class="line">deployment <span class="string">"nginx"</span> created</span><br><span class="line"></span><br><span class="line">$ kubectl create -f nginx-svc.yaml</span><br><span class="line">service <span class="string">"nginx-service"</span> created</span><br></pre></td></tr></table></figure>
+
+<p>完成後，可以查看一下資訊：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl get svc,pods,rc -o wide</span><br><span class="line"></span><br><span class="line">NAME                CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE       SELECTOR</span><br><span class="line">svc/kubernetes      192.168.3.1     &lt;none&gt;        443/TCP        51m       &lt;none&gt;</span><br><span class="line">svc/nginx-service   192.168.3.155   &lt;nodes&gt;       80:30000/TCP   1m        app=nginx</span><br><span class="line"></span><br><span class="line">NAME                        READY     STATUS    RESTARTS   AGE       IP             NODE</span><br><span class="line">po/nginx-4087004473-0wrbs   1/1       Running   0          2m        172.16.101.2   172.16.35.10</span><br></pre></td></tr></table></figure>
+
+<p>最後要刪除的話，直接將 create 改成使用<code>delete</code>即可：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl delete -f nginx-dp.yaml</span><br><span class="line">$ kubectl delete -f nginx-svc.yaml</span><br></pre></td></tr></table></figure>
+
+<h2 id="其他-Kubernetes-網路技術"><a href="#其他-Kubernetes-網路技術" class="headerlink" title="其他 Kubernetes 網路技術"></a>其他 Kubernetes 網路技術</h2><p>Kubernetes 支援多種網路整合，若 Flannel 用不爽可以改以下幾種：</p>
+<ul>
+<li><a href="https://github.com/kubernetes/kubernetes/blob/master/docs/admin/ovs-networking.md" target="_blank" rel="noopener">OpenVSwitch with GRE/VxLAN</a></li>
+<li><a href="http://blog.oddbit.com/2014/08/11/four-ways-to-connect-a-docker/" target="_blank" rel="noopener">Linux Bridge L2 networks</a></li>
+<li><a href="https://github.com/zettio/weave" target="_blank" rel="noopener">Weave</a></li>
+<li><a href="https://github.com/Metaswitch/calico" target="_blank" rel="noopener">Calico</a>(使用 BGP Routing)</li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">kube-up 腳本部署 Kubernetes 叢集(Deprecated)</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2016-1-16 17:01</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2016/02/11/devops/monitoring/graphite/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    利用 Graphite 監控系統資料
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2016/01/14/kubernetes/deploy/docker-multi/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">hyperkube 建立多節點 Kubernetes</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2016/01/16/kubernetes/deploy/kubeup-deploy/" data-id="ck3ns7qbc00hjwmpf08ikuop2" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2016/01/16/kubernetes/deploy/kubeup-deploy/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2016/01/16/kubernetes/deploy/kubeup-deploy/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#節點資訊"><span class="toc-number">1.</span> <span class="toc-text">節點資訊</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#事前準備"><span class="toc-number">2.</span> <span class="toc-text">事前準備</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#部署-Kubernetes-叢集"><span class="toc-number">3.</span> <span class="toc-text">部署 Kubernetes 叢集</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Option-部署-Add-ons"><span class="toc-number">4.</span> <span class="toc-text">(Option)部署 Add-ons</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#建立-Nginx-應用程式"><span class="toc-number">5.</span> <span class="toc-text">建立 Nginx 應用程式</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#利用-ad-hoc-指令建立"><span class="toc-number">5.1.</span> <span class="toc-text">利用 ad-hoc 指令建立</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#撰寫-YAML-檔案建立"><span class="toc-number">5.2.</span> <span class="toc-text">撰寫 YAML 檔案建立</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#其他-Kubernetes-網路技術"><span class="toc-number">6.</span> <span class="toc-text">其他 Kubernetes 網路技術</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2016/01/16/kubernetes/deploy/kubeup-deploy/';
+        
+        this.page.identifier = 'kubernetes/deploy/kubeup-deploy';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>探討 Kubernetes 自定義控制器是如何運作 Part2 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="前言在前幾天文章中，認識了開發 Kubernetes 自定義控制器的知識與概念，如: API 函式庫、client-go 函式庫、CRD 與自定義控制器本身等等。但講了這麼多，卻都沒有實際執行一個自定義控制器，因此今天將以 Kubernetes 社區提供的 sample-controller 範例為主，來說明如何運行與實作。">
+<meta name="keywords" content="Kubernetes">
+<meta property="og:type" content="article">
+<meta property="og:title" content="探討 Kubernetes 自定義控制器是如何運作 Part2">
+<meta property="og:url" content="https://k2r2bai.com/2019/10/09/ironman2020/day24/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="前言在前幾天文章中，認識了開發 Kubernetes 自定義控制器的知識與概念，如: API 函式庫、client-go 函式庫、CRD 與自定義控制器本身等等。但講了這麼多，卻都沒有實際執行一個自定義控制器，因此今天將以 Kubernetes 社區提供的 sample-controller 範例為主，來說明如何運行與實作。">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://i.imgur.com/J9lmgVa.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.390Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="探討 Kubernetes 自定義控制器是如何運作 Part2">
+<meta name="twitter:description" content="前言在前幾天文章中，認識了開發 Kubernetes 自定義控制器的知識與概念，如: API 函式庫、client-go 函式庫、CRD 與自定義控制器本身等等。但講了這麼多，卻都沒有實際執行一個自定義控制器，因此今天將以 Kubernetes 社區提供的 sample-controller 範例為主，來說明如何運行與實作。">
+<meta name="twitter:image" content="https://i.imgur.com/J9lmgVa.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-ironman2020/day24" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            探討 Kubernetes 自定義控制器是如何運作 Part2
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2019/10/09/ironman2020/day24/">
+            <u><time datetime="2019-10-08T16:00:00.000Z" itemprop="datePublished">2019-10-09</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在前幾天文章中，認識了開發 Kubernetes 自定義控制器的知識與概念，如: API 函式庫、client-go 函式庫、CRD 與自定義控制器本身等等。但講了這麼多，卻都沒有實際執行一個自定義控制器，因此今天將以 Kubernetes 社區提供的 <a href="https://github.com/kubernetes/sample-controller" target="_blank" rel="noopener">sample-controller</a> 範例為主，來說明如何運行與實作。</p>
+<a id="more"></a>
+<h2 id="Sample-Controller-架構與運作流程"><a href="#Sample-Controller-架構與運作流程" class="headerlink" title="Sample Controller 架構與運作流程"></a>Sample Controller 架構與運作流程</h2><p>Sample Controller 是 Kubernetes 官方提供的範例，該範例實現了針對<code>Foo</code>自定義資源的控制器，當建立自定義資源 Foo 物件時，該控制器將使用 nginx:latest 容器映像檔與指定的副本數建立 Deployment，換句話說，控制器會確保每個 Foo 資源都有一個對應的 Deployment，其中 Foo 資源的<code>.spec</code>內容會與 Deployment 關聯，控制器會在協調循環中依據 Foo 資源的<code>.spec</code>內容處理預期的結果。另外該範例也提供了 CRD 的一些功能展示，如: Validation 與 Sub Resources。</p>
+<p><img src="https://i.imgur.com/J9lmgVa.png" alt></p>
+<p>這個控制器流程大致如下:</p>
+<ol>
+<li>Sample Controller 使用 <a href="https://github.com/kubernetes/client-go/" target="_blank" rel="noopener">client-go</a> 與 <a href="https://github.com/kubernetes/sample-controller/tree/master/pkg/generated" target="_blank" rel="noopener">Foo clientset</a> 函式庫來與 Kubernetes API Server 溝通，並建立一個控制循環(Control Loop)。</li>
+<li>在控制循環中，Sample Controller 使用 <a href="https://github.com/kubernetes/client-go/blob/master/tools/cache/reflector.go" target="_blank" rel="noopener">Reflector</a>(實現這功能的是<code>ListAndWatch()</code>) 監視 Kubernetes API 中的 Foo 與 Deployment 資源類型(Kind)，以確保兩者持續同步。</li>
+<li>當 Reflector 透過 Watch API，收到有關新<code>Foo</code>與<code>Deployment</code>資源實例存在的事件通知時，它將使用 List API 取得新建立的 API 資源物件，並將其放入<code>watchHandler</code>函式內的 DeltaFIFO 佇列中。</li>
+<li>接著 Sample Controller 使用 <a href="https://github.com/kubernetes/client-go/blob/master/tools/cache/controller.go" target="_blank" rel="noopener">SharedInformer</a>(<code>DeploymentInformer</code> 與 <code>FooInformer</code>) 從 DeltaFIFO 佇列中取出 API 資源物件。這邊，SharedInformer 提供了<code>AddEventHandler()</code>函式，用於註冊事件處理程式，並將 API 資源物件新增到 Workqueue 中。這邊為 Foo 與 Deployment 傳遞了不同的資源處理函式(<a href="https://github.com/kubernetes/sample-controller/blob/master/controller.go#L116-L141" target="_blank" rel="noopener">L116-L141</a>)，以處理 API 資源在<code>add</code>、<code>update</code>與<code>delete</code>的事件。如果需要進行某些處理時，這些函式會負責將 Foo 資源物件的鍵(Key)排入 Workqueue。</li>
+</ol>
+<blockquote>
+<ul>
+<li>在本範例中，Workqueue 採用<code>RateLimitQueue</code>來進行 API 物件的處理速率限制。</li>
+<li>當事件函式被呼叫時，控制器透過<code>MetaNamespaceKeyFunc()</code>函式，將當前處理的 API 資源物件轉換為<code>namespace/name</code>或<code>name</code>(如果沒有 Namespace 的話)的格式作為 Key，然後將這些 Key 添加到 Workqueue。或者透過<code>DeletionHandlingMetaNamespaceKeyFunc()</code>來處理刪除事件的 API 資源物件。</li>
+</ul>
+</blockquote>
+<ol start="5">
+<li>這時，Sample Controller 會運行幾個 Worker(完成這個操作的函式是<code>runWorker()</code>)，它們會透過不斷的呼叫<code>processNextWorkItem()</code>來消耗 Workqueue 中要被處理的 API 物件。這時會進入<code>syncHandler()</code>以協調 Foo 當前狀態至預期狀態。而在<code>syncHandler()</code>中，控制器會將 Key 恢復成 Namespace 與 Name，並用<code>Lister</code>來取得 API 物件內容。</li>
+</ol>
+<blockquote>
+<p>在<code>syncHandler()</code>中，部分功能會使用 <a href="https://github.com/kubernetes/client-go/blob/master/tools/cache/index.go" target="_blank" rel="noopener">Indexer</a> 引用或者是一個 Listing 封裝器(Wrapper)來檢索對應 Key 的 API 資源物件內容。</p>
+</blockquote>
+<ol start="6">
+<li>在呼叫<code>syncHandler()</code>時，控制器會使用指定名稱(Foo 的<code>.spec.deploymentName</code>)與副本數(Foo 的<code>.spec.replicas</code>)建立一個 Deployment，並同步 Foo 資源的<code>.status</code>狀態。</li>
+</ol>
+<blockquote>
+<p>在這些過程中，控制器會建立一個 EventRecorder 來紀錄事件的變化過程到 Kubernetes API 中。</p>
+</blockquote>
+<p>而 Sample Controller 整個目錄結構用意如下所示:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">sample-controller</span><br><span class="line">├── Godeps </span><br><span class="line">├── artifacts</span><br><span class="line">│   └── examples <span class="comment"># 存放 Foo 範例，以及 CRD 檔案。</span></span><br><span class="line">├── docs</span><br><span class="line">│   └── images</span><br><span class="line">├── hack <span class="comment"># 存放</span></span><br><span class="line">└── pkg</span><br><span class="line">    ├── apis</span><br><span class="line">    │   └── samplecontroller</span><br><span class="line">    │       └── v1alpha1 <span class="comment"># 自定義資源 Foo 資料結構，會用於 code-generator 產生 client libraries。</span></span><br><span class="line">    ├── generated <span class="comment"># 透過 code-generator 產生的 client libraries。用於跟 API Server 溝通操作 Foo 資源。</span></span><br><span class="line">    │   ├── clientset</span><br><span class="line">    │   │   └── versioned</span><br><span class="line">    │   │       ├── fake</span><br><span class="line">    │   │       ├── scheme</span><br><span class="line">    │   │       └── typed</span><br><span class="line">    │   │           └── samplecontroller</span><br><span class="line">    │   │               └── v1alpha1</span><br><span class="line">    │   │                   └── fake</span><br><span class="line">    │   ├── informers </span><br><span class="line">    │   │   └── externalversions</span><br><span class="line">    │   │       ├── internalinterfaces</span><br><span class="line">    │   │       └── samplecontroller</span><br><span class="line">    │   │           └── v1alpha1</span><br><span class="line">    │   └── listers</span><br><span class="line">    │       └── samplecontroller</span><br><span class="line">    │           └── v1alpha1</span><br><span class="line">    └── signals <span class="comment"># 實現 Windows 與 POSIX 的 OS shutdown signal</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="測試環境部署"><a href="#測試環境部署" class="headerlink" title="測試環境部署"></a>測試環境部署</h2><p>由於本次文章將實際執行自定義控制器範例，因此需要建立測試用環境來觀察，這邊請依據需求來完成。</p>
+<ul>
+<li>需要一座 Kubernetes 叢集。透過 <a href="https://github.com/kubernetes/minikube" target="_blank" rel="noopener">Minikube</a> 建立即可 <code>minikube start --kubernetes-version=v1.15.4</code>。</li>
+<li>安裝 kubectl 工具，請參考 <a href="https://kubernetes.io/docs/tasks/tools/install-kubectl/" target="_blank" rel="noopener">Install and Set Up kubectl</a></li>
+<li>安裝 Go 語言 v1.11+ 開發環境，請參考 <a href="https://golang.org/doc/install" target="_blank" rel="noopener">Go Getting Started</a>。</li>
+<li>安裝 Git 工具，請參考 <a href="https://git-scm.com/" target="_blank" rel="noopener">Git</a>。</li>
+</ul>
+<h3 id="設定-Sample-Controller"><a href="#設定-Sample-Controller" class="headerlink" title="設定 Sample Controller"></a>設定 Sample Controller</h3><p>首先透過 Git(或 Go) 取得 sample-controller 原始碼:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://github.com/kubernetes/sample-controller.git</span><br><span class="line">$ <span class="built_in">cd</span> sample-controller</span><br></pre></td></tr></table></figure>
+
+<p>透過 kubectl 建立該自定義控制器的 CRD 到當前叢集中:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl apply -f artifacts/examples/crd.yaml</span><br><span class="line">customresourcedefinition.apiextensions.k8s.io/foos.samplecontroller.k8s.io created</span><br><span class="line"></span><br><span class="line">$ kubectl get crd</span><br><span class="line">NAME                           CREATED AT</span><br><span class="line">foos.samplecontroller.k8s.io   2019-10-06T12:55:18Z</span><br></pre></td></tr></table></figure>
+
+<h3 id="執行-Sample-Controller"><a href="#執行-Sample-Controller" class="headerlink" title="執行 Sample Controller"></a>執行 Sample Controller</h3><p>當 CRD 建立好後，就可以透過 Go 指令直接執行這個控制器。首先透過 go mod 下載相依函示庫:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">export</span> GO111MODULE=on</span><br><span class="line">$ go mod download</span><br></pre></td></tr></table></figure>
+
+<p>載完後，即可透過以下指令來執行控制器:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ go run $(ls -1 *.go | grep -v _test.go) -kubeconfig=<span class="variable">$HOME</span>/.kube/config -v=3 -logtostderr</span><br><span class="line">I1006 21:14:32.364765   73322 controller.go:114] Setting up event handlers</span><br><span class="line">I1006 21:14:32.364892   73322 controller.go:155] Starting Foo controller</span><br><span class="line">I1006 21:14:32.364905   73322 controller.go:158] Waiting <span class="keyword">for</span> informer caches to sync</span><br><span class="line">I1006 21:14:32.365031   73322 reflector.go:150] Starting reflector *v1.Deployment (30s) from pkg/mod/k8s.io/client-go@v0.0.0-20191005115821-b1fd78950135/tools/cache/reflector.go:105</span><br><span class="line">I1006 21:14:32.365724   73322 reflector.go:185] Listing and watching *v1.Deployment from pkg/mod/k8s.io/client-go@v0.0.0-20191005115821-b1fd78950135/tools/cache/reflector.go:105</span><br><span class="line">I1006 21:14:32.365032   73322 reflector.go:150] Starting reflector *v1alpha1.Foo (30s) from pkg/mod/k8s.io/client-go@v0.0.0-20191005115821-b1fd78950135/tools/cache/reflector.go:105</span><br><span class="line">I1006 21:14:32.365796   73322 reflector.go:185] Listing and watching *v1alpha1.Foo from pkg/mod/k8s.io/client-go@v0.0.0-20191005115821-b1fd78950135/tools/cache/reflector.go:105</span><br><span class="line">I1006 21:14:32.467616   73322 controller.go:163] Starting workers</span><br><span class="line">I1006 21:14:32.467660   73322 controller.go:169] Started workers</span><br></pre></td></tr></table></figure>
+
+<h3 id="建立-Foo-資源實例"><a href="#建立-Foo-資源實例" class="headerlink" title="建立 Foo 資源實例"></a>建立 Foo 資源實例</h3><p>當執行了控制器後，就可以開一個新 Terminal 來建立 Foo 實例，以觀察控制器執行的結果:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> sample-controller</span><br><span class="line">$ kubectl apply -f artifacts/examples/example-foo.yaml</span><br><span class="line">foo.samplecontroller.k8s.io/example-foo created</span><br><span class="line"></span><br><span class="line">$ kubectl get foo</span><br><span class="line">NAME          AGE</span><br><span class="line">example-foo   48s</span><br><span class="line"></span><br><span class="line">$ kubectl get deploy,po</span><br><span class="line">NAME                                READY   UP-TO-DATE   AVAILABLE   AGE</span><br><span class="line">deployment.extensions/example-foo   1/1     1            1           5m22s</span><br><span class="line"></span><br><span class="line">NAME                              READY   STATUS    RESTARTS   AGE</span><br><span class="line">pod/example-foo-d75d8587c-wlqsz   1/1     Running   0          5m22s</span><br></pre></td></tr></table></figure>
+
+<p>從範例中，可以發現 Foo 實際功能是管理著一個 Deployment 的建立，因此會看到上述的結果。當嘗試修改 Foo 中的<code>.spec.replicas</code>時，會發現 Foo 管理的 Deployment 會跟著變動副本數。</p>
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>Sample Controller 雖然只是一個非常簡單的自定義控制器範例，但從中卻可以學習到很多觀念，從最基本的 API 資源結構定義、透過 code-generator 產生客戶端函式庫、管理原有的 Kubernetes API 資源等等。雖然範例交代了很多基礎觀念，但是在實際應用上，還是缺乏了一些元素，比如說:多個相同控制器的 HA 實現、如何取得控制器 Metrics、怎麼使用 Finalizer 實作垃圾資源回收、實際部署方式與 RBAC 設定等等問題與功能。</p>
+<p>在接下來章節中，我將針對這部份一一說明，我會透過每天實作一小部分來完成一個自定義控制器，在過程中再把一些觀念進一步釐清。</p>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li><a href="https://engineering.bitnami.com/articles/a-deep-dive-into-kubernetes-controllers.html" target="_blank" rel="noopener">https://engineering.bitnami.com/articles/a-deep-dive-into-kubernetes-controllers.html</a></li>
+<li><a href="https://engineering.bitnami.com/articles/kubewatch-an-example-of-kubernetes-custom-controller.html" target="_blank" rel="noopener">https://engineering.bitnami.com/articles/kubewatch-an-example-of-kubernetes-custom-controller.html</a></li>
+<li><a href="https://itnext.io/building-an-operator-for-kubernetes-with-the-sample-controller-b4204be9ad56" target="_blank" rel="noopener">https://itnext.io/building-an-operator-for-kubernetes-with-the-sample-controller-b4204be9ad56</a></li>
+<li><a href="https://github.com/kubernetes/sample-controller" target="_blank" rel="noopener">https://github.com/kubernetes/sample-controller</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">探討 Kubernetes 自定義控制器是如何運作 Part2</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2019-10-9 00:10</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2019/10/10/ironman2020/day25/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    動手實作 Kubernetes 自定義控制器 Part1
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2019/10/08/ironman2020/day23/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">探討 Kubernetes 自定義控制器是如何運作 Part1</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2019/10/09/ironman2020/day24/" data-id="ck3ns7q6e0049wmpfgw1bld8v" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2019/10/09/ironman2020/day24/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/10/09/ironman2020/day24/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Sample-Controller-架構與運作流程"><span class="toc-number">2.</span> <span class="toc-text">Sample Controller 架構與運作流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#測試環境部署"><span class="toc-number">3.</span> <span class="toc-text">測試環境部署</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#設定-Sample-Controller"><span class="toc-number">3.1.</span> <span class="toc-text">設定 Sample Controller</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#執行-Sample-Controller"><span class="toc-number">3.2.</span> <span class="toc-text">執行 Sample Controller</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#建立-Foo-資源實例"><span class="toc-number">3.3.</span> <span class="toc-text">建立 Foo 資源實例</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#結語"><span class="toc-number">4.</span> <span class="toc-text">結語</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Reference"><span class="toc-number">5.</span> <span class="toc-text">Reference</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2019/10/09/ironman2020/day24/';
+        
+        this.page.identifier = 'ironman2020/day24';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

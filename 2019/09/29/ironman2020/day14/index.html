@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>實作 Kubernetes 外部認證系統整合: 以 LDAP 為例 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="前言在一座 Kubernetes 叢集中，通常都會透過不同的使用者來給予不同的存取權限，因為若讓任何人擁有叢集最高權限的話，有可能帶來一些風險。而在 Kubernetes 中都會有兩種類型的使用者:  由 Kubernetes 管理的服務帳號(Service Account)。 普通使用者。  假設普通使用者是由外部獨立系統進行管理(如 LDAP)，那麼管理員分散私鑰、儲存使用者資訊等等功能，都必">
+<meta name="keywords" content="Kubernetes">
+<meta property="og:type" content="article">
+<meta property="og:title" content="實作 Kubernetes 外部認證系統整合: 以 LDAP 為例">
+<meta property="og:url" content="https://k2r2bai.com/2019/09/29/ironman2020/day14/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="前言在一座 Kubernetes 叢集中，通常都會透過不同的使用者來給予不同的存取權限，因為若讓任何人擁有叢集最高權限的話，有可能帶來一些風險。而在 Kubernetes 中都會有兩種類型的使用者:  由 Kubernetes 管理的服務帳號(Service Account)。 普通使用者。  假設普通使用者是由外部獨立系統進行管理(如 LDAP)，那麼管理員分散私鑰、儲存使用者資訊等等功能，都必">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://i.imgur.com/7Fb4saO.png">
+<meta property="og:image" content="https://i.imgur.com/JBJ86LQ.png">
+<meta property="og:image" content="https://i.imgur.com/mRqk5F8.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.389Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="實作 Kubernetes 外部認證系統整合: 以 LDAP 為例">
+<meta name="twitter:description" content="前言在一座 Kubernetes 叢集中，通常都會透過不同的使用者來給予不同的存取權限，因為若讓任何人擁有叢集最高權限的話，有可能帶來一些風險。而在 Kubernetes 中都會有兩種類型的使用者:  由 Kubernetes 管理的服務帳號(Service Account)。 普通使用者。  假設普通使用者是由外部獨立系統進行管理(如 LDAP)，那麼管理員分散私鑰、儲存使用者資訊等等功能，都必">
+<meta name="twitter:image" content="https://i.imgur.com/7Fb4saO.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-ironman2020/day14" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            實作 Kubernetes 外部認證系統整合: 以 LDAP 為例
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2019/09/29/ironman2020/day14/">
+            <u><time datetime="2019-09-28T16:00:00.000Z" itemprop="datePublished">2019-09-29</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在一座 Kubernetes 叢集中，通常都會透過不同的使用者來給予不同的存取權限，因為若讓任何人擁有叢集最高權限的話，有可能帶來一些風險。而在 Kubernetes 中都會有兩種類型的使用者:</p>
+<ul>
+<li>由 Kubernetes 管理的服務帳號(Service Account)。</li>
+<li>普通使用者。</li>
+</ul>
+<p>假設普通使用者是由外部獨立系統進行管理(如 LDAP)，那麼管理員分散私鑰、儲存使用者資訊等等功能，都必須由外部系統處理，因為在這方面，Kubernetes 並沒有普通使用者的 API 物件可以使用，因此無法透過 API 將普通使用者資訊添加到叢集中。</p>
+<a id="more"></a>
+
+<p>但在 Kubernetes 生產環境中，管理普通使用者需求是很常見的需求，假設公司又希望讓管理使用者事情，由既有的帳戶系統管理的話，就會面臨問題。好在 Kubernetes 在這方面也都考慮到了，Kubernetes 提供了 <a href="https://kubernetes.io/docs/admin/authentication/#webhook-token-authentication" target="_blank" rel="noopener">Webhook Token Authentication</a> 與 <a href="https://kubernetes.io/docs/admin/authentication/#authenticating-proxy" target="_blank" rel="noopener">Authenticating Proxy</a> 機制讓我們可以跟既有系統整合。</p>
+<blockquote>
+<p>TODO: 補 Webhook 細節。</p>
+</blockquote>
+<h2 id="以-LDAP-作為-Kubernetes-身份認證"><a href="#以-LDAP-作為-Kubernetes-身份認證" class="headerlink" title="以 LDAP 作為 Kubernetes 身份認證"></a>以 LDAP 作為 Kubernetes 身份認證</h2><p>本節以 LDAP 為例來實現身份認證整合。由於 Kubernetes 官方並沒有針對 LDAP/AD 的整合，因此需要藉由 Webhook Token 方式來達成。這邊概念上會開發一個 HTTP Server 提供認證 APIs，當 Kubernetes API Server 收到認證請求時，會轉發至認證用的 HTTP Server 上，這時 HTTP Server 會利用 LDAP client 檢索符合認證的 User 資訊，並將該 User 的 Group 回傳給 API Server，最後 API Server 以該資訊來進行認證授權。</p>
+<p><img src="https://i.imgur.com/7Fb4saO.png" alt></p>
+<h3 id="節點資訊"><a href="#節點資訊" class="headerlink" title="節點資訊"></a>節點資訊</h3><p>部署沿用之前文章建置的 HA 環境進行測試，全部都採用裸機部署，作業系統為<code>Ubuntu 18.04+</code>:</p>
+<table>
+<thead>
+<tr>
+<th>IP Address</th>
+<th>Hostname</th>
+<th>CPU</th>
+<th>Memory</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>172.22.132.11</td>
+<td>k8s-m1</td>
+<td>4</td>
+<td>16G</td>
+<td>Master</td>
+</tr>
+<tr>
+<td>172.22.132.12</td>
+<td>k8s-m2</td>
+<td>4</td>
+<td>16G</td>
+<td>Master</td>
+</tr>
+<tr>
+<td>172.22.132.13</td>
+<td>k8s-m3</td>
+<td>4</td>
+<td>16G</td>
+<td>Master</td>
+</tr>
+<tr>
+<td>172.22.132.21</td>
+<td>k8s-n1</td>
+<td>4</td>
+<td>16G</td>
+<td>Node</td>
+</tr>
+<tr>
+<td>172.22.132.22</td>
+<td>k8s-n2</td>
+<td>4</td>
+<td>16G</td>
+<td>Node</td>
+</tr>
+<tr>
+<td>172.22.132.31</td>
+<td>k8s-g1</td>
+<td>4</td>
+<td>16G</td>
+<td>Node</td>
+</tr>
+<tr>
+<td>172.22.132.32</td>
+<td>k8s-g2</td>
+<td>4</td>
+<td>16G</td>
+<td>Node</td>
+</tr>
+<tr>
+<td>172.22.132.150</td>
+<td>deploy-node</td>
+<td>4</td>
+<td>16G</td>
+<td>LDAP Server</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>節點不需要這麼多，這邊只是沿用。</p>
+</blockquote>
+<h3 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h3><p>在開始部署時，請確保滿足以下條件:</p>
+<ul>
+<li><code>LDAP Server</code>節點需要安裝 Docker 容器引擎:</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl -fsSL <span class="string">"https://get.docker.com/"</span> | sh</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>部署一座 Kubernetes v1.10+ 叢集。可參考<a href="https://kairen.github.io/2016/09/29/kubernetes/deploy/kubeadm/" target="_blank" rel="noopener">用 kubeadm 部署 Kubernetes 叢集</a>。</li>
+</ul>
+<h3 id="OpenLDAP-與-phpLDAPadmin-部署"><a href="#OpenLDAP-與-phpLDAPadmin-部署" class="headerlink" title="OpenLDAP 與 phpLDAPadmin 部署"></a>OpenLDAP 與 phpLDAPadmin 部署</h3><p>本部分說明如何部署、設定與操作 OpenLDAP。首先進入<code>ldap-server</code>節點，接著利用容器部署 OpenLDAP 與 phpLDAPadmin:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker run -d \</span><br><span class="line">    -p 389:389 -p 636:636 \</span><br><span class="line">    --env LDAP_ORGANISATION=<span class="string">"Kubernetes LDAP"</span> \</span><br><span class="line">    --env LDAP_DOMAIN=<span class="string">"k8s.com"</span> \</span><br><span class="line">    --env LDAP_ADMIN_PASSWORD=<span class="string">"password"</span> \</span><br><span class="line">    --env LDAP_CONFIG_PASSWORD=<span class="string">"password"</span> \</span><br><span class="line">    --name openldap-server \</span><br><span class="line">    osixia/openldap:1.2.0</span><br><span class="line"></span><br><span class="line">$ docker run -d \</span><br><span class="line">    -p 443:443 \</span><br><span class="line">    --env PHPLDAPADMIN_LDAP_HOSTS=172.22.132.150 \</span><br><span class="line">    --name phpldapadmin \</span><br><span class="line">    osixia/phpldapadmin:0.7.1</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li>這邊的<code>cn=admin,dc=k8s,dc=com</code>為<code>admin</code> DN，而<code>cn=admin,cn=config</code>為<code>config</code> DN。</li>
+<li>另外這邊僅做測試用，故沒有使用 Persistent Volumes，若需要的話，可以參考 <a href="https://github.com/osixia/docker-openldap" target="_blank" rel="noopener">Docker OpenLDAP</a> 來設定。</li>
+</ul>
+</blockquote>
+<p>執行完成後，就可以透過瀏覽器來 <a href="https://172.22.132.150/" target="_blank" rel="noopener">phpLDAPadmin</a>。這邊點選<code>Login</code>輸入 DN 與 Password。成功登入後畫面，就可以自行新增其他資訊。</p>
+<p><img src="https://i.imgur.com/JBJ86LQ.png" alt></p>
+<p>雖然可以直接利用 phpLDAPadmin 來新增跟 Kubernetes 整合的資訊，但為了操作快速，這邊以指令方式進行。</p>
+<h4 id="建立-Kubenretes-Token-Schema"><a href="#建立-Kubenretes-Token-Schema" class="headerlink" title="建立 Kubenretes Token Schema"></a>建立 Kubenretes Token Schema</h4><p>在<code>ldap-server</code>節點透過 Docker 進入<code>openldap-server</code>容器，然後執行以下指令建立 Kubernetes token schema 設定:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker <span class="built_in">exec</span> -ti openldap-server sh</span><br><span class="line">$ mkdir ~/kubernetes_tokens</span><br><span class="line">$ cat &lt;&lt;EOF &gt; ~/kubernetes_tokens/kubernetesToken.schema</span><br><span class="line">attributeType ( 1.3.6.1.4.1.18171.2.1.8</span><br><span class="line">        NAME <span class="string">'kubernetesToken'</span></span><br><span class="line">        DESC <span class="string">'Kubernetes authentication token'</span></span><br><span class="line">        EQUALITY caseExactIA5Match</span><br><span class="line">        SUBSTR caseExactIA5SubstringsMatch</span><br><span class="line">        SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )</span><br><span class="line"></span><br><span class="line">objectClass ( 1.3.6.1.4.1.18171.2.3</span><br><span class="line">        NAME <span class="string">'kubernetesAuthenticationObject'</span></span><br><span class="line">        DESC <span class="string">'Object that may authenticate to a Kubernetes cluster'</span></span><br><span class="line">        AUXILIARY</span><br><span class="line">        MUST kubernetesToken )</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line">$ <span class="built_in">echo</span> <span class="string">"include /root/kubernetes_tokens/kubernetesToken.schema"</span> &gt; ~/kubernetes_tokens/schema_convert.conf</span><br><span class="line">$ slaptest -f ~/kubernetes_tokens/schema_convert.conf -F ~/kubernetes_tokens</span><br><span class="line">config file testing succeeded</span><br></pre></td></tr></table></figure>
+
+<p>然後執行以下指令來修改內容:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ vim ~/kubernetes_tokens/cn=config/cn=schema/cn\=\&#123;0\&#125;kubernetestoken.ldif</span><br><span class="line"><span class="comment"># AUTO-GENERATED FILE - DO NOT EDIT!! Use ldapmodify.</span></span><br><span class="line"><span class="comment"># CRC32 e502306e</span></span><br><span class="line">dn: cn=kubernetestoken,cn=schema,cn=config</span><br><span class="line">objectClass: olcSchemaConfig</span><br><span class="line">cn: kubernetestoken</span><br><span class="line">olcAttributeTypes: &#123;0&#125;( 1.3.6.1.4.1.18171.2.1.8 NAME <span class="string">'kubernetesToken'</span> DESC</span><br><span class="line"> <span class="string">'Kubernetes authentication token'</span> EQUALITY caseExactIA5Match SUBSTR caseExa</span><br><span class="line"> ctIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )</span><br><span class="line">olcObjectClasses: &#123;0&#125;( 1.3.6.1.4.1.18171.2.3 NAME <span class="string">'kubernetesAuthenticationO</span></span><br><span class="line"><span class="string"> bject'</span> DESC <span class="string">'Object that may authenticate to a Kubernetes cluster'</span> AUXILIAR</span><br><span class="line"> Y MUST kubernetesToken )</span><br></pre></td></tr></table></figure>
+
+<p>接著利用 ldapadd 指令將 Kubernetes token schema 物件新增到當前 LDAP 伺服器中:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> ~/kubernetes_tokens/cn=config/cn=schema</span><br><span class="line">$ ldapadd -c -Y EXTERNAL -H ldapi:/// -f cn\=\&#123;0\&#125;kubernetestoken.ldif</span><br><span class="line">SASL/EXTERNAL authentication started</span><br><span class="line">SASL username: gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth</span><br><span class="line">SASL SSF: 0</span><br><span class="line">adding new entry <span class="string">"cn=kubernetestoken,cn=schema,cn=config"</span></span><br></pre></td></tr></table></figure>
+
+
+<p>完成後，透過 ldapsearch 指令查詢是否有正確新增 Entry:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ldapsearch -x -H ldap:/// -LLL -D <span class="string">"cn=admin,cn=config"</span> -w password -b <span class="string">"cn=schema,cn=config"</span> <span class="string">"(objectClass=olcSchemaConfig)"</span> dn -Z</span><br><span class="line">Enter LDAP Password:</span><br><span class="line">dn: cn=schema,cn=config</span><br><span class="line">...</span><br><span class="line">dn: cn=&#123;14&#125;kubernetestoken,cn=schema,cn=config</span><br></pre></td></tr></table></figure>
+
+<h4 id="新增測試用-LDAP-Groups-與-Users"><a href="#新增測試用-LDAP-Groups-與-Users" class="headerlink" title="新增測試用 LDAP Groups 與 Users"></a>新增測試用 LDAP Groups 與 Users</h4><p>一但 Kubernetes token schema 建立完成後，就能夠新增一些測試用 Groups 來模擬。這邊一樣在<code>openldap-server</code>容器中執行:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cat &lt;&lt;EOF &gt; groups.ldif</span><br><span class="line">dn: ou=People,dc=k8s,dc=com</span><br><span class="line">ou: People</span><br><span class="line">objectClass: top</span><br><span class="line">objectClass: organizationalUnit</span><br><span class="line">description: Parent object of all UNIX accounts</span><br><span class="line"></span><br><span class="line">dn: ou=Groups,dc=k8s,dc=com</span><br><span class="line">ou: Groups</span><br><span class="line">objectClass: top</span><br><span class="line">objectClass: organizationalUnit</span><br><span class="line">description: Parent object of all UNIX groups</span><br><span class="line"></span><br><span class="line">dn: cn=kubernetes,ou=Groups,dc=k8s,dc=com</span><br><span class="line">cn: kubernetes</span><br><span class="line">gidnumber: 100</span><br><span class="line">memberuid: user1</span><br><span class="line">memberuid: user2</span><br><span class="line">objectclass: posixGroup</span><br><span class="line">objectclass: top</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line">$ ldapmodify -x -a -H ldap:// -D <span class="string">"cn=admin,dc=k8s,dc=com"</span> -w password -f groups.ldif</span><br><span class="line">adding new entry <span class="string">"ou=People,dc=k8s,dc=com"</span></span><br><span class="line"></span><br><span class="line">adding new entry <span class="string">"ou=Groups,dc=k8s,dc=com"</span></span><br><span class="line"></span><br><span class="line">adding new entry <span class="string">"cn=kubernetes,ou=Groups,dc=k8s,dc=com"</span></span><br></pre></td></tr></table></figure>
+
+<p>當 Group 建立完成後，再接著建立 Users 資訊:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cat &lt;&lt;EOF &gt; users.ldif</span><br><span class="line">dn: uid=user1,ou=People,dc=k8s,dc=com</span><br><span class="line">cn: user1</span><br><span class="line">gidnumber: 100</span><br><span class="line">givenname: user1</span><br><span class="line">homedirectory: /home/users/user1</span><br><span class="line">loginshell: /bin/sh</span><br><span class="line">objectclass: inetOrgPerson</span><br><span class="line">objectclass: posixAccount</span><br><span class="line">objectclass: top</span><br><span class="line">objectClass: shadowAccount</span><br><span class="line">objectClass: organizationalPerson</span><br><span class="line">sn: user1</span><br><span class="line">uid: user1</span><br><span class="line">uidnumber: 1000</span><br><span class="line">userpassword: user1</span><br><span class="line"></span><br><span class="line">dn: uid=user2,ou=People,dc=k8s,dc=com</span><br><span class="line">homedirectory: /home/users/user2</span><br><span class="line">loginshell: /bin/sh</span><br><span class="line">objectclass: inetOrgPerson</span><br><span class="line">objectclass: posixAccount</span><br><span class="line">objectclass: top</span><br><span class="line">objectClass: shadowAccount</span><br><span class="line">objectClass: organizationalPerson</span><br><span class="line">cn: user2</span><br><span class="line">givenname: user2</span><br><span class="line">sn: user2</span><br><span class="line">uid: user2</span><br><span class="line">uidnumber: 1001</span><br><span class="line">gidnumber: 100</span><br><span class="line">userpassword: user2</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line">$ ldapmodify -x -a -H ldap:// -D <span class="string">"cn=admin,dc=k8s,dc=com"</span> -w password -f users.ldif</span><br><span class="line">adding new entry <span class="string">"uid=user1,ou=People,dc=k8s,dc=com"</span></span><br><span class="line"></span><br><span class="line">adding new entry <span class="string">"uid=user2,ou=People,dc=k8s,dc=com"</span></span><br></pre></td></tr></table></figure>
+
+<p>完成後，就可以透過指令或是登入 phpLDAPadmin 頁面查看資訊。如下圖所示。</p>
+<p><img src="https://i.imgur.com/mRqk5F8.png" alt></p>
+<h4 id="新增-Kubernetes-Token-至-Users"><a href="#新增-Kubernetes-Token-至-Users" class="headerlink" title="新增 Kubernetes Token 至 Users"></a>新增 Kubernetes Token 至 Users</h4><p>當 Users 建立完成後，就可以透過執行以下指令來新增每個 User 的 Kubernetes Token:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cat &lt;&lt;EOF &gt; users.txt</span><br><span class="line">dn: uid=user1,ou=People,dc=k8s,dc=com</span><br><span class="line">dn: uid=user2,ou=People,dc=k8s,dc=com</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line"><span class="comment"># 新增 token 腳本指令</span></span><br><span class="line">$ <span class="keyword">while</span> <span class="built_in">read</span> -r user; <span class="keyword">do</span></span><br><span class="line">fname=$(<span class="built_in">echo</span> <span class="variable">$user</span> | grep -E -o <span class="string">"uid=[a-z0-9]+"</span> | cut -d<span class="string">"="</span> -f2)</span><br><span class="line">token=$(dd <span class="keyword">if</span>=/dev/urandom bs=128 count=1 2&gt;/dev/null | base64 | tr -d <span class="string">"=+/"</span> | dd bs=32 count=1 2&gt;/dev/null)</span><br><span class="line">cat &lt;&lt; EOF &gt; <span class="string">"<span class="variable">$&#123;fname&#125;</span>.ldif"</span></span><br><span class="line"><span class="variable">$user</span></span><br><span class="line">changetype: modify</span><br><span class="line">add: objectClass</span><br><span class="line">objectclass: kubernetesAuthenticationObject</span><br><span class="line">-</span><br><span class="line">add: kubernetesToken</span><br><span class="line">kubernetesToken: <span class="variable">$token</span></span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line">ldapmodify -a -H ldapi:/// -D <span class="string">"cn=admin,dc=k8s,dc=com"</span> -w password  -f <span class="string">"<span class="variable">$&#123;fname&#125;</span>.ldif"</span></span><br><span class="line"><span class="keyword">done</span> &lt; users.txt</span><br><span class="line"></span><br><span class="line"><span class="comment"># output</span></span><br><span class="line">Enter LDAP Password:</span><br><span class="line">modifying entry <span class="string">"uid=user1,ou=Users,dc=k8s,dc=com"</span></span><br><span class="line"></span><br><span class="line">Enter LDAP Password:</span><br><span class="line">modifying entry <span class="string">"uid=user2,ou=Users,dc=k8s,dc=com"</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="部署-LDAP-Webhook"><a href="#部署-LDAP-Webhook" class="headerlink" title="部署 LDAP Webhook"></a>部署 LDAP Webhook</h3><p>當 OpenLDAP 都完成，且 Kubernetes 叢集也建立完成後，就可以進入任一 Kubernetes 主節點部署 LDAP Webhook，這邊透過 Git 取得:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://github.com/kairen/kube-ldap-authn.git</span><br><span class="line">$ <span class="built_in">cd</span> kube-ldap-authn</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>Golang 版本可以參考 <a href="https://github.com/kairen/kube-ldap-webhook" target="_blank" rel="noopener">kube-ldap-webhook</a>。</p>
+</blockquote>
+<p>新增一個<code>config.py</code>檔案，並設定查詢時需要的相關內容：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">LDAP_URL=<span class="string">'ldap://172.22.132.150/ ldap://172.22.132.150'</span></span><br><span class="line">LDAP_START_TLS = False</span><br><span class="line">LDAP_BIND_DN = <span class="string">'cn=admin,dc=k8s,dc=com'</span></span><br><span class="line">LDAP_BIND_PASSWORD = <span class="string">'password'</span></span><br><span class="line">LDAP_USER_NAME_ATTRIBUTE = <span class="string">'uid'</span></span><br><span class="line">LDAP_USER_UID_ATTRIBUTE = <span class="string">'uidNumber'</span></span><br><span class="line">LDAP_USER_SEARCH_BASE = <span class="string">'ou=People,dc=k8s,dc=com'</span></span><br><span class="line">LDAP_USER_SEARCH_FILTER = <span class="string">"(&amp;(kubernetesToken=&#123;token&#125;))"</span></span><br><span class="line">LDAP_GROUP_NAME_ATTRIBUTE = <span class="string">'cn'</span></span><br><span class="line">LDAP_GROUP_SEARCH_BASE = <span class="string">'ou=Groups,dc=k8s,dc=com'</span></span><br><span class="line">LDAP_GROUP_SEARCH_FILTER = <span class="string">'(|(&amp;(objectClass=posixGroup)(memberUid=&#123;username&#125;))(&amp;(member=&#123;dn&#125;)(objectClass=groupOfNames)))'</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>可以參考 <a href="https://github.com/kairen/kube-ldap-authn/blob/master/config.py.example" target="_blank" rel="noopener">Config example</a> 查看詳細變數說明。</p>
+</blockquote>
+<p>接著將上述的設定檔以 Secret 方式上傳至 Kubernetes 叢集中，然後部署 LDAP webhook 的 DaemonSet 到所有主節點上:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl -n kube-system create secret generic ldap-authn-config --from-file=config.py=config.py</span><br><span class="line">$ kubectl create -f daemonset.yaml</span><br><span class="line">$ kubectl -n kube-system get po -l app=kube-ldap-authn -o wide</span><br><span class="line">NAME                    READY     STATUS    RESTARTS   AGE       IP             NODE</span><br><span class="line">kube-ldap-authn-sx994   1/1       Running   0          13s       192.16.35.11   k8s-m1</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>部署到所有主節點是在 HA 架構中進行，因為呼叫 API 時，有可能會因為負載平衡關析，而導到不同節點上，這時若沒有在每個節點設定 Webhook 的話，就會認證失敗。</p>
+</blockquote>
+<p>部署成功後，就可以透過 cURL 工具來測試:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl -X POST -H <span class="string">"Content-Type: application/json"</span> \</span><br><span class="line">    -d <span class="string">'&#123;"apiVersion": "authentication.k8s.io/v1beta1", "kind": "TokenReview",  "spec": &#123;"token": "&lt;LDAP_K8S_TOKEN&gt;"&#125;&#125;'</span> \</span><br><span class="line">    http://localhost:8087/authn</span><br><span class="line"></span><br><span class="line"><span class="comment"># output</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="string">"apiVersion"</span>: <span class="string">"authentication.k8s.io/v1beta1"</span>,</span><br><span class="line">  <span class="string">"kind"</span>: <span class="string">"TokenReview"</span>,</span><br><span class="line">  <span class="string">"status"</span>: &#123;</span><br><span class="line">    <span class="string">"authenticated"</span>: <span class="literal">true</span>,</span><br><span class="line">    <span class="string">"user"</span>: &#123;</span><br><span class="line">      <span class="string">"groups"</span>: [</span><br><span class="line">        <span class="string">"kubernetes"</span></span><br><span class="line">      ],</span><br><span class="line">      <span class="string">"uid"</span>: <span class="string">"1000"</span>,</span><br><span class="line">      <span class="string">"username"</span>: <span class="string">"user1"</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>確認沒問題後，接著在所有主節點上，新增<code>/srv/kubernetes/webhook-authn</code>檔案，並加入以下內容:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ mkdir /srv/kubernetes</span><br><span class="line">$ cat &lt;&lt;EOF &gt; /srv/kubernetes/webhook-authn</span><br><span class="line">clusters:</span><br><span class="line">  - name: ldap-authn</span><br><span class="line">    cluster:</span><br><span class="line">      server: http://localhost:8087/authn</span><br><span class="line">users:</span><br><span class="line">  - name: apiserver</span><br><span class="line">current-context: webhook</span><br><span class="line">contexts:</span><br><span class="line">- context:</span><br><span class="line">    cluster: ldap-authn</span><br><span class="line">    user: apiserver</span><br><span class="line">  name: webhook</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<p>完成後，修改所有主節點的<code>/etc/kubernetes/manifests</code>目錄底下的<code>kube-apiserver.yaml</code>檔案，其內容修改成如下:</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="string">...</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  containers:</span></span><br><span class="line"><span class="attr">  - command:</span></span><br><span class="line">    <span class="string">...</span></span><br><span class="line"><span class="bullet">    -</span> <span class="bullet">--runtime-config=authentication.k8s.io/v1beta1=true</span></span><br><span class="line"><span class="bullet">    -</span> <span class="bullet">--authentication-token-webhook-config-file=/srv/kubernetes/webhook-authn</span></span><br><span class="line"><span class="bullet">    -</span> <span class="bullet">--authentication-token-webhook-cache-ttl=5m</span></span><br><span class="line"><span class="attr">    volumeMounts:</span></span><br><span class="line">      <span class="string">...</span></span><br><span class="line"><span class="attr">    - mountPath:</span> <span class="string">/srv/kubernetes/webhook-authn</span></span><br><span class="line"><span class="attr">      name:</span> <span class="string">webhook-authn</span></span><br><span class="line"><span class="attr">      readOnly:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">  volumes:</span></span><br><span class="line">    <span class="string">...</span></span><br><span class="line"><span class="attr">  - hostPath:</span></span><br><span class="line"><span class="attr">      path:</span> <span class="string">/srv/kubernetes/webhook-authn</span></span><br><span class="line"><span class="attr">      type:</span> <span class="string">File</span></span><br><span class="line"><span class="attr">    name:</span> <span class="string">webhook-authn</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊<code>...</code>表示已存在的內容，請不要刪除與變更。</p>
+</blockquote>
+<h3 id="測試功能"><a href="#測試功能" class="headerlink" title="測試功能"></a>測試功能</h3><p>都完成部署後，就可以進入任一主節點進行測試。這邊建立一個綁定在 user1 Namespace 的 Role 與 RoleBinding 來提供權限測試:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl create ns user1</span><br><span class="line"></span><br><span class="line"><span class="comment"># 建立 Role</span></span><br><span class="line">$ cat &lt;&lt;EOF | kubectl create -f -</span><br><span class="line">kind: Role</span><br><span class="line">apiVersion: rbac.authorization.k8s.io/v1</span><br><span class="line">metadata:</span><br><span class="line">  name: <span class="built_in">readonly</span>-role</span><br><span class="line">  namespace: user1</span><br><span class="line">rules:</span><br><span class="line">- apiGroups: [<span class="string">""</span>]</span><br><span class="line">  resources: [<span class="string">"pods"</span>]</span><br><span class="line">  verbs: [<span class="string">"get"</span>, <span class="string">"watch"</span>, <span class="string">"list"</span>]</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line"><span class="comment"># 建立 RoleBinding</span></span><br><span class="line">$ cat &lt;&lt;EOF | kubectl create -f -</span><br><span class="line">kind: RoleBinding</span><br><span class="line">apiVersion: rbac.authorization.k8s.io/v1</span><br><span class="line">metadata:</span><br><span class="line">  name: <span class="built_in">readonly</span>-role-binding</span><br><span class="line">  namespace: user1</span><br><span class="line">subjects:</span><br><span class="line">- kind: Group</span><br><span class="line">  name: kubernetes</span><br><span class="line">  apiGroup: <span class="string">""</span></span><br><span class="line">roleRef:</span><br><span class="line">  kind: Role</span><br><span class="line">  name: <span class="built_in">readonly</span>-role</span><br><span class="line">  apiGroup: <span class="string">""</span></span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>在 RoleBinding 中的 subjects 需要對應於 LDAP 中的 Group 資訊。</p>
+</blockquote>
+<p>接著在任一台操作端設定 Kubeconfig 來以 user1 使用者，存取叢集:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cd</span></span><br><span class="line">$ kubectl config <span class="built_in">set</span>-credentials user1 --kubeconfig=.kube/config --token=&lt;user-ldap-token&gt;</span><br><span class="line">$ kubectl config <span class="built_in">set</span>-context user1-context \</span><br><span class="line">    --kubeconfig=.kube/config \</span><br><span class="line">    --cluster=kubernetes \</span><br><span class="line">    --namespace=user1 --user=user1</span><br></pre></td></tr></table></figure>
+
+<p>透過 kubectl 來測試權限是否正確設定:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl --context=user1-context get po</span><br><span class="line">No resources found</span><br><span class="line"></span><br><span class="line">$ kubectl --context=user1-context run nginx --image nginx --port 80</span><br><span class="line">Error from server (Forbidden): deployments.extensions is forbidden: User <span class="string">"user1"</span> cannot create deployments.extensions <span class="keyword">in</span> the namespace <span class="string">"user1"</span></span><br><span class="line"></span><br><span class="line">$ kubectl --context=user1-context get po -n default</span><br><span class="line">Error from server (Forbidden): pods is forbidden: User <span class="string">"user1"</span> cannot list pods <span class="keyword">in</span> the namespace <span class="string">"default"</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>今天簡單實作了 Kubernetes 整合外部認證系統的功能，讓我們能夠以 LDAP 方式來管理 Kubernetes 的普通使用者。可以發現 Kubernetes 在各種方面都考慮了許多擴充方式，不只是網路、儲存等等，在認證與授權部分也提供了一些 API 與機制來實現。現在也有很多開源專案實作了 Auth Webhook 來整合認證，如以下:</p>
+<ul>
+<li><a href="https://github.com/dexidp/dex" target="_blank" rel="noopener">Dex</a></li>
+<li><a href="https://github.com/planetlabs/kubehook" target="_blank" rel="noopener">Kubehook</a></li>
+<li><a href="https://github.com/kubernetes/cloud-provider-openstack/blob/master/docs/using-keystone-webhook-authenticator-and-authorizer.md" target="_blank" rel="noopener">OpenStack Keystone</a></li>
+<li><a href="https://github.com/appscode/guard" target="_blank" rel="noopener">Guard</a></li>
+</ul>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li><a href="https://github.com/osixia/docker-openldap" target="_blank" rel="noopener">https://github.com/osixia/docker-openldap</a></li>
+<li><a href="https://icicimov.github.io/blog/virtualization/Kubernetes-LDAP-Authentication/" target="_blank" rel="noopener">https://icicimov.github.io/blog/virtualization/Kubernetes-LDAP-Authentication/</a></li>
+<li><a href="https://github.com/torchbox/kube-ldap-authn" target="_blank" rel="noopener">https://github.com/torchbox/kube-ldap-authn</a></li>
+<li><a href="https://superuser.openstack.org/articles/strengthening-open-infrastructure-integrating-openstack-and-kubernetes/" target="_blank" rel="noopener">https://superuser.openstack.org/articles/strengthening-open-infrastructure-integrating-openstack-and-kubernetes/</a></li>
+<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/webhook/" target="_blank" rel="noopener">https://kubernetes.io/docs/reference/access-authn-authz/webhook/</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">實作 Kubernetes 外部認證系統整合: 以 LDAP 為例</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2019-9-29 00:09</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2019/09/30/ironman2020/day15/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    自建私有容器儲存庫(Container Registry)與實現內容信任(Content Trust)
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2019/09/28/ironman2020/day13/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">實作 Kubernetes 裸機 Load Balancer Part3</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2019/09/29/ironman2020/day14/" data-id="ck3ns7q63003hwmpfq6va5ds0" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2019/09/29/ironman2020/day14/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/09/29/ironman2020/day14/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#以-LDAP-作為-Kubernetes-身份認證"><span class="toc-number">2.</span> <span class="toc-text">以 LDAP 作為 Kubernetes 身份認證</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#節點資訊"><span class="toc-number">2.1.</span> <span class="toc-text">節點資訊</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#事前準備"><span class="toc-number">2.2.</span> <span class="toc-text">事前準備</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#OpenLDAP-與-phpLDAPadmin-部署"><span class="toc-number">2.3.</span> <span class="toc-text">OpenLDAP 與 phpLDAPadmin 部署</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#部署-LDAP-Webhook"><span class="toc-number">2.4.</span> <span class="toc-text">部署 LDAP Webhook</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#測試功能"><span class="toc-number">2.5.</span> <span class="toc-text">測試功能</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#結語"><span class="toc-number">3.</span> <span class="toc-text">結語</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Reference"><span class="toc-number">4.</span> <span class="toc-text">Reference</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2019/09/29/ironman2020/day14/';
+        
+        this.page.identifier = 'ironman2020/day14';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

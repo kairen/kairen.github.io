@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>簡單部署 DC/OS 於 CentOS 上 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="DC/OS(Data Center Operating System，資料中心作業系統)是 Mesosphere 公司開源的系統，該平台提供了諸多巨量資料處理框架與系統的建置，並以分散式系統 Mesos 作為核心，提供系統資源的隔離與調度，使用者可以根據需求與策略來應用系統資源。 而本篇將說明如何透過 UI 與 CLI 進行安裝 DC/OS。">
+<meta name="keywords" content="Spark,DC&#x2F;OS,Mesos">
+<meta property="og:type" content="article">
+<meta property="og:title" content="簡單部署 DC&#x2F;OS 於 CentOS 上">
+<meta property="og:url" content="https://k2r2bai.com/2016/08/17/data-engineer/dcos-install/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="DC/OS(Data Center Operating System，資料中心作業系統)是 Mesosphere 公司開源的系統，該平台提供了諸多巨量資料處理框架與系統的建置，並以分散式系統 Mesos 作為核心，提供系統資源的隔離與調度，使用者可以根據需求與策略來應用系統資源。 而本篇將說明如何透過 UI 與 CLI 進行安裝 DC/OS。">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.383Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="簡單部署 DC&#x2F;OS 於 CentOS 上">
+<meta name="twitter:description" content="DC/OS(Data Center Operating System，資料中心作業系統)是 Mesosphere 公司開源的系統，該平台提供了諸多巨量資料處理框架與系統的建置，並以分散式系統 Mesos 作為核心，提供系統資源的隔離與調度，使用者可以根據需求與策略來應用系統資源。 而本篇將說明如何透過 UI 與 CLI 進行安裝 DC/OS。">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-data-engineer/dcos-install" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            簡單部署 DC/OS 於 CentOS 上
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2016/08/17/data-engineer/dcos-install/">
+            <u><time datetime="2016-08-17T09:08:54.000Z" itemprop="datePublished">2016-08-17</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Spark/">Spark</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/DC-OS/">DC/OS</a>, <a class="tag-link" href="/tags/Mesos/">Mesos</a>, <a class="tag-link" href="/tags/Spark/">Spark</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>DC/OS(Data Center Operating System，資料中心作業系統)是 Mesosphere 公司開源的系統，該平台提供了諸多巨量資料處理框架與系統的建置，並以分散式系統 Mesos 作為核心，提供系統資源的隔離與調度，使用者可以根據需求與策略來應用系統資源。</p>
+<p>而本篇將說明如何透過 UI 與 CLI 進行安裝 DC/OS。</p>
+<a id="more"></a>
+
+<h2 id="節點配置"><a href="#節點配置" class="headerlink" title="節點配置"></a>節點配置</h2><p>DC/OS 最低需求要四台主機，以下為本次安裝的硬體設備：</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>RAM</th>
+<th>Disk</th>
+<th>CPUs</th>
+<th>IP Address</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>bootstrap</td>
+<td>16 GB 記憶體</td>
+<td>250 GB 儲存空間</td>
+<td>四核處理器</td>
+<td>10.0.0.101</td>
+</tr>
+<tr>
+<td>master</td>
+<td>8 GB 記憶體</td>
+<td>250 GB 儲存空間</td>
+<td>四核處理器</td>
+<td>10.0.0.102</td>
+</tr>
+<tr>
+<td>agent-1</td>
+<td>8 GB 記憶體</td>
+<td>250 GB 儲存空間</td>
+<td>四核處理器</td>
+<td>10.0.0.103</td>
+</tr>
+<tr>
+<td>agent-2</td>
+<td>8 GB 記憶體</td>
+<td>250 GB 儲存空間</td>
+<td>四核處理器</td>
+<td>10.0.0.104</td>
+</tr>
+</tbody></table>
+<p>請以上節點都分別安裝 RHEL 或者 CentOS 作業系統。並且設定 IP 為靜態固定，編輯<code>/etc/sysconfig/network-scripts/ifcfg-&lt;name&gt;</code>檔案，加入以下內容：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">ONBOOT=<span class="string">"yes"</span></span><br><span class="line">IPADDR=<span class="string">"10.0.0.104"</span></span><br><span class="line">PREFIX=<span class="string">"24"</span></span><br><span class="line">GATEWAY=<span class="string">"10.0.0.1"</span></span><br><span class="line">DNS1=<span class="string">"8.8.8.8"</span></span><br><span class="line">DNS2=<span class="string">"8.8.8.4"</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="安裝前準備"><a href="#安裝前準備" class="headerlink" title="安裝前準備"></a>安裝前準備</h2><p>在開始安裝以前，首先需要在每一台節點將基本環境的軟體更新：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo yum upgrade -y</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>完成後檢查是否是最新版本，可以透過以下方式查看 Kernel：</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ uname -r</span><br><span class="line">3.10.0-327.13.1.el7.x86_64</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>如果不是以上版本，請執行以下指令：</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo yum upgrade --assumeyes --tolerant</span><br><span class="line">$ sudo yum update --assumeyes</span><br></pre></td></tr></table></figure>
+
+<p>由於在 CentOS 與 RHEL 預設會開啟防火牆，故要關閉防火牆與開機時自動啟動：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo systemctl stop firewalld &amp;&amp; sudo systemctl <span class="built_in">disable</span> firewalld</span><br></pre></td></tr></table></figure>
+
+<p>接著安裝一些基本工具軟體：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo yum install -y tar xz unzip curl ipset vim</span><br></pre></td></tr></table></figure>
+
+<p>設定啟動 OverlayFS :</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo tee /etc/modules-load.d/overlay.conf &lt;&lt;-<span class="string">'EOF'</span></span><br><span class="line">overlay</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<p>設定關閉 SELinux 與設定一些資訊，並重新啟動：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo sed -i s/SELINUX=enforcing/SELINUX=permissive/g /etc/selinux/config &amp;&amp;</span><br><span class="line">sudo groupadd nogroup &amp;&amp;</span><br><span class="line">sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1 &amp;&amp;</span><br><span class="line">sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1 &amp;&amp;</span><br><span class="line">sudo reboot</span><br></pre></td></tr></table></figure>
+
+<p>完成重新啟動後，在每一台節點安裝 Docker，首先要取得 Repos，設定以下來讓 yum 可以抓取：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo tee /etc/yum.repos.d/docker.repo &lt;&lt;-<span class="string">'EOF'</span></span><br><span class="line">[dockerrepo]</span><br><span class="line">name=Docker Repository</span><br><span class="line">baseurl=https://yum.dockerproject.org/repo/main/centos/<span class="variable">$releasever</span>/</span><br><span class="line">enabled=1</span><br><span class="line">gpgcheck=1</span><br><span class="line">gpgkey=https://yum.dockerproject.org/gpg</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<p>設定 systemd 執行 Docker daemon 於 OverlayFS：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo mkdir -p /etc/systemd/system/docker.service.d &amp;&amp; sudo tee /etc/systemd/system/docker.service.d/override.conf &lt;&lt;- EOF</span><br><span class="line">[Service]</span><br><span class="line">ExecStart=</span><br><span class="line">ExecStart=/usr/bin/docker daemon --storage-driver=overlay -H fd://</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<p>安裝 Docker engine，並啟動 docker 與設定開機啟動：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo yum install --assumeyes --tolerant docker-engine</span><br><span class="line">$ sudo systemctl start docker</span><br><span class="line">$ sudo systemctl <span class="built_in">enable</span> docker</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊可以設定使用者加入 docker 群組：</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo gpasswd -a $(whoami) docker</span><br></pre></td></tr></table></figure>
+
+<h2 id="安裝-Bootstrap-Node"><a href="#安裝-Bootstrap-Node" class="headerlink" title="安裝 Bootstrap Node"></a>安裝 Bootstrap Node</h2><p>Bootstrap 節點主要提供佈署的功能，可以採用 UI 或 CLI 來進行部署，以下將說明如何透過建置 Bootstrap 來完成 DC/OS 佈署。</p>
+<h3 id="GUI-安裝"><a href="#GUI-安裝" class="headerlink" title="GUI 安裝"></a>GUI 安裝</h3><p>這邊採用 GUI 方式來佈署 DC/OS，首先下載 <a href="https://downloads.dcos.io/dcos/EarlyAccess/dcos_generate_config.sh?_ga=1.252969481.1283195233.1461920094" target="_blank" rel="noopener">DC/OS installer</a>：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ wget https://downloads.dcos.io/dcos/EarlyAccess/dcos_generate_config.sh</span><br></pre></td></tr></table></figure>
+
+<p>接著執行啟動 DC/OS UI：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo bash dcos_generate_config.sh --web -v</span><br></pre></td></tr></table></figure>
+
+<p>完成後，即可開啟瀏覽器輸入 <a href="http://<bootstrap-node-public-ip>:9000" target="_blank" rel="noopener">bootstrap web</a></p>
+<p>這邊需要輸入 Bootstrap 節點的 SSH 私有金鑰，透過以下方式產生與印出：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ssh-keygen -t rsa</span><br><span class="line">$ cat .ssh/id_rsa</span><br></pre></td></tr></table></figure>
+
+<p>並建立一個腳本檔案<code>ip-detect</code>，並加入以下內容：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="built_in">set</span> -o nounset -o errexit</span><br><span class="line"></span><br><span class="line">IP=&lt;MASTER_IP&gt;</span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> $(ip route get <span class="variable">$&#123;IP&#125;</span> | awk <span class="string">'&#123;print $NF; exit&#125;'</span>)</span><br></pre></td></tr></table></figure>
+
+<p>上傳以上資訊，並填入 Master 與 Agent 的 IP Address。</p>
+<h3 id="CLI-安裝"><a href="#CLI-安裝" class="headerlink" title="CLI 安裝"></a>CLI 安裝</h3><p>DC/OS 除了可以透過 GUI 進行安裝，也可以透過 CLI 的方式來佈署，首先建立目錄<code>genconf</code>：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ mkdir -p dcos_cluster</span><br><span class="line">$ <span class="built_in">cd</span> dcos_cluster</span><br><span class="line">$ mkdir -p genconf</span><br></pre></td></tr></table></figure>
+
+<p>然後下載 DC/OS installer 來進行安裝，並且查看所有指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ wget https://downloads.dcos.io/dcos/EarlyAccess/dcos_generate_config.sh</span><br><span class="line">$ sudo bash dcos_generate_config.sh --<span class="built_in">help</span></span><br></pre></td></tr></table></figure>
+
+<p>建立一個腳本檔案<code>genconf/ip-detect</code>，並加入以下內容：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="built_in">set</span> -o nounset -o errexit</span><br><span class="line"></span><br><span class="line">IP=&lt;MASTER_IP&gt;</span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> $(ip route get <span class="variable">$&#123;IP&#125;</span> | awk <span class="string">'&#123;print $NF; exit&#125;'</span>)</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>MASTER_IP</code>為修改成主節點 IP。</p>
+</blockquote>
+<p>接著建立設定檔<code>genconf/config.yaml</code>，並加入以下內容：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">---</span><br><span class="line">agent_list:</span><br><span class="line">- &lt;agent-private-ip-1&gt;</span><br><span class="line">- &lt;agent-private-ip-2&gt;</span><br><span class="line">bootstrap_url: file:///opt/dcos_install_tmp</span><br><span class="line">cluster_name: <span class="string">"DC/OS Cluster"</span></span><br><span class="line">master_discovery: static</span><br><span class="line">master_list:</span><br><span class="line">- &lt;master-private-ip-1&gt;</span><br><span class="line">resolvers:</span><br><span class="line">- 8.8.4.4</span><br><span class="line">- 8.8.8.8</span><br><span class="line">ssh_port: 22</span><br><span class="line">ssh_user: &lt;username&gt;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li><code>&lt;agent-private-ip-1&gt;</code> 修改成 <code>10.0.0.103</code>。</li>
+<li><code>&lt;agent-private-ip-2&gt;</code> 修改成 <code>10.0.0.104</code>。</li>
+<li><code>&lt;master-private-ip-1&gt;</code> 修改成 <code>10.0.0.102</code>。</li>
+<li><code>&lt;username&gt;</code> 修改成 <code>cloud-user</code>。P.S 這邊是用 cloud image。</li>
+</ul>
+</blockquote>
+<p>完成後複製 Bootstrap 節點的 SSH 私有金鑰到目錄底下：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cp &lt;path-to-key&gt; genconf/ssh_key &amp;&amp; chmod 0600 genconf/ssh_key</span><br></pre></td></tr></table></figure>
+
+<p>透過 DC/OS installer 產生設定資訊：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo bash dcos_generate_config.sh --genconf</span><br><span class="line">Extracting image from this script and loading into docker daemon, this step can take a few minutes</span><br><span class="line">dcos-genconf.e060aa49ac4ab62d5e-1e14856f55e5d5d07b.tar</span><br><span class="line">Running mesosphere/dcos-genconf docker with BUILD_DIR <span class="built_in">set</span> to /home/centos/genconf</span><br><span class="line">====&gt; EXECUTING CONFIGURATION GENERATION</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>成功的話目錄結構會類似以下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">├── dcos-genconf.14509fe1e7899f4395-3a2b7e03c45cd615da.tar</span><br><span class="line">├── dcos_generate_config.sh</span><br><span class="line">└── genconf</span><br><span class="line">    ├── cluster_packages.json</span><br><span class="line">    ├── config.yaml</span><br><span class="line">    ├── ip-detect</span><br><span class="line">    ├── serve</span><br><span class="line">    │   ├── bootstrap</span><br><span class="line">    │   │   ├── 3a2b7e03c45cd615da8dfb1b103943894652cd71.active.json</span><br><span class="line">    │   │   └── 3a2b7e03c45cd615da8dfb1b103943894652cd71.bootstrap.tar.xz</span><br><span class="line">    │   ├── bootstrap.latest</span><br><span class="line">    │   ├── cluster-package-info.json</span><br><span class="line">    │   ├── dcos_install.sh</span><br><span class="line">    │   ├── fetch_packages.sh</span><br><span class="line">    │   └── packages</span><br><span class="line">    │       ├── dcos-config</span><br><span class="line">    │       │   └── dcos-config--setup_6dac2d99011d6219b32d9f66cafa9845b7cf6d74.tar.xz</span><br><span class="line">    │       └── dcos-metadata</span><br><span class="line">    │           └── dcos-metadata--setup_6dac2d99011d6219b32d9f66cafa9845b7cf6d74.tar.xz</span><br><span class="line">    ├── ssh_key</span><br><span class="line">    └── state</span><br></pre></td></tr></table></figure>
+
+<p>若沒問題就可以 prerequisites 佈署階段：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo bash dcos_generate_config.sh --install-prereqs</span><br><span class="line">Running mesosphere/dcos-genconf docker with BUILD_DIR <span class="built_in">set</span> to /home/centos/genconf</span><br><span class="line">====&gt; dcos_installer.action_lib.prettyprint:: ====&gt; EXECUTING INSTALL PREREQUISITES</span><br><span class="line">====&gt; dcos_installer.action_lib.prettyprint:: ====&gt; START install_prereqs</span><br></pre></td></tr></table></figure>
+
+<p>若沒問題就可以執行 preflight 來驗證叢集是否可以安裝：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo bash dcos_generate_config.sh --preflight</span><br><span class="line">Running mesosphere/dcos-genconf docker with BUILD_DIR <span class="built_in">set</span> to /home/centos/genconf</span><br><span class="line">====&gt; dcos_installer.action_lib.prettyprint:: ====&gt; EXECUTING PREFLIGHT</span><br><span class="line">====&gt; dcos_installer.action_lib.prettyprint:: ====&gt; START run_preflight</span><br><span class="line">====&gt; dcos_installer.action_lib.prettyprint:: ====&gt; STAGE preflight</span><br></pre></td></tr></table></figure>
+
+<p>一樣若沒問題就可以執行 deploy 來安裝 DC/OS：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo bash dcos_generate_config.sh --deploy</span><br><span class="line">Running mesosphere/dcos-genconf docker with BUILD_DIR <span class="built_in">set</span> to /home/centos/genconf</span><br><span class="line">====&gt; dcos_installer.action_lib.prettyprint:: ====&gt; EXECUTING DC/OS INSTALLATION</span><br><span class="line">====&gt; dcos_installer.action_lib.prettyprint:: ====&gt; START deploy_master</span><br></pre></td></tr></table></figure>
+
+<p>最後沒問題就可以執行 postflight 來確認服務是否有啟動：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo bash dcos_generate_config.sh --postflight</span><br><span class="line">Running mesosphere/dcos-genconf docker with BUILD_DIR <span class="built_in">set</span> to /home/centos/genconf</span><br><span class="line">====&gt; dcos_installer.action_lib.prettyprint:: ====&gt; EXECUTING POSTFLIGHT</span><br><span class="line">====&gt; dcos_installer.action_lib.prettyprint:: ====&gt; START run_postflight</span><br></pre></td></tr></table></figure>
+
+<p>都完成後就可以查看 <a href="http://<master-public-ip>:8181/exhibitor/v1/ui/index.html" target="_blank" rel="noopener">Zookpeer</a> 與 <a href="http://<public-master-ip>/" target="_blank" rel="noopener">DC/OS</a>。</p>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">簡單部署 DC/OS 於 CentOS 上</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2016-8-17 17:08</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2016/08/19/golang/installation/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    Go 語言環境安裝
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2016/07/21/openstack/kolla-ansible/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">OpenStack Kolla 初體驗</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2016/08/17/data-engineer/dcos-install/" data-id="ck3ns7q5f001owmpf9cvh5vaj" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2016/08/17/data-engineer/dcos-install/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2016/08/17/data-engineer/dcos-install/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#節點配置"><span class="toc-number">1.</span> <span class="toc-text">節點配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安裝前準備"><span class="toc-number">2.</span> <span class="toc-text">安裝前準備</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安裝-Bootstrap-Node"><span class="toc-number">3.</span> <span class="toc-text">安裝 Bootstrap Node</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#GUI-安裝"><span class="toc-number">3.1.</span> <span class="toc-text">GUI 安裝</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CLI-安裝"><span class="toc-number">3.2.</span> <span class="toc-text">CLI 安裝</span></a></li></ol></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2016/08/17/data-engineer/dcos-install/';
+        
+        this.page.identifier = 'data-engineer/dcos-install';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>Pacemaker + Corosync 做服務 HA | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Pacemaker 與 Corosync 是 Linux 中現今較常用的高可靠性叢集系統組合。Pacemaker 自身提供了很多常用的應用管理功能，不過若要使用 Pacemaker 來管理自己實作的服務，或是一些特別的東西時，就必須要自己實作管理資源。">
+<meta name="keywords" content="Linux,Load Balancer,High Availability">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Pacemaker + Corosync 做服務 HA">
+<meta property="og:url" content="https://k2r2bai.com/2016/05/26/linux/ubuntu/corosync-pacemaker/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Pacemaker 與 Corosync 是 Linux 中現今較常用的高可靠性叢集系統組合。Pacemaker 自身提供了很多常用的應用管理功能，不過若要使用 Pacemaker 來管理自己實作的服務，或是一些特別的東西時，就必須要自己實作管理資源。">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.397Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Pacemaker + Corosync 做服務 HA">
+<meta name="twitter:description" content="Pacemaker 與 Corosync 是 Linux 中現今較常用的高可靠性叢集系統組合。Pacemaker 自身提供了很多常用的應用管理功能，不過若要使用 Pacemaker 來管理自己實作的服務，或是一些特別的東西時，就必須要自己實作管理資源。">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-linux/ubuntu/corosync-pacemaker" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            Pacemaker + Corosync 做服務 HA
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2016/05/26/linux/ubuntu/corosync-pacemaker/">
+            <u><time datetime="2016-05-26T08:23:01.000Z" itemprop="datePublished">2016-05-26</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Linux/">Linux</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/High-Availability/">High Availability</a>, <a class="tag-link" href="/tags/Linux/">Linux</a>, <a class="tag-link" href="/tags/Load-Balancer/">Load Balancer</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>Pacemaker 與 Corosync 是 Linux 中現今較常用的高可靠性叢集系統組合。Pacemaker 自身提供了很多常用的應用管理功能，不過若要使用 Pacemaker 來管理自己實作的服務，或是一些特別的東西時，就必須要自己實作管理資源。</p>
+<a id="more"></a>
+
+<h2 id="節點配置"><a href="#節點配置" class="headerlink" title="節點配置"></a>節點配置</h2><p>本安裝將使用三台實體主機與一台虛擬機器，主機規格如以下所示：</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>IP Address</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>pacemaker1</td>
+<td>172.16.35.10</td>
+</tr>
+<tr>
+<td>pacemaker2</td>
+<td>172.16.35.11</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>作業系統皆為 <code>Ubuntu 14.04 Server</code>。</p>
+</blockquote>
+<h2 id="進行安裝與設定"><a href="#進行安裝與設定" class="headerlink" title="進行安裝與設定"></a>進行安裝與設定</h2><p>首先要在所有節點之間設定無密碼 ssh 登入，透過以下方式：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ssh-keygen -t rsa</span><br><span class="line">$ ssh-copy-id pacemaker1</span><br></pre></td></tr></table></figure>
+
+<p>安裝相關套件軟體：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get install -y corosync pacemaker heartbeat resource-agents fence-agents apache2</span><br></pre></td></tr></table></figure>
+
+<p>完成後，在<code>pacemaker1</code>進行以下步驟，首先編輯<code>/etc/corosync/corosync.conf</code>設定檔，修改一下內容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># Please read the openais.conf.5 manual page</span><br><span class="line"></span><br><span class="line">totem &#123;</span><br><span class="line">    version: 2</span><br><span class="line"></span><br><span class="line">    # How long before declaring a token lost (ms)</span><br><span class="line">    token: 3000</span><br><span class="line"></span><br><span class="line">    # How many token retransmits before forming a new configuration</span><br><span class="line">    token_retransmits_before_loss_const: 10</span><br><span class="line"></span><br><span class="line">    # How long to wait for join messages in the membership protocol (ms)</span><br><span class="line">    join: 60</span><br><span class="line"></span><br><span class="line">    # How long to wait for consensus to be achieved before starting a new round of membership configuration (ms)</span><br><span class="line">    consensus: 3600</span><br><span class="line"></span><br><span class="line">    # Turn off the virtual synchrony filter</span><br><span class="line">    vsftype: none</span><br><span class="line"></span><br><span class="line">    # Number of messages that may be sent by one processor on receipt of the token</span><br><span class="line">    max_messages: 20</span><br><span class="line"></span><br><span class="line">    # Limit generated nodeids to 31-bits (positive signed integers)</span><br><span class="line">    clear_node_high_bit: yes</span><br><span class="line"></span><br><span class="line">    # Disable encryption</span><br><span class="line">     secauth: off  #啟動認證功能</span><br><span class="line"></span><br><span class="line">    # How many threads to use for encryption/decryption</span><br><span class="line">     threads: 0</span><br><span class="line"></span><br><span class="line">    # Optionally assign a fixed node id (integer)</span><br><span class="line">    # nodeid: 1234</span><br><span class="line"></span><br><span class="line">    # This specifies the mode of redundant ring, which may be none, active, or passive.</span><br><span class="line">     rrp_mode: none</span><br><span class="line"></span><br><span class="line">     interface &#123;</span><br><span class="line">        # The following values need to be set based on your environment</span><br><span class="line">        ringnumber: 0</span><br><span class="line">        bindnetaddr: 10.11.8.0  # 主機所在網路位址</span><br><span class="line">        mcastaddr: 226.93.2.1  # 廣播地址，不要被佔用即可 P.S. 範圍:224.0.2.0～238.255.255.255</span><br><span class="line">        mcastport: 5405  # 廣播埠口</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">amf &#123;</span><br><span class="line">    mode: disabled</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">quorum &#123;</span><br><span class="line">    # Quorum for the Pacemaker Cluster Resource Manager</span><br><span class="line">    provider: corosync_votequorum</span><br><span class="line">    expected_votes: 1</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">aisexec &#123;</span><br><span class="line">        user:   root</span><br><span class="line">        group:  root</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">logging &#123;</span><br><span class="line">        fileline: off</span><br><span class="line">        to_stderr: yes  # 輸出到標準输出</span><br><span class="line">        to_logfile: yes  # 輸出到日誌檔案</span><br><span class="line">        logfile: /var/log/corosync.log  # 日誌檔案位置</span><br><span class="line">        to_syslog: no  # 輸出到系统日誌</span><br><span class="line">        syslog_facility: daemon</span><br><span class="line">        debug: off</span><br><span class="line">        timestamp: on</span><br><span class="line">        logger_subsys &#123;</span><br><span class="line">                subsys: AMF</span><br><span class="line">                debug: off</span><br><span class="line">                tags: enter|leave|trace1|trace2|trace3|trace4|trace6</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"># 新增 pacemaker 服務配置</span><br><span class="line">service &#123;</span><br><span class="line">    ver: 1</span><br><span class="line">    name: pacemaker</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接著產生節點之間的溝通時的認證金鑰文件：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ corosync-keygen -l</span><br></pre></td></tr></table></figure>
+
+<p>然後將設定檔與金鑰複製到<code>pacemaker2</code>上：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> /etc/corosync/</span><br><span class="line">$ scp -p corosync.conf authkey pacemaker2:/etc/corosync/</span><br></pre></td></tr></table></figure>
+
+<p>接著分別在<code>兩個</code>節點上編輯<code>/etc/default/corosync</code>檔案，修改以下：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># start corosync at boot [yes|no]</span></span><br><span class="line">START=yes</span><br></pre></td></tr></table></figure>
+
+<p>接著將 Corosync 與 Pacemaker 服務啟動：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo service corosync start</span><br><span class="line">$ sudo service pacemaker start</span><br></pre></td></tr></table></figure>
+
+<p>完成後透過 crm 指令來查看狀態：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ crm status</span><br><span class="line"></span><br><span class="line">Last updated: Tue Dec 27 03:12:07 2016</span><br><span class="line">Last change: Tue Dec 27 02:35:18 2016 via cibadmin on pacemaker1</span><br><span class="line">Stack: corosync</span><br><span class="line">Current DC: pacemaker1 (739255050) - partition with quorum</span><br><span class="line">Version: 1.1.10-42f2063</span><br><span class="line">2 Nodes configured</span><br><span class="line">0 Resources configured</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">Online: [ pacemaker1 pacemaker2 ]</span><br></pre></td></tr></table></figure>
+
+<p>關閉 corosync 預設啟動的 stonith 與 quorum 在兩台節點之問題：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ crm configure property stonith-enabled=<span class="literal">false</span></span><br><span class="line">$ crm configure property no-quorum-policy=ignore</span><br></pre></td></tr></table></figure>
+
+<p>完成後，透過指令檢查：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ crm configure show</span><br><span class="line"></span><br><span class="line">node <span class="variable">$id</span>=<span class="string">"739255050"</span> pacemaker1</span><br><span class="line">node <span class="variable">$id</span>=<span class="string">"739255051"</span> pacemaker2</span><br><span class="line">property <span class="variable">$id</span>=<span class="string">"cib-bootstrap-options"</span> \</span><br><span class="line">	dc-version=<span class="string">"1.1.10-42f2063"</span> \</span><br><span class="line">	cluster-infrastructure=<span class="string">"corosync"</span> \</span><br><span class="line">	stonith-enabled=<span class="string">"false"</span> \</span><br><span class="line">	no-quorum-policy=<span class="string">"ignore"</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="設定資源"><a href="#設定資源" class="headerlink" title="設定資源"></a>設定資源</h2><p>Corosync 支援了多種資源代理，如 heartbeat、LSB(Linux Standard Base)與 OCF(Open Cluster Framework) 等。而 Corosync 也可以透過指令來查詢：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ crm ra classes</span><br><span class="line"></span><br><span class="line">lsb</span><br><span class="line">ocf / heartbeat pacemaker redhat</span><br><span class="line">service</span><br><span class="line">stonith</span><br><span class="line">upstart</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>而更細部的資訊可以透過以下查詢：</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ crm ra list lsb</span><br><span class="line">$ crm ra list ocf heartbeat</span><br><span class="line">$ crm ra info ocf:heartbeat:IPaddr</span><br></pre></td></tr></table></figure>
+
+<p>首先新增一個 heartbeat 資源：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> crm configure</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 設定 VIP</span></span><br><span class="line"><span class="meta">crm(live)configure#</span><span class="bash"> primitive vip ocf:heartbeat:IPaddr params ip=172.16.35.20 nic=eth2 cidr_netmask=24 op monitor interval=10s timeout=20s on-fail=restart</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 設定 httpd</span></span><br><span class="line"><span class="meta">crm(live)configure#</span><span class="bash"> primitive httpd lsb:apache2</span></span><br><span class="line"><span class="meta">crm(live)configure#</span><span class="bash"> <span class="built_in">exit</span></span></span><br><span class="line">There are changes pending. Do you want to commit them? yes</span><br></pre></td></tr></table></figure>
+
+<p>設定 Group 來將 httpd 與 vip 資源放一起：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">crm(live)configure<span class="comment"># group webservice vip httpd</span></span><br></pre></td></tr></table></figure>
+
+<p>完成後，透過 crm 指令查詢狀態：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ crm status</span><br><span class="line"></span><br><span class="line">Last updated: Tue Dec 27 03:52:21 2016</span><br><span class="line">Last change: Tue Dec 27 03:52:20 2016 via cibadmin on pacemaker1</span><br><span class="line">Stack: corosync</span><br><span class="line">Current DC: pacemaker1 (739255050) - partition with quorum</span><br><span class="line">Version: 1.1.10-42f2063</span><br><span class="line">2 Nodes configured</span><br><span class="line">2 Resources configured</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">Online: [ pacemaker1 pacemaker2 ]</span><br><span class="line"></span><br><span class="line"> Resource Group: webservice</span><br><span class="line">     vip	(ocf::heartbeat:IPaddr):	Started pacemaker1</span><br><span class="line">     httpd	(lsb:apache2):	Started pacemaker2</span><br></pre></td></tr></table></figure>
+
+<p>最後就可以在<code>pacemaker1</code>或<code>pacemaker2</code>關閉服務來確認是否正常執行。</p>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">Pacemaker + Corosync 做服務 HA</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2016-5-26 16:05</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2016/05/27/linux/ubuntu/flashcache/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    用 Flashcache 建立高容量與高效能儲存
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2016/05/15/ceph/rados-java/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">利用 rados-java 存取 Ceph</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2016/05/26/linux/ubuntu/corosync-pacemaker/" data-id="ck3ns7qbv00iqwmpf14lea1po" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2016/05/26/linux/ubuntu/corosync-pacemaker/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2016/05/26/linux/ubuntu/corosync-pacemaker/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#節點配置"><span class="toc-number">1.</span> <span class="toc-text">節點配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#進行安裝與設定"><span class="toc-number">2.</span> <span class="toc-text">進行安裝與設定</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#設定資源"><span class="toc-number">3.</span> <span class="toc-text">設定資源</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2016/05/26/linux/ubuntu/corosync-pacemaker/';
+        
+        this.page.identifier = 'linux/ubuntu/corosync-pacemaker';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

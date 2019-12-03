@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>淺談 Kubernetes 叢集元件更新 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="前言在 Kubernetes 的快速發展下，每隔三個月左右，我們就會看到新版本的推出，以及舊版本進入 EOL(End of Life) 狀態，這時一但想要嘗試新功能與特性，或者是由於安全漏洞關析需要進行補丁時，就必須面對升級 Kubernetes 叢集元件問題。但是若在生產環境中，隨意升級 Kubernetes 叢集元件會不會發生什麼問題? 是的，若對於 Kubernetes 不熟悉的話，很容易掉">
+<meta name="keywords" content="Kubernetes">
+<meta property="og:type" content="article">
+<meta property="og:title" content="淺談 Kubernetes 叢集元件更新">
+<meta property="og:url" content="https://k2r2bai.com/2019/09/21/ironman2020/day06/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="前言在 Kubernetes 的快速發展下，每隔三個月左右，我們就會看到新版本的推出，以及舊版本進入 EOL(End of Life) 狀態，這時一但想要嘗試新功能與特性，或者是由於安全漏洞關析需要進行補丁時，就必須面對升級 Kubernetes 叢集元件問題。但是若在生產環境中，隨意升級 Kubernetes 叢集元件會不會發生什麼問題? 是的，若對於 Kubernetes 不熟悉的話，很容易掉">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://i.imgur.com/zMJoesc.png">
+<meta property="og:image" content="https://i.imgur.com/Ho4qVuT.png">
+<meta property="og:image" content="https://i.imgur.com/Q8pmOSC.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.387Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="淺談 Kubernetes 叢集元件更新">
+<meta name="twitter:description" content="前言在 Kubernetes 的快速發展下，每隔三個月左右，我們就會看到新版本的推出，以及舊版本進入 EOL(End of Life) 狀態，這時一但想要嘗試新功能與特性，或者是由於安全漏洞關析需要進行補丁時，就必須面對升級 Kubernetes 叢集元件問題。但是若在生產環境中，隨意升級 Kubernetes 叢集元件會不會發生什麼問題? 是的，若對於 Kubernetes 不熟悉的話，很容易掉">
+<meta name="twitter:image" content="https://i.imgur.com/zMJoesc.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-ironman2020/day06" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            淺談 Kubernetes 叢集元件更新
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2019/09/21/ironman2020/day06/">
+            <u><time datetime="2019-09-20T16:00:00.000Z" itemprop="datePublished">2019-09-21</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在 Kubernetes 的快速發展下，每隔三個月左右，我們就會看到新版本的推出，以及舊版本進入 EOL(End of Life) 狀態，這時一但想要嘗試新功能與特性，或者是由於安全漏洞關析需要進行補丁時，就必須面對升級 Kubernetes 叢集元件問題。但是若在生產環境中，隨意升級 Kubernetes 叢集元件會不會發生什麼問題?</p>
+<p>是的，若對於 Kubernetes 不熟悉的話，很容易掉入陷阱，比如說:已被棄用的 API、不相容的 Add-ons 版本、已棄用的元件參數、不正確的升級方式等等，這些都是有可能在升級後，導致 Kubernetes 叢集功能無法正常工作的原因。</p>
+<a id="more"></a>
+
+<p>而今天就是要來跟大家分享一下，如何更安全地升級 Kubernetes 叢集，並且遇到問題時，該如何避免與解決。在開始前，我們先來了解一座 Kubernetes 叢集要更新時，需要關注哪些元件。</p>
+<ul>
+<li><strong>Kubernetes</strong> <ul>
+<li><strong>主節點元件</strong>: kube-apiserver, kube-scheduler, kube-controller-manager 等等。</li>
+<li><strong>節點</strong>: kubelet。</li>
+<li><strong>Add-ons</strong>: kube-proxy、CoreDNS 等等。</li>
+</ul>
+</li>
+<li><strong>容器 Runtime</strong>: Docker、CRI-O 等等。</li>
+<li><strong>叢集資料儲存</strong>: etcd。</li>
+<li><strong>叢集網路(CNI plugins)</strong>: Ｃalico, Flannel 等等。</li>
+<li><strong>作業系統</strong>: 系統軟體與 Kernel 版本。</li>
+</ul>
+<h3 id="更新叢集前須知"><a href="#更新叢集前須知" class="headerlink" title="更新叢集前須知"></a>更新叢集前須知</h3><p>為了預防在更新 Kubernetes 叢集時發生問題，因此不需先注意幾件事情，以確保升級順利。</p>
+<ol>
+<li>在更新叢集時，請務必<code>備份 etcd 資料</code>。因為 etcd 儲存 Kubernetes 叢集的狀態，若發生不一致時，將會影響叢集運行。這邊可以透過以下工具來完成。<ul>
+<li><a href="https://github.com/coreos/etcd-operator" target="_blank" rel="noopener">etcd Operator</a></li>
+<li>透過 <a href="https://github.com/coreos/etcd-operator" target="_blank" rel="noopener">etcdctl</a> 的 snapshot + cron + restore 指令。</li>
+</ul>
+</li>
+</ol>
+<p><img src="https://i.imgur.com/zMJoesc.png" alt="R.I.P"></p>
+<ol start="2">
+<li><p>叢集更新時，務必以一個<code>次要版本(Minor)</code>為間隔進行。</p>
+<ul>
+<li>Kubernetes 約每三個月會發布一個次要版本，其中每個次要版本號都會提供相容功能與 APIs 來轉移將被棄用的。</li>
+<li><strong>Good</strong>: My cluster is of v1.10, I want to upgrade to v1.11.</li>
+<li><strong>Bad</strong>: My cluster is of v1.10, I want to upgrade to v.1.13.</li>
+<li><strong>Good</strong>: My cluster is of v1.10, I upgrade to v1.11 and then upgrade to v1.12.</li>
+</ul>
+</li>
+<li><p>閱讀 <a href="https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG.md" target="_blank" rel="noopener">Release Notes</a> 來了解每個版本的變化。</p>
+<ul>
+<li>了解已知問題</li>
+<li>需要採取的措施</li>
+<li>被棄用與移除的功能</li>
+</ul>
+</li>
+<li><p><code>善用工具</code>或<code>公有雲服務</code>來完成叢集更新過程。</p>
+<ul>
+<li>Kubeadm, Kops, Kubespray, <a href="https://github.com/kubernetes-sigs/cluster-api" target="_blank" rel="noopener">Cluster API</a>, ….</li>
+<li>GKE, EKS, AKS, ….</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>公有雲通常提供了更新機制，這也是公有雲 Kubernetes 服務的優勢之一，因為自建的環境往往很容易因為更新發生問題。</p>
+</blockquote>
+<ol start="5">
+<li>了解要更新的 Kubernetes <code>目標版本 API 變化</code>。<ul>
+<li>API 會隨版本演進而改變，如 <a href="https://kubernetes.io/blog/2019/07/18/api-deprecations-in-1-16/" target="_blank" rel="noopener">v1.16 要移除 extensions/v1beta1</a>。</li>
+</ul>
+</li>
+</ol>
+<p><img src="https://i.imgur.com/Ho4qVuT.png" alt></p>
+<ol start="6">
+<li>確保應用程式使用進階或穩定的 API 建置實例，如 Deployment。<ul>
+<li>確保應用程式有多個實例(Pod)支撐。</li>
+<li>利用探針確保應用狀態，以攔阻流量的分發。</li>
+<li>使用 Pod 的 PreStop hook 來加強生命週期管理。</li>
+</ul>
+</li>
+<li>更新 Node 以前，優先更新 Master。</li>
+</ol>
+<blockquote>
+<p>TODO: 補充更多細節</p>
+</blockquote>
+<h3 id="可預見問題與解法"><a href="#可預見問題與解法" class="headerlink" title="可預見問題與解法"></a>可預見問題與解法</h3><ol>
+<li>etcd 中過舊的資料。<ul>
+<li>不要刪除 API 版本(#52185)。</li>
+<li>使用 <a href="https://kubernetes.io/docs/reference/using-api/deprecation-policy" target="_blank" rel="noopener">Storage migration 系統</a><a href="https://github.com/kubernetes/community/pull/2524" target="_blank" rel="noopener">1</a>。</li>
+<li>不要部署 EOL 版本 API<a href="https://kubernetes.io/docs/reference/using-api/deprecation-policy/" target="_blank" rel="noopener">2</a>。</li>
+</ul>
+</li>
+<li>Clients 使用的版本已過舊(過時)<ul>
+<li>應用與服務使用的 API 依然是相依於 extensions/v1beta1。<ul>
+<li>需在叢集更新以前，優先將應用與服務的 API object 轉移到新版本</li>
+</ul>
+</li>
+<li>開發的 Custom Controller 涉及過舊版本的 API 與函式庫。<ul>
+<li>需要更新程式碼使用新版 API，並且將相依 Libraries 也更新至相容的新版本。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Policy breaks after upgrade(Webhook, RBAC)<ul>
+<li>有新版本 batch/v2 與 test_batch/v1<ul>
+<li>在叢集更新前，先更新 Policies 使用目前所有支援的版本。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<p><img src="https://i.imgur.com/Q8pmOSC.png" alt></p>
+<blockquote>
+<p>TODO: 補充更多細節</p>
+</blockquote>
+<h3 id="不可預見問題與解法"><a href="#不可預見問題與解法" class="headerlink" title="不可預見問題與解法"></a>不可預見問題與解法</h3><ul>
+<li>在升級前盡可能地在實際環境測試要升級的版本。<ul>
+<li>使用舊版本的 <a href="https://github.com/heptio/sonobuoy" target="_blank" rel="noopener">Sonobuoy</a> 來測試新版本叢集。</li>
+</ul>
+</li>
+<li>確保組態檔案保持一致，並確保設定是否因為版本改變而出現錯誤。</li>
+<li>檢視 Addons 是否因為新版本的特性而崩潰。</li>
+<li>利用多階段升級方式來確保 API 的相容。</li>
+</ul>
+<blockquote>
+<p>TODO: 補充更多細節</p>
+</blockquote>
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>今天簡單的分享了升級 Kubernetes 叢集時，需要優先了解的知識，目的是希望幫助正在煩惱升級的人，能夠更有信心的執行。這邊在總結一下更新叢集前、更新叢集中與更新叢集後需要瞭解的事情。</p>
+<ul>
+<li><strong>更新叢集前</strong><ul>
+<li>備份 etcd 資料!!備份 etcd 資料!!備份 etcd 資料!!</li>
+<li>閱讀新版本的 Release notes</li>
+<li>更新客戶端相關軟體與程式，以支援新舊版本的相容 API 與函式庫。</li>
+<li>更新相關的組態檔案，以支援新舊版本的相容 API 與函式庫。</li>
+</ul>
+</li>
+<li><strong>更新叢集中</strong><ul>
+<li>先更新主節點(Master node)，在更新工作節點(Node)。</li>
+<li>若主節點為 HA 架構，請確保所有節點都更新完，在使用新的 APIs 與功能。</li>
+<li>更新工作節點前，透過<code>kubectl drain &lt;node&gt;</code>將節點設定為維運模式。</li>
+<li>確認 Add-ons 支援新版本的 Kubernetes 元件、APIs 與函式庫等等後，再進行更新。</li>
+<li>網路插件同上。</li>
+</ul>
+</li>
+<li><strong>更新叢集後</strong><ul>
+<li>檢查 Kubernetes 叢集控制平面元件。</li>
+<li>檢查 Add-ons 與網路插件。</li>
+<li>確保所有節點處於 Ready 狀態。</li>
+<li>平衡因為升級而集中的 Pod。</li>
+</ul>
+</li>
+</ul>
+<p>當有了基本的叢集更新知識後，明天我們將實際實踐更新一座叢集的過程。</p>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li><a href="https://static.sched.com/hosted_files/kccncchina2018english/1c/Safely%20upgrading%20Kubernetes%20clusters.pdf" target="_blank" rel="noopener">https://static.sched.com/hosted_files/kccncchina2018english/1c/Safely%20upgrading%20Kubernetes%20clusters.pdf</a></li>
+<li><a href="https://static.sched.com/hosted_files/kccna18/8b/Highly%20Available%20Kubernetes%20Clusters%20-%20Best%20Practices%20-%20Kubecon%20NA%202018.pdf" target="_blank" rel="noopener">https://static.sched.com/hosted_files/kccna18/8b/Highly%20Available%20Kubernetes%20Clusters%20-%20Best%20Practices%20-%20Kubecon%20NA%202018.pdf</a></li>
+<li><a href="https://v1-15.docs.kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade-1-15/" target="_blank" rel="noopener">https://v1-15.docs.kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade-1-15/</a></li>
+<li><a href="https://medium.com/@fairwinds/the-reactiveops-bestest-kubernetes-cluster-upgrade-f7a7589b21fb" target="_blank" rel="noopener">https://medium.com/@fairwinds/the-reactiveops-bestest-kubernetes-cluster-upgrade-f7a7589b21fb</a></li>
+<li><a href="https://cloud.google.com/blog/products/gcp/kubernetes-best-practices-upgrading-your-clusters-with-zero-downtime" target="_blank" rel="noopener">https://cloud.google.com/blog/products/gcp/kubernetes-best-practices-upgrading-your-clusters-with-zero-downtime</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">淺談 Kubernetes 叢集元件更新</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2019-9-21 00:09</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2019/09/22/ironman2020/day07/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    動手嘗試 Kubernetes 叢集更新吧
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2019/09/20/ironman2020/day05/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">實現 Kubernetes 高可靠架構部署</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2019/09/21/ironman2020/day06/" data-id="ck3ns7q5u002twmpf5yxlkts1" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2019/09/21/ironman2020/day06/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/09/21/ironman2020/day06/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#更新叢集前須知"><span class="toc-number">1.1.</span> <span class="toc-text">更新叢集前須知</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#可預見問題與解法"><span class="toc-number">1.2.</span> <span class="toc-text">可預見問題與解法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#不可預見問題與解法"><span class="toc-number">1.3.</span> <span class="toc-text">不可預見問題與解法</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#結語"><span class="toc-number">2.</span> <span class="toc-text">結語</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Reference"><span class="toc-number">3.</span> <span class="toc-text">Reference</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2019/09/21/ironman2020/day06/';
+        
+        this.page.identifier = 'ironman2020/day06';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>[Helm] 基礎介紹與使用 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Helm 是 Kubernetes Chart 的管理工具，Kubernetes Chart 是一套預先組態的 Kubernetes 資源套件。使用 Helm 有以下幾個好處：  查詢與使用熱門的 Kubernetes Chart 軟體套件。 以 Kuberntes Chart 來分享自己的應用程式。 可利用 Chart 來重複建立應用程式。 智能地管理 Kubernetes manifest 檔">
+<meta name="keywords" content="Kubernetes,Helm">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[Helm] 基礎介紹與使用">
+<meta property="og:url" content="https://k2r2bai.com/2017/03/25/kubernetes/helm/quick-start/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Helm 是 Kubernetes Chart 的管理工具，Kubernetes Chart 是一套預先組態的 Kubernetes 資源套件。使用 Helm 有以下幾個好處：  查詢與使用熱門的 Kubernetes Chart 軟體套件。 以 Kuberntes Chart 來分享自己的應用程式。 可利用 Chart 來重複建立應用程式。 智能地管理 Kubernetes manifest 檔">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/k8s/helm-peer.png">
+<meta property="og:image" content="https://k2r2bai.com/images/k8s/helm-jenkins.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.395Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="[Helm] 基礎介紹與使用">
+<meta name="twitter:description" content="Helm 是 Kubernetes Chart 的管理工具，Kubernetes Chart 是一套預先組態的 Kubernetes 資源套件。使用 Helm 有以下幾個好處：  查詢與使用熱門的 Kubernetes Chart 軟體套件。 以 Kuberntes Chart 來分享自己的應用程式。 可利用 Chart 來重複建立應用程式。 智能地管理 Kubernetes manifest 檔">
+<meta name="twitter:image" content="https://k2r2bai.com/images/k8s/helm-peer.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-kubernetes/helm/quick-start" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            [Helm] 基礎介紹與使用
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2017/03/25/kubernetes/helm/quick-start/">
+            <u><time datetime="2017-03-25T09:08:54.000Z" itemprop="datePublished">2017-03-25</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Helm/">Helm</a>, <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p><a href="https://github.com/kubernetes/helm" target="_blank" rel="noopener">Helm</a> 是 Kubernetes Chart 的管理工具，Kubernetes Chart 是一套預先組態的 Kubernetes 資源套件。使用 Helm 有以下幾個好處：</p>
+<ul>
+<li>查詢與使用熱門的 <a href="https://github.com/kubernetes/charts" target="_blank" rel="noopener">Kubernetes Chart</a> 軟體套件。</li>
+<li>以 Kuberntes Chart 來分享自己的應用程式。</li>
+<li>可利用 Chart 來重複建立應用程式。</li>
+<li>智能地管理 Kubernetes manifest 檔案。</li>
+<li>管理釋出的 Helm 版本。</li>
+</ul>
+<a id="more"></a>
+
+<h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>Helm 有三個觀念需要我們去了解，分別為 Chart、Release 與 Repository，其細節如下：</p>
+<ul>
+<li><strong>Chart</strong>：主要定義要被執行的應用程式中，所需要的工具、資源、服務等資訊，有點類似 Homebrew 的 Formula 或是 APT 的 dpkg 檔案。</li>
+<li><strong>Release</strong>：一個被執行於 Kubernetes 的 Chart 實例。Chart 能夠在一個叢集中擁有多個 Release，例如 MySQL Chart，可以在叢集建立基於該 Chart 的兩個資料庫實例，其中每個 Release 都會有獨立的名稱。</li>
+<li><strong>Repository</strong>：主要用來存放 Chart 的倉庫，如 <a href="https://kubeapps.com/" target="_blank" rel="noopener">KubeApps</a>。</li>
+</ul>
+<p>可以理解 Helm 主要目標就是從 Chart Repository 中，查找部署者需要的應用程式 Chart，然後以 Release 形式來部署到 Kubernetes 中進行管理。</p>
+<h2 id="Helm-系統元件"><a href="#Helm-系統元件" class="headerlink" title="Helm 系統元件"></a>Helm 系統元件</h2><p>Helm 主要分為兩種元件，Helm Client 與 Tiller Server，兩者功能如下：</p>
+<ul>
+<li><strong>Helm Client</strong>：一個安裝 Helm CLI 的機器，該機器透過 gRPC 連接 Tiller Server 來對 Repository、Chart 與 Release 等進行管理與操作，如建立、刪除與升級等操作，細節可以查看 <a href="https://github.com/kubernetes/helm/blob/master/docs/index.md" target="_blank" rel="noopener">Helm Documentation</a>。</li>
+<li><strong>Tiller Server</strong>：主要負責接收來至 Client 的指令，並透過 kube-apiserver 與 Kubernetes 叢集做溝通，根據 Chart 定義的內容，來產生與管理各種對應 API 物件的 Kubernetes 部署檔案(又稱為 <code>Release</code>)。</li>
+</ul>
+<p>兩者溝通架構圖如下所示：<br><img src="/images/k8s/helm-peer.png" alt></p>
+<h2 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h2><p>安裝前需要確認環境滿足以下幾膽：</p>
+<ul>
+<li>已部署 Kubernetes 叢集。</li>
+<li>操作端安裝 kubectl 工具。</li>
+<li>操作端可以透過 kubectl 工具管理到 Kubernetes（可用的 kubectl config）。</li>
+</ul>
+<h2 id="安裝-Helm"><a href="#安裝-Helm" class="headerlink" title="安裝 Helm"></a>安裝 Helm</h2><p>Helm 有許多種安裝方式，這邊個人比較喜歡用 binary 檔案來進行安裝：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ wget -qO- https://kubernetes-helm.storage.googleapis.com/helm-v2.8.1-linux-amd64.tar.gz | tar -zx</span><br><span class="line">$ sudo mv linux-amd64/helm /usr/<span class="built_in">local</span>/bin/</span><br><span class="line">$ helm version</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>OS X 為下載 <code>helm-v2.4.1-darwin-amd64.tar.gz</code>。</p>
+</blockquote>
+<h2 id="初始化-Helm"><a href="#初始化-Helm" class="headerlink" title="初始化 Helm"></a>初始化 Helm</h2><p>在開始使用 Helm 之前，我們需要建置 Tiller Server 來對 Kubernetes 的管理，而 Helm CLI 內建也提供了快速初始化指令，如下：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl -n kube-system create sa tiller</span><br><span class="line">$ kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller</span><br><span class="line">$ helm init --service-account tiller</span><br><span class="line"><span class="variable">$HELM_HOME</span> has been configured at /root/.helm.</span><br><span class="line"></span><br><span class="line">Tiller (the helm server side component) has been installed into your Kubernetes Cluster.</span><br><span class="line">Happy Helming!</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若之前只用舊版想要更新可以透過以下指令<code>helm init --upgrade</code>來達到效果。</p>
+</blockquote>
+<p>完成後，就可以透過 kubectl 來查看 Tiller Server 是否被建立：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl get po,svc -n kube-system -l app=helm</span><br><span class="line">NAME                                READY     STATUS    RESTARTS   AGE</span><br><span class="line">po/tiller-deploy-1651596238-5lsdw   1/1       Running   0          3m</span><br><span class="line"></span><br><span class="line">NAME                CLUSTER-IP        EXTERNAL-IP   PORT(S)     AGE</span><br><span class="line">svc/tiller-deploy   192.162.204.144   &lt;none&gt;        44134/TCP   3m</span><br></pre></td></tr></table></figure>
+
+<p>接著透過 helm ctl 來查看資訊：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">export</span> KUBECONFIG=/etc/kubernetes/admin.conf</span><br><span class="line">$ <span class="built_in">export</span> HELM_HOST=$(kubectl describe svc/tiller-deploy -n kube-system | awk <span class="string">'/Endpoints/&#123;print $2&#125;'</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># wait for a few minutes</span></span><br><span class="line">$ helm version</span><br><span class="line">Client: &amp;version.Version&#123;SemVer:<span class="string">"v2.8.1"</span>, GitCommit:<span class="string">"6af75a8fd72e2aa18a2b278cfe5c7a1c5feca7f2"</span>, GitTreeState:<span class="string">"clean"</span>&#125;</span><br><span class="line">Server: &amp;version.Version&#123;SemVer:<span class="string">"v2.8.1"</span>, GitCommit:<span class="string">"6af75a8fd72e2aa18a2b278cfe5c7a1c5feca7f2"</span>, GitTreeState:<span class="string">"clean"</span>&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="部署-Chart-Release-實例"><a href="#部署-Chart-Release-實例" class="headerlink" title="部署 Chart Release 實例"></a>部署 Chart Release 實例</h2><p>當完成初始化後，就可以透過 helm ctl 來管理與部署 Chart Release，我們可以到 <a href="https://kubeapps.com/" target="_blank" rel="noopener">KubeApps</a> 查找想要部署的 Chart，如以下快速部屬 Jenkins　範例，首先先透過搜尋來查看目前應用程式版本：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ helm search jenkins</span><br><span class="line">NAME          	VERSION	DESCRIPTION</span><br><span class="line">stable/jenkins	0.6.3  	Open <span class="built_in">source</span> continuous integration server. It s...</span><br></pre></td></tr></table></figure>
+
+<p>接著透過<code>inspect</code>指令查看該 Chart 的參數資訊：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ helm inspect stable/jenkins</span><br><span class="line">...</span><br><span class="line">Persistence:</span><br><span class="line">  Enabled: <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>從中我們會發現需要建立一個 PVC 來提供持久性儲存。</p>
+</blockquote>
+<p>因此需要建立一個 PVC 提供給 Jenkins Chart 來儲存使用，這邊我們自己手動建立<code>jenkins-pv-pvc.yml</code>檔案：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">PersistentVolume</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">jenkins-pv</span></span><br><span class="line"><span class="attr">  labels:</span></span><br><span class="line"><span class="attr">    app:</span> <span class="string">jenkins</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  capacity:</span></span><br><span class="line"><span class="attr">    storage:</span> <span class="number">10</span><span class="string">Gi</span></span><br><span class="line"><span class="attr">  accessModes:</span></span><br><span class="line"><span class="bullet">  -</span> <span class="string">ReadWriteOnce</span></span><br><span class="line"><span class="attr">  persistentVolumeReclaimPolicy:</span> <span class="string">Recycle</span></span><br><span class="line"><span class="attr">  nfs:</span></span><br><span class="line"><span class="attr">    path:</span> <span class="string">/var/nfs/jenkins</span></span><br><span class="line"><span class="attr">    server:</span> <span class="number">172.20</span><span class="number">.3</span><span class="number">.91</span></span><br><span class="line"></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">PersistentVolumeClaim</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">jenkins-pvc</span></span><br><span class="line"><span class="attr">  labels:</span></span><br><span class="line"><span class="attr">    app:</span> <span class="string">jenkins</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  accessModes:</span></span><br><span class="line"><span class="bullet">  -</span> <span class="string">ReadWriteOnce</span></span><br><span class="line"><span class="attr">  resources:</span></span><br><span class="line"><span class="attr">    requests:</span></span><br><span class="line"><span class="attr">      storage:</span> <span class="number">10</span><span class="string">Gi</span></span><br></pre></td></tr></table></figure>
+
+<p>接著透過 kubectl 來建立：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl create -f jenkins-pv-pvc.yml</span><br><span class="line">persistentvolumeclaim <span class="string">"jenkins-pvc"</span> created</span><br><span class="line">persistentvolume <span class="string">"jenkins-pv"</span> created</span><br><span class="line"></span><br><span class="line">$ kubectl get pv,pvc</span><br><span class="line">NAME            CAPACITY   ACCESSMODES   RECLAIMPOLICY   STATUS    CLAIM                 STORAGECLASS   REASON    AGE</span><br><span class="line">pv/jenkins-pv   10Gi       RWO           Recycle         Bound     default/jenkins-pvc                            20s</span><br><span class="line"></span><br><span class="line">NAME              STATUS    VOLUME       CAPACITY   ACCESSMODES   STORAGECLASS   AGE</span><br><span class="line">pvc/jenkins-pvc   Bound     jenkins-pv   10Gi       RWO                          20s</span><br></pre></td></tr></table></figure>
+
+<p>當 PVC 建立完成後，就可以開始透過 Helm 來建立 Jenkins Release：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">export</span> PVC_NAME=$(kubectl get pvc -l app=jenkins --output=template --template=<span class="string">"&#123;&#123;with index .items 0&#125;&#125;&#123;&#123;.metadata.name&#125;&#125;&#123;&#123;end&#125;&#125;"</span>)</span><br><span class="line">$ helm install --name demo --<span class="built_in">set</span> Persistence.ExistingClaim=<span class="variable">$&#123;PVC_NAME&#125;</span> stable/jenkins</span><br><span class="line">NAME:   demo</span><br><span class="line">LAST DEPLOYED: Thu May 25 17:53:50 2017</span><br><span class="line">NAMESPACE: default</span><br><span class="line">STATUS: DEPLOYED</span><br><span class="line"></span><br><span class="line">RESOURCES:</span><br><span class="line">==&gt; v1beta1/Deployment</span><br><span class="line">NAME          DESIRED  CURRENT  UP-TO-DATE  AVAILABLE  AGE</span><br><span class="line">demo-jenkins  1        1        1           0          1s</span><br><span class="line"></span><br><span class="line">==&gt; v1/Secret</span><br><span class="line">NAME          TYPE    DATA  AGE</span><br><span class="line">demo-jenkins  Opaque  2     1s</span><br><span class="line"></span><br><span class="line">==&gt; v1/ConfigMap</span><br><span class="line">NAME                DATA  AGE</span><br><span class="line">demo-jenkins-tests  1     1s</span><br><span class="line">demo-jenkins        3     1s</span><br><span class="line"></span><br><span class="line">==&gt; v1/Service</span><br><span class="line">NAME          CLUSTER-IP       EXTERNAL-IP  PORT(S)                         AGE</span><br><span class="line">demo-jenkins  192.169.143.140  &lt;pending&gt;    8080:30152/TCP,50000:31806/TCP  1s</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>P.S. <code>install</code> 指令可以安裝來至<code>Chart repository</code>、<code>壓縮檔 Chart</code>、<code>一個 Chart 目錄</code>與<code>Chart URL</code>。
+這邊 install 可以額外透過以下兩種方式來覆寫參數，在這之前可以先透過<code>helm inspect values &lt;chart&gt;</code>來取得使用的變數。</p>
+<ul>
+<li><strong>–values</strong>：指定一個 YAML 檔案來覆寫設定。<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">echo</span> -e <span class="string">'Master:\n  AdminPassword: r00tme'</span> &gt; config.yaml</span><br><span class="line">$ helm install -f config.yaml stable/jenkins</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</blockquote>
+<blockquote>
+<ul>
+<li><strong>–sets</strong>：指定一對 Key/value 指令來覆寫。<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ helm install --<span class="built_in">set</span> Master.AdminPassword=r00tme stable/jenkins</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</blockquote>
+<p>完成後就可以透過 helm 與 kubectl 來查看建立狀態：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ helm ls</span><br><span class="line">NAME	REVISION	UPDATED                 	STATUS  	CHART        	NAMESPACE</span><br><span class="line">demo	1       	Thu May 25 17:53:50 2017	DEPLOYED	jenkins-0.6.3	default</span><br><span class="line"></span><br><span class="line">$ kubectl get po,svc</span><br><span class="line">NAME                               READY     STATUS    RESTARTS   AGE</span><br><span class="line">po/demo-jenkins-3139496662-c0lzk   1/1       Running   0          1m</span><br><span class="line"></span><br><span class="line">NAME               CLUSTER-IP        EXTERNAL-IP   PORT(S)                          AGE</span><br><span class="line">svc/demo-jenkins   192.169.143.140   &lt;pending&gt;     8080:30152/TCP,50000:31806/TCP   1m</span><br></pre></td></tr></table></figure>
+
+<p>由於預設只使用 LoadBalancerSourceRanges 來定義存取策略，但沒有指定任何外部 IP，因此要手動加入以下內容：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl edit svc demo-jenkins</span><br><span class="line"></span><br><span class="line">spec:</span><br><span class="line">  externalIPs:</span><br><span class="line">  - 172.20.3.90</span><br></pre></td></tr></table></figure>
+
+<p>完成後再次查看 Service 資訊：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl get svc</span><br><span class="line">NAME           CLUSTER-IP        EXTERNAL-IP    PORT(S)                          AGE</span><br><span class="line">demo-jenkins   192.169.143.140   ,172.20.3.90   8080:30152/TCP,50000:31806/TCP   10m</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這時候就可以透過 <a href="http://172.20.3.90:8080" target="_blank" rel="noopener">http://172.20.3.90:8080</a> 連進去 Jenkins 了，其預設帳號為 <code>admin</code>。</p>
+</blockquote>
+<p>透過以下指令來取得 Jenkins admin 密碼：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">printf</span> $(kubectl get secret --namespace default demo-jenkins -o jsonpath=<span class="string">"&#123;.data.jenkins-admin-password&#125;"</span> | base64 --decode);<span class="built_in">echo</span></span><br><span class="line">buQ1ik2Q7x</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>該 Chart 會產生亂數密碼存放到 secret 中。</p>
+</blockquote>
+<p><img src="/images/k8s/helm-jenkins.png" alt></p>
+<p>最後我們也可以透過<code>upgrade</code>指令來更新已經 Release 的 Chart：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ helm upgrade --<span class="built_in">set</span> Master.AdminPassword=r00tme --<span class="built_in">set</span> Persistence.ExistingClaim=jenkins-pvc demo stable/jenkins</span><br><span class="line">Release <span class="string">"demo"</span> has been upgraded. Happy Helming!</span><br><span class="line"></span><br><span class="line">$ helm get values demo</span><br><span class="line">Master:</span><br><span class="line">  AdminPassword: r00tme</span><br><span class="line">Persistence:</span><br><span class="line">  ExistingClaim: jenkins-pvc</span><br><span class="line"></span><br><span class="line">$ helm ls</span><br><span class="line">NAME    REVISION        UPDATED                         STATUS          CHART           NAMESPACE</span><br><span class="line">demo    2               Tue May 30 21:18:43 2017        DEPLOYED        jenkins-0.6.3   default</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊會看到<code>REVISION</code>會 +1，這可以用來做 rollback 的版本號使用。</p>
+</blockquote>
+<h2 id="刪除-Release"><a href="#刪除-Release" class="headerlink" title="刪除 Release"></a>刪除 Release</h2><p>Helm 除了基本的建立功能外，其還包含了整個 Release 的生命週期管理功能，如我們不需要該 Release 時，就可以透過以下方式刪除：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ helm del demo</span><br><span class="line">$ helm status demo | grep STATUS</span><br><span class="line">STATUS: DELETED</span><br></pre></td></tr></table></figure>
+
+<p>當刪除後，該 Release 並沒有真的被刪除，我們可以透過 helm ls 來查看被刪除的 Release：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ helm ls --all</span><br><span class="line">NAME    REVISION        UPDATED                         STATUS  CHART           NAMESPACE</span><br><span class="line">demo    2               Tue May 30 21:18:43 2017        DELETED jenkins-0.6.3   default</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>當執行 <code>helm ls</code> 指令為加入 <code>--all</code> 時，表示只列出<code>DEPLOYED</code>狀態的 Release。</p>
+</blockquote>
+<p>而當 Release 處於 <code>DELETED</code> 狀態時，我們可以進行一些操作，如 Roll back 或完全刪除 Release：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ helm rollback demo 1</span><br><span class="line">Rollback was a success! Happy Helming!</span><br><span class="line"></span><br><span class="line">$ <span class="built_in">printf</span> $(kubectl get secret --namespace default demo-jenkins -o jsonpath=<span class="string">"&#123;.data.jenkins-admin-password&#125;"</span> | base64 --decode);<span class="built_in">echo</span></span><br><span class="line">BIsLlQTN9l</span><br><span class="line"></span><br><span class="line">$ helm del demo --purge</span><br><span class="line">release <span class="string">"demo"</span> deleted</span><br><span class="line"></span><br><span class="line"><span class="comment"># 這時執行以下指令就不會再看到已刪除的 Release.</span></span><br><span class="line">$ helm ls --all</span><br></pre></td></tr></table></figure>
+
+<h2 id="建立簡單-Chart-結構"><a href="#建立簡單-Chart-結構" class="headerlink" title="建立簡單 Chart 結構"></a>建立簡單 Chart 結構</h2><p>Helm 提供了 create 指令來建立一個 Chart 基本結構：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ helm create example</span><br><span class="line">$ tree example/</span><br><span class="line">example/</span><br><span class="line">├── charts</span><br><span class="line">├── Chart.yaml</span><br><span class="line">├── templates</span><br><span class="line">│   ├── deployment.yaml</span><br><span class="line">│   ├── _helpers.tpl</span><br><span class="line">│   ├── ingress.yaml</span><br><span class="line">│   ├── NOTES.txt</span><br><span class="line">│   └── service.yaml</span><br><span class="line">└── values.yaml</span><br></pre></td></tr></table></figure>
+
+<p>當我們設定完 Chart 後，就可以透過 helm 指令來打包：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ helm package example/</span><br><span class="line">example-0.1.0.tgz</span><br></pre></td></tr></table></figure>
+
+<p>最後可以用 helm 來安裝：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ helm install ./example-0.1.0.tgz</span><br></pre></td></tr></table></figure>
+
+<h2 id="自己建立-Repository"><a href="#自己建立-Repository" class="headerlink" title="自己建立 Repository"></a>自己建立 Repository</h2><p>Helm 指令除了可以建立 Chart 基本結構外，很幸運的也提供了建立 Helm Repository 的功能，建立方式如下：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ helm serve --repo-path example-0.1.0.tgz</span><br><span class="line">$ helm repo add example http://repo-url</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>另外 helm repo 也可以加入來至於 Github 與 HTTP 伺服器的網址來提供服務。</p>
+</blockquote>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">[Helm] 基礎介紹與使用</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2017-3-25 17:03</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2017/04/10/tensorflow/introduction/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    TensorFlow 基本使用與分散式概念
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2017/03/17/kubernetes/deploy/kubespray/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">Kubespray 部署實體機 Kubernetes v1.6 叢集</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2017/03/25/kubernetes/helm/quick-start/" data-id="ck3ns7qbl00i4wmpf8o6jwdbu" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2017/03/25/kubernetes/helm/quick-start/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2017/03/25/kubernetes/helm/quick-start/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#概念"><span class="toc-number">1.</span> <span class="toc-text">概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Helm-系統元件"><span class="toc-number">2.</span> <span class="toc-text">Helm 系統元件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#事前準備"><span class="toc-number">3.</span> <span class="toc-text">事前準備</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安裝-Helm"><span class="toc-number">4.</span> <span class="toc-text">安裝 Helm</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#初始化-Helm"><span class="toc-number">5.</span> <span class="toc-text">初始化 Helm</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#部署-Chart-Release-實例"><span class="toc-number">6.</span> <span class="toc-text">部署 Chart Release 實例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#刪除-Release"><span class="toc-number">7.</span> <span class="toc-text">刪除 Release</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#建立簡單-Chart-結構"><span class="toc-number">8.</span> <span class="toc-text">建立簡單 Chart 結構</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#自己建立-Repository"><span class="toc-number">9.</span> <span class="toc-text">自己建立 Repository</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2017/03/25/kubernetes/helm/quick-start/';
+        
+        this.page.identifier = 'kubernetes/helm/quick-start';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

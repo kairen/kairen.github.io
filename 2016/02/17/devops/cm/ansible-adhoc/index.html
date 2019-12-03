@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>Ansible Ad-Hoc 指令與 Modules | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="ad-hoc command（特設指令）簡單說就是直接執行指令，這些指令不需要要被保存在日後使用。在進行 Ansible 的 Playbook 語言之前，了解 ad-hoc 指令也可以幫助我們做一些快速的事情，不一定要寫出一個完整的 Playbooks 指令。 模組（也被稱為Task plugins或是Library plugins）是 Ansible 中實際執行的功能，它們會在每個 Playbo">
+<meta name="keywords" content="Ansible,DevOps,Automation Engine">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Ansible Ad-Hoc 指令與 Modules">
+<meta property="og:url" content="https://k2r2bai.com/2016/02/17/devops/cm/ansible-adhoc/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="ad-hoc command（特設指令）簡單說就是直接執行指令，這些指令不需要要被保存在日後使用。在進行 Ansible 的 Playbook 語言之前，了解 ad-hoc 指令也可以幫助我們做一些快速的事情，不一定要寫出一個完整的 Playbooks 指令。 模組（也被稱為Task plugins或是Library plugins）是 Ansible 中實際執行的功能，它們會在每個 Playbo">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.384Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Ansible Ad-Hoc 指令與 Modules">
+<meta name="twitter:description" content="ad-hoc command（特設指令）簡單說就是直接執行指令，這些指令不需要要被保存在日後使用。在進行 Ansible 的 Playbook 語言之前，了解 ad-hoc 指令也可以幫助我們做一些快速的事情，不一定要寫出一個完整的 Playbooks 指令。 模組（也被稱為Task plugins或是Library plugins）是 Ansible 中實際執行的功能，它們會在每個 Playbo">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-devops/cm/ansible-adhoc" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            Ansible Ad-Hoc 指令與 Modules
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2016/02/17/devops/cm/ansible-adhoc/">
+            <u><time datetime="2016-02-17T04:23:01.000Z" itemprop="datePublished">2016-02-17</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/DevOps/">DevOps</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Ansible/">Ansible</a>, <a class="tag-link" href="/tags/Automation-Engine/">Automation Engine</a>, <a class="tag-link" href="/tags/DevOps/">DevOps</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>ad-hoc command（特設指令）簡單說就是直接執行指令，這些指令不需要要被保存在日後使用。在進行 Ansible 的 Playbook 語言之前，了解 ad-hoc 指令也可以幫助我們做一些快速的事情，不一定要寫出一個完整的 Playbooks 指令。</p>
+<p>模組（也被稱為<code>Task plugins</code>或是<code>Library plugins</code>）是 Ansible 中實際執行的功能，它們會在每個 Playbook 任務中被執行，也可以透過 ansible 直接呼叫使用。目前 Ansible 已經擁有許多模組，可參閱 <a href="http://docs.ansible.com/ansible/modules_by_category.html" target="_blank" rel="noopener">Module Index</a>。</p>
+<a id="more"></a>
+
+<p>首先我們先編輯<code>/etc/ansible/hosts</code>，加入以下內容：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">[cluster]</span><br><span class="line">ansible-slave-1 ansible_host=172.16.1.206</span><br><span class="line">ansible-slave-2 ansible_host=172.16.1.207</span><br><span class="line">ansible-slave-3 ansible_host=172.16.1.208</span><br></pre></td></tr></table></figure>
+
+<h3 id="Parallelism-and-Shell-Commands"><a href="#Parallelism-and-Shell-Commands" class="headerlink" title="Parallelism and Shell Commands"></a>Parallelism and Shell Commands</h3><p>接下來我們將透過範例來說明 Ansible 的平行性與 Shell 指令，一開始我們需要將 ssh-agent 加入私有金鑰管理：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ssh-agent bash</span><br><span class="line">$ ssh-add ~/.ssh/id_rsa</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>如果不想要透過 ssh-agent 的金鑰登入，可以在 ansible 指令使用<code>--ask-pass（-k）</code>參數，但是建議使用 ssh-agent。</p>
+</blockquote>
+<p>剛剛我們在 Inventroy 檔案建立了一個群組（Cluster），裡面擁有三台主機，接下來我們透過執行一個簡單的指令與參數來實現並行執行：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible cluster -a <span class="string">"sleep 2"</span> -f 1</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>上面的指令會隨機執行一台主機，完成後接下執行下一台，然而<code>-f</code>參數可以改變一次執行的 bash，好比改成：</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible cluster -a <span class="string">"sleep 2"</span> -f 3</span><br></pre></td></tr></table></figure>
+
+<p>會發現 bash 是平行執行的。</p>
+<p>我們除了使用預設的 user 登入以外，也可以指定要登入的使用者：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible cluster -a <span class="string">"echo <span class="variable">$USER</span>"</span> -u ubuntu</span><br></pre></td></tr></table></figure>
+
+<p>如果想透過特權（sudo）執行指令，可以透過以下方式：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible cluster -a <span class="string">"apt-get update"</span> -u ubuntu --become</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若該使用者沒有設定 sudo 不需要密碼的話，可以加入<code>--ask-sudo-pass（-k）</code>來驗證密碼。也可以使用<code>--become-method</code>來改變權限使用方法（預設為 sudo）。</p>
+</blockquote>
+<p>也可以透過<code>--become-user</code>來切換使用者：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible cluster -a <span class="string">"echo <span class="variable">$USER</span>"</span> -u ubuntu --become-user root</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若有密碼，可以使用<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"></span><br><span class="line">以上是基本的幾個指令，但當使用 ansible ad-hoc 指令時，會發現無法使用`shell 變數`以及`pipeline 等相關`，這是因為預設的 ansible ad-hoc 指令不支援，</span><br><span class="line">故要改用 shell 模組來執行：</span><br><span class="line">```sh</span><br><span class="line">$ ansible cluster -m shell -a &apos;echo $(hostname) | grep -o &quot;[0-9]&quot;&apos;</span><br></pre></td></tr></table></figure></p>
+</blockquote>
+<blockquote>
+<p>以上指令的<code>-m</code>表示要使用的模組。但要注意！使用 ansible 指令時要留意<code>&quot;cmd&quot;</code>與<code>&#39;comd&#39;</code>的差別，比如使用<code>&quot;cmd&quot;</code>會是抓取當前系統的資訊。</p>
+</blockquote>
+<h3 id="File-Transfer"><a href="#File-Transfer" class="headerlink" title="File Transfer"></a>File Transfer</h3><p>Ansible 能夠以平行的方式同時<code>scp</code>大量的檔案到多台主機上，如以下範例：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible cluster -m copy -a <span class="string">"src=/etc/hosts dest=~/hosts"</span></span><br></pre></td></tr></table></figure>
+
+<p>也可以使用<code>file</code>模組做到修改檔案的權限與屬性（這邊可以將<code>copy</code>替換成<code>file</code>）：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible cluster -m file -a <span class="string">"dest=~/hosts mode=600"</span></span><br><span class="line">$ ansible cluster -m file -a <span class="string">"dest=~/hosts mode=600 owner=ubuntu group=ubuntu"</span></span><br></pre></td></tr></table></figure>
+
+<p><code>file</code>模組也能夠建立目錄：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible cluster -m file -a <span class="string">"dest=~/data mode=755 owner=ubuntu group=ubuntu state=directory"</span></span><br></pre></td></tr></table></figure>
+
+<p>若要刪除可以使用以下方式：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible cluster -m file -a <span class="string">"dest=~/data state=absent"</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Managing-Packages"><a href="#Managing-Packages" class="headerlink" title="Managing Packages"></a>Managing Packages</h3><p>目前 Ansible 已經支援了<code>yum</code>與<code>apt</code>的模組，以下是一個<code>apt</code> 確認指定軟體名稱是否已安裝，並且不升級：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible cluster -m apt -a <span class="string">"name=ntp state=present"</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>也可以在<code>name=ntp</code>後面加版本號，如<code>name=ntp-{version}</code>。</p>
+</blockquote>
+<p>若要確認是否為最新版本，可以使用以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible cluster -m apt -a <span class="string">"name=ntp state=latest"</span></span><br></pre></td></tr></table></figure>
+
+<p>若要確認一個軟體套件沒有安裝，可以使用以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible cluster -m apt -a <span class="string">"name=ntp state=absent"</span> --become</span><br></pre></td></tr></table></figure>
+
+<p>更多的指令資訊可以查看 <a href="http://docs.ansible.com/ansible/modules.html" target="_blank" rel="noopener">About Modules</a>。</p>
+<h3 id="Users-and-Groups"><a href="#Users-and-Groups" class="headerlink" title="Users and Groups"></a>Users and Groups</h3><p>若想要建立系統使用者與群組，可以使用<code>user</code>模組，如以下範例：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible all -m user -a <span class="string">"name=food password=food"</span> --become</span><br></pre></td></tr></table></figure>
+
+<p>刪除則如以下：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible all -m user -a <span class="string">"name=food state=absent"</span> -b</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>--become</code>與<code>-b</code>是等效的。</p>
+</blockquote>
+<h3 id="Deploying-From-Source-Control"><a href="#Deploying-From-Source-Control" class="headerlink" title="Deploying From Source Control"></a>Deploying From Source Control</h3><p>Ansible 不只可以透過<code>apt</code>與<code>ad-hoc 指令</code>來安裝與部署應用程式，也能用<code>git</code>模組來安裝：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible cluster -m git -a <span class="string">"repo=https://github.com/imac-cloud/Spark-tutorial.git dest=~/spark-tutorial"</span> -f 3</span><br></pre></td></tr></table></figure>
+
+<h3 id="Managing-Services"><a href="#Managing-Services" class="headerlink" title="Managing Services"></a>Managing Services</h3><p>Ansible 也可以透過<code>service</code>模組來確認指定主機是否已啟動服務：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible cluster -m service -a <span class="string">"name=ssh state=started"</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>也可以改變<code>state</code>來執行對應動作，如<code>state=restarted</code>就會重新啟動服務。</p>
+</blockquote>
+<h3 id="Time-Limited-Background-Operations"><a href="#Time-Limited-Background-Operations" class="headerlink" title="Time Limited Background Operations"></a>Time Limited Background Operations</h3><p>有些操作需要長時間執行於後台，在指令開始執行後，可以持續檢查執行狀態，但是若不想要獲取該資訊可以使用以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible ansible-slave-1 -B 3600 -P 0 -a <span class="string">"/usr/bin/long_running_operation --do-stuff"</span></span><br></pre></td></tr></table></figure>
+
+<p>若要檢查執行狀態的話，可以使用<code>async_status</code>來傳入一個<code>jid</code>查看：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible cluster -m async_status -a <span class="string">"jid=488359678239.2844"</span></span><br></pre></td></tr></table></figure>
+
+<p>獲取狀態指令如下：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible ansible-slave-1 -B 1800 -P 60 -a <span class="string">"/usr/bin/long_running_operation --do-stuff"</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>-B</code>表示最常執行時間，<code>-P</code>表示每隔60秒回傳狀態。</p>
+</blockquote>
+<h3 id="Gathering-Facts"><a href="#Gathering-Facts" class="headerlink" title="Gathering Facts"></a>Gathering Facts</h3><p>在 Playboooks 中有對 Facts 做一些描述，他表示的是一些系統<code>已知的變數</code>，若要查看所有 Facts，可以使用以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible cluster[0] -m setup</span><br></pre></td></tr></table></figure>
+
+<p>接下來可以針對 <a href="http://docs.ansible.com/ansible/playbooks.html" target="_blank" rel="noopener">Playbooks</a> 與 <a href="http://docs.ansible.com/ansible/playbooks_variables.html" target="_blank" rel="noopener">Variables</a> 進行研究。</p>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">Ansible Ad-Hoc 指令與 Modules</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2016-2-17 12:02</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2016/02/17/devops/cm/ansible-dynamic-inventory/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    Ansible Dynamic Inventory
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2016/02/17/devops/cm/ansible-inventory/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">Ansible Inventory</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2016/02/17/devops/cm/ansible-adhoc/" data-id="ck3ns7qal00fkwmpfiyefee8n" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2016/02/17/devops/cm/ansible-adhoc/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2016/02/17/devops/cm/ansible-adhoc/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#Parallelism-and-Shell-Commands"><span class="toc-number">1.</span> <span class="toc-text">Parallelism and Shell Commands</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#File-Transfer"><span class="toc-number">2.</span> <span class="toc-text">File Transfer</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Managing-Packages"><span class="toc-number">3.</span> <span class="toc-text">Managing Packages</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Users-and-Groups"><span class="toc-number">4.</span> <span class="toc-text">Users and Groups</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Deploying-From-Source-Control"><span class="toc-number">5.</span> <span class="toc-text">Deploying From Source Control</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Managing-Services"><span class="toc-number">6.</span> <span class="toc-text">Managing Services</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Time-Limited-Background-Operations"><span class="toc-number">7.</span> <span class="toc-text">Time Limited Background Operations</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Gathering-Facts"><span class="toc-number">8.</span> <span class="toc-text">Gathering Facts</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2016/02/17/devops/cm/ansible-adhoc/';
+        
+        this.page.identifier = 'devops/cm/ansible-adhoc';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

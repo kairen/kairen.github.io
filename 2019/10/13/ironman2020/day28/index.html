@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>動手實作 Kubernetes 自定義控制器 Part4 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="前言在動手實作 Kubernetes 自定義控制器 Part3 文章中，了解如何實現自定義控制器的高可靠架構，而今天將延續之前位完成的部分，會簡單以 Docker 實作一個虛擬機驅動來提供給自定義控制器使用，控制器會依據自定義資源VirtualMachine的內容，來協調完成預期結果的事情。如下架構圖所示。">
+<meta name="keywords" content="Kubernetes">
+<meta property="og:type" content="article">
+<meta property="og:title" content="動手實作 Kubernetes 自定義控制器 Part4">
+<meta property="og:url" content="https://k2r2bai.com/2019/10/13/ironman2020/day28/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="前言在動手實作 Kubernetes 自定義控制器 Part3 文章中，了解如何實現自定義控制器的高可靠架構，而今天將延續之前位完成的部分，會簡單以 Docker 實作一個虛擬機驅動來提供給自定義控制器使用，控制器會依據自定義資源VirtualMachine的內容，來協調完成預期結果的事情。如下架構圖所示。">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://i.imgur.com/3xhW8am.png">
+<meta property="og:image" content="https://i.imgur.com/lWMxYl7.png">
+<meta property="og:image" content="https://i.imgur.com/6qecfOu.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.391Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="動手實作 Kubernetes 自定義控制器 Part4">
+<meta name="twitter:description" content="前言在動手實作 Kubernetes 自定義控制器 Part3 文章中，了解如何實現自定義控制器的高可靠架構，而今天將延續之前位完成的部分，會簡單以 Docker 實作一個虛擬機驅動來提供給自定義控制器使用，控制器會依據自定義資源VirtualMachine的內容，來協調完成預期結果的事情。如下架構圖所示。">
+<meta name="twitter:image" content="https://i.imgur.com/3xhW8am.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-ironman2020/day28" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            動手實作 Kubernetes 自定義控制器 Part4
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2019/10/13/ironman2020/day28/">
+            <u><time datetime="2019-10-12T16:00:00.000Z" itemprop="datePublished">2019-10-13</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在<a href="https://k2r2bai.com/2019/10/12/ironman2020/day27/">動手實作 Kubernetes 自定義控制器 Part3</a> 文章中，了解如何實現自定義控制器的高可靠架構，而今天將延續之前位完成的部分，會簡單以 Docker 實作一個虛擬機驅動來提供給自定義控制器使用，控制器會依據自定義資源<code>VirtualMachine</code>的內容，來協調完成預期結果的事情。如下架構圖所示。</p>
+<a id="more"></a>
+
+<p><img src="https://i.imgur.com/3xhW8am.png" alt></p>
+<p>由於為了方便大家在 Minikube 上執行這個自定義控制器，因此這邊實作了一個 <a href="https://github.com/cloud-native-taiwan/controller101/blob/master/pkg/driver/driver.go" target="_blank" rel="noopener">VM Driver</a> 的 Golang 介面，並以該介面實現一個 <a href="https://github.com/cloud-native-taiwan/controller101/blob/master/pkg/driver/docker.go" target="_blank" rel="noopener">Docker Driver</a> 來作為使用。這個 Docker Driver 會以 Docker 預設的系統環境變數來載入 Endpoint、Certs 等等 Docker client 需要的資訊，接著透過這些資訊建立一個 client 與 Docker API 溝通進行各種操作。這邊介面只簡單實現以下函式來完成範例:</p>
+<figure class="highlight golang"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Interface <span class="keyword">interface</span> &#123;</span><br><span class="line">	CreateServer(*CreateRequest) (*CreateReponse, error)</span><br><span class="line">	DeleteServer(name <span class="keyword">string</span>) error</span><br><span class="line">	IsServerExist(name <span class="keyword">string</span>) (<span class="keyword">bool</span>, error)</span><br><span class="line">	GetServerStatus(name <span class="keyword">string</span>) (*GetStatusReponse, error)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>當控制器收到 VirtualMachine 的實例建立時，控制器會在<code>syncHandler()</code>函式依據接受到的資源物件資訊來呼叫 VM Driver 進行處理相關事情(如建立虛擬機環境、更新虛擬機使用率等等)，當處理完成後，再依據回應的內容更新到 VirtualMachine 資源實例的<code>.status</code>內容。而當控制器收到有個 VirtualMachine 實例被刪除時，就會呼叫 Informer 的<code>DeleteFunc</code>來進行處理實際虛擬機移除的事情。</p>
+<blockquote>
+<ul>
+<li>由於這只是為了說明如何開發控制器，因此該範例使用的 Docker Driver 在建立容器時，只會以 NGINX 映像檔為基礎來建立。</li>
+<li>原本規劃 Fake Driver 與 KVM 來模擬，但因為時間關析，只能之後再補上。</li>
+</ul>
+</blockquote>
+<h2 id="協調資源"><a href="#協調資源" class="headerlink" title="協調資源"></a>協調資源</h2><p>本部分將修改<code>controller.go</code>程式，以實現自定義資源 VirtualMachine 管理虛擬機的機制。</p>
+<h3 id="環境準備"><a href="#環境準備" class="headerlink" title="環境準備"></a>環境準備</h3><p>由於使用這個功能需要用到 Kubernetes 與 Go 語言，因此需要透過以下來完成條件:</p>
+<ul>
+<li>一座 Kubernetes v1.10+ 叢集。透過 <a href="https://github.com/kubernetes/minikube" target="_blank" rel="noopener">Minikube</a> 建立即可 <code>minikube start --kubernetes-version=v1.15.4</code>。</li>
+<li>一個 Docker 環境，可以直接 Minikube 執行<code>eval $(minikube docker-env)</code>來取的 Docker 參數，並遠端操作。</li>
+<li>安裝 Go 語言 v1.11+ 開發環境，由於開發中會使用到 Go mod 來管理第三方套件，因此必須符合支援版本。安裝請參考 <a href="https://golang.org/doc/install" target="_blank" rel="noopener">Go Getting Started</a>。</li>
+</ul>
+<h3 id="管理虛擬機邏輯實現"><a href="#管理虛擬機邏輯實現" class="headerlink" title="管理虛擬機邏輯實現"></a>管理虛擬機邏輯實現</h3><p>前幾天我們在實作控制器時，有提到主要處理 API 資源實例的函式是<code>syncHandler()</code>，因此大部分邏輯會在這邊實現。但由於該控制器需要透過一些方法管理實際的虛擬機，因此這邊以 <a href="https://github.com/cloud-native-taiwan/controller101/blob/master/pkg/driver/driver.go" target="_blank" rel="noopener">VM Driver</a> 實現 <a href="https://github.com/cloud-native-taiwan/controller101/blob/master/pkg/driver/docker.go" target="_blank" rel="noopener">Docker Driver</a> 方式進行模擬。這時要修改控制器結構與建構子如下。</p>
+<h4 id="pkg-controller-controller-go"><a href="#pkg-controller-controller-go" class="headerlink" title="pkg/controller/controller.go"></a>pkg/controller/controller.go</h4><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Controller <span class="keyword">struct</span> &#123;</span><br><span class="line">	...</span><br><span class="line">	vm        driver.Interface <span class="comment">// 管理實際虛擬機的驅動程式</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">New</span><span class="params">(clientset cloudnative.Interface, informer cloudnativeinformer.SharedInformerFactory, vm driver.Interface)</span> *<span class="title">Controller</span></span> &#123;</span><br><span class="line">    ...</span><br><span class="line">	controller := &amp;Controller&#123;</span><br><span class="line">        ...</span><br><span class="line">        vm:        vm,</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">	<span class="keyword">return</span> controller</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>...</code> 表示不更改內容。完整程式請參考 <a href="https://github.com/cloud-native-taiwan/controller101/blob/9669f5e1e744fdc33baf5c0c229c9cb27f095b20/pkg/controller/controller.go#L44-L72" target="_blank" rel="noopener">controller.go L44-L72</a></p>
+</blockquote>
+<p>完成後，就可以透過上面物件，在這個控制器結構的函式操作虛擬機。接著在<code>syncHandler()</code>實現協調循環的邏輯:</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Controller)</span> <span class="title">syncHandler</span><span class="params">(key <span class="keyword">string</span>)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	namespace, name, err := cache.SplitMetaNamespaceKey(key)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		utilruntime.HandleError(fmt.Errorf(<span class="string">"invalid resource key: %s"</span>, key))</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	vm, err := c.lister.VirtualMachines(namespace).Get(name)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">if</span> errors.IsNotFound(err) &#123;</span><br><span class="line">			utilruntime.HandleError(fmt.Errorf(<span class="string">"virtualmachine '%s' in work queue no longer exists"</span>, key))</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">switch</span> vm.Status.Phase &#123;</span><br><span class="line">	<span class="keyword">case</span> v1alpha1.VirtualMachineNone:</span><br><span class="line">		<span class="keyword">if</span> err := c.makeCreatingPhase(vm); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line">	<span class="keyword">case</span> v1alpha1.VirtualMachinePending, v1alpha1.VirtualMachineFailed:</span><br><span class="line">		<span class="keyword">if</span> err := c.createServer(vm); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line">	<span class="keyword">case</span> v1alpha1.VirtualMachineActive:</span><br><span class="line">		<span class="keyword">if</span> err := c.updateUsage(vm); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 用於更新 VirtualMachine 資源狀態的通用函式</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Controller)</span> <span class="title">updateStatus</span><span class="params">(vm *v1alpha1.VirtualMachine, phase v1alpha1.VirtualMachinePhase, reason error)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	vm.Status.Reason = <span class="string">""</span></span><br><span class="line">	<span class="keyword">if</span> reason != <span class="literal">nil</span> &#123;</span><br><span class="line">		vm.Status.Reason = reason.Error()</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	vm.Status.Phase = phase</span><br><span class="line">	vm.Status.LastUpdateTime = metav1.NewTime(time.Now())</span><br><span class="line">	_, err := c.clientset.CloudnativeV1alpha1().VirtualMachines(vm.Namespace).Update(vm)</span><br><span class="line">	<span class="keyword">return</span> err</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 用於將虛擬機狀態新增到 VirtualMachine 資源的通用函式</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Controller)</span> <span class="title">appendServerStatus</span><span class="params">(vm *v1alpha1.VirtualMachine)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	status, err := c.vm.GetServerStatus(vm.Name)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	vm.Status.Server.Usage.CPU = status.CPUPercentage</span><br><span class="line">	vm.Status.Server.Usage.Memory = status.MemoryPercentage</span><br><span class="line">	vm.Status.Server.State = status.State</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>當收到 Informer 的 Add/Update 事件時，會將資源實例的物件放到 Workqueue，然後控制器的 Workers 會呼叫<code>processNextWorkItem()</code>函式來持續消化 Workqueue 中的物件，並在取出物件的 Key 後，將其丟到<code>syncHandler()</code>函式處理。而<code>syncHandler()</code>函式會透過 Lister 從本地快取中獲取資源實例的內容，這時我們就能透過內容的狀態來處理對應事情。以上面程式為例，我們分成以下幾個狀態來處理。</p>
+<blockquote>
+<p>這邊使用不同狀態來處理不同過程，其目的是確保控制器不會因為實例的狀態更新，而一直觸發 Update 事件導致無限循環，因此以狀態來做收斂的點。</p>
+</blockquote>
+<ul>
+<li><strong>VirtualMachineNone</strong>: 由於 VirtualMachine 資源實例被建立時，並不會有任何資源狀態，因此該狀態可用於判斷是否是第一次建立，若是的話則將狀態更新為 Creating，這樣可以讓該資源被標示為即將建立虛擬機。程式內容如下:</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Controller)</span> <span class="title">makeCreatingPhase</span><span class="params">(vm *v1alpha1.VirtualMachine)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	vmCopy := vm.DeepCopy()</span><br><span class="line">	<span class="keyword">return</span> c.updateStatus(vmCopy, v1alpha1.VirtualMachineCreating, <span class="literal">nil</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>VirtualMachineCreating</strong>: 當處於 Creating 時，控制器會呼叫 VM Driver 以建立虛擬機，若成功的話，則更新 VirtualMachine 資源的<code>.status</code>為 Active 狀態;若失敗的話，則標示為 Failed，狀態，並提供失敗原因的訊息。程式內容如下:</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Controller)</span> <span class="title">createServer</span><span class="params">(vm *v1alpha1.VirtualMachine)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	vmCopy := vm.DeepCopy()</span><br><span class="line">	ok, _ := c.vm.IsServerExist(vm.Name)</span><br><span class="line">	<span class="keyword">if</span> !ok &#123;</span><br><span class="line">		req := &amp;driver.CreateRequest&#123;</span><br><span class="line">			Name:   vm.Name,</span><br><span class="line">			CPU:    vm.Spec.Resource.Cpu().Value(),</span><br><span class="line">			Memory: vm.Spec.Resource.Memory().Value(),</span><br><span class="line">		&#125;</span><br><span class="line">		resp, err := c.vm.CreateServer(req)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">if</span> err := c.updateStatus(vmCopy, v1alpha1.VirtualMachineFailed, err); err != <span class="literal">nil</span> &#123;</span><br><span class="line">				<span class="keyword">return</span> err</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line">		vmCopy.Status.Server.ID = resp.ID</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> err := c.appendServerStatus(vmCopy); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> err := c.updateStatus(vmCopy, v1alpha1.VirtualMachineActive, <span class="literal">nil</span>); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>VirtualMachineFailed</strong>: 類似 Creating 狀態，當嘗試透過 VM Driver 建立虛擬機失敗時，會讓資源 Requeuing 到 Workqueue 中，並繼續在協調循環中重新嘗試建立虛擬機，直到建立成功或 VirtualMachine 資源被刪除。程式內容同 Creating 狀態。</li>
+<li><strong>VirtualMachineActive</strong>: 當虛擬機被正確建立，並且能夠取得狀態後，就會進入 Active 狀態。而當資源一直處於 Active 時，就能夠持續透過 VM Driver 獲取當前虛擬機狀態，並更新到 API 資源上。程式內容如下:</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Controller)</span> <span class="title">updateUsage</span><span class="params">(vm *v1alpha1.VirtualMachine)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	vmCopy := vm.DeepCopy()</span><br><span class="line">	t := subtractTime(vmCopy.Status.LastUpdateTime.Time)</span><br><span class="line">	<span class="keyword">if</span> t.Seconds() &gt; periodSec &#123;</span><br><span class="line">		<span class="keyword">if</span> err := c.appendServerStatus(vmCopy); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> err := c.updateStatus(vmCopy, v1alpha1.VirtualMachineActive, <span class="literal">nil</span>); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊<code>subtractTime()</code>用於避免控制器一直執行<code>updateStatus()</code>，而導致無限循環。</p>
+</blockquote>
+<p>而當 API 資源物件被刪除時，Informer 會呼叫<code>DeleteFunc</code>的對應函式<code>deleteObject()</code>來刪除虛擬機。程式內容如下:</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Controller)</span> <span class="title">deleteObject</span><span class="params">(obj <span class="keyword">interface</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line">	vm := obj.(*v1alpha1.VirtualMachine)</span><br><span class="line">	<span class="keyword">if</span> err := c.vm.DeleteServer(vm.Name); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		klog.Errorf(<span class="string">"Failed to delete the '%s' server: %v"</span>, vm.Name, err)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="cmd-main-go"><a href="#cmd-main-go" class="headerlink" title="cmd/main.go"></a>cmd/main.go</h4><p>當 Controller 與 VM Driver 程式都完成後，就可以修改主程式來反映功能改變:</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> (</span><br><span class="line">	...</span><br><span class="line">	driverName         <span class="keyword">string</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">parseFlags</span><span class="params">()</span></span> &#123;</span><br><span class="line">	...</span><br><span class="line">	flag.StringVarP(&amp;driverName, <span class="string">"vm-driver"</span>, <span class="string">""</span>, <span class="string">""</span>, <span class="string">"Driver is one of: [fake docker]."</span>)</span><br><span class="line">	...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">var</span> vmDriver driver.Interface</span><br><span class="line">	<span class="keyword">switch</span> driverName &#123;</span><br><span class="line">	<span class="keyword">case</span> <span class="string">"docker"</span>:</span><br><span class="line">		docker, err := driver.NewDockerDriver()</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			klog.Fatalf(<span class="string">"Error to create docker driver: %s"</span>, err.Error())</span><br><span class="line">		&#125;</span><br><span class="line">		vmDriver = docker</span><br><span class="line">	<span class="keyword">default</span>:</span><br><span class="line">		klog.Fatalf(<span class="string">"The driver '%s' is not supported."</span>, driverName)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">	controller := controller.New(clientset, informer, vmDriver)</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>...</code> 表示不更改內容。完整程式請參考 <a href="https://github.com/cloud-native-taiwan/controller101/blob/master/cmd/main.go" target="_blank" rel="noopener">main.co</a></p>
+</blockquote>
+<h3 id="執行"><a href="#執行" class="headerlink" title="執行"></a>執行</h3><p>當上述功能實現後，且已有新增完 VirtualMachine CRD 的 Kubernetes 環境時，就可以執行以下指令來啟動控制器:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">eval</span> $(minikube docker-env)</span><br><span class="line">$ go run cmd/main.go --kubeconfig=<span class="variable">$HOME</span>/.kube/config \</span><br><span class="line">    -v=3 --logtostderr \</span><br><span class="line">    --leader-elect=<span class="literal">false</span> \</span><br><span class="line">    --vm-driver=docker</span><br><span class="line">...</span><br><span class="line">I1015 16:02:57.180484   62884 controller.go:77] Starting the controller</span><br><span class="line">I1015 16:02:57.180665   62884 controller.go:78] Waiting <span class="keyword">for</span> the informer caches to sync</span><br><span class="line">I1015 16:02:57.285693   62884 controller.go:86] Started workers</span><br></pre></td></tr></table></figure>
+
+<p>接著開啟另一個 Terminal 來建立 VirtualMachine 資源實例。當建立時，會發現控制器更新了 test-vm 資源實例，這時可以利用 kubectl 查看狀態:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cat &lt;&lt;EOF | kubectl apply -f -</span><br><span class="line">apiVersion: cloudnative.tw/v1alpha1</span><br><span class="line">kind: VirtualMachine</span><br><span class="line">metadata:</span><br><span class="line">  name: <span class="built_in">test</span>-vm</span><br><span class="line">spec:</span><br><span class="line">  resource:</span><br><span class="line">    cpu: 2</span><br><span class="line">    memory: 4G</span><br><span class="line">EOF</span><br><span class="line">virtualmachine.cloudnative.tw/<span class="built_in">test</span>-vm created</span><br><span class="line"></span><br><span class="line">$ kubectl get vms</span><br><span class="line">NAME      STATUS   CPU   MEMORY                AGE</span><br><span class="line"><span class="built_in">test</span>-vm   Active   0     0.10977787071142493   44s</span><br></pre></td></tr></table></figure>
+
+<p>由於本範例使用 Docker 作為虛擬機驅動程式，因此該資源實際上是建立一個容器。我們可以利用 docker 指令來查看:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker ps --filter <span class="string">"name=test-vm"</span></span><br><span class="line">CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES</span><br><span class="line">b0d7f2be48e5        nginx:1.17.4        <span class="string">"nginx -g 'daemon of…"</span>   8 seconds ago       Up 6 seconds        80/tcp              <span class="built_in">test</span>-vm</span><br><span class="line"></span><br><span class="line">$ docker inspect <span class="built_in">test</span>-vm -f <span class="string">"&#123;&#123;.HostConfig.Memory&#125;&#125;"</span></span><br><span class="line">4000000000</span><br><span class="line"></span><br><span class="line">$ docker inspect <span class="built_in">test</span>-vm -f <span class="string">"&#123;&#123;.HostConfig.NanoCpus&#125;&#125;"</span></span><br><span class="line">2</span><br></pre></td></tr></table></figure>
+
+<p>接著我們來增加這個 NIGNX 的工作負載，以查看 CPU 變化:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ IP=$(docker inspect <span class="built_in">test</span>-vm -f <span class="string">"&#123;&#123;.NetworkSettings.IPAddress&#125;&#125;"</span>)</span><br><span class="line">$ docker run --rm -it busybox /bin/sh -c <span class="string">"while :; do wget -O- <span class="variable">$&#123;IP&#125;</span>; done"</span></span><br></pre></td></tr></table></figure>
+
+<p>開啟新 Terminal 以 kubectl 指令來查看:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ kubectl get vms -w</span><br><span class="line">NAME      STATUS   CPU   MEMORY                AGE</span><br><span class="line">test-vm   Active   0     0.11279374628042013   5m30s</span><br><span class="line">test-vm   Active   15.637706179775282   0.11279374628042013   5m43s</span><br><span class="line">test-vm   Active   15.688157325581395   0.11299480465168647   6m13s</span><br><span class="line">test-vm   Active   15.55665426966292    0.11279374628042013   6m43s</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>由於控制器設計關析，CPU 與 Memory 只會每 30s 同步一次。</p>
+</blockquote>
+<p><img src="https://i.imgur.com/lWMxYl7.png" alt></p>
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>今天將控制器管理 VirtualMachine 資源實例的邏輯完成。一但完成，就能利用 Kubernetes-like API 來管理虛擬機的生命週期，或取得虛擬機狀態等等事情。然而今天實作部分，事實上還有一些問題存在，比如說我們先把自定義控制器暫時關閉，然後執行<code>kubectl delete vm test-vm</code>指令來將該資源實例從 Kubernetes 中刪除，這時查看虛擬機列表(因為 VM Driver 為 Docker，因此對應查看為 <code>docker ps</code>)時，就會發現被管理的虛擬機依然存在，並且當重新啟動控制器時，也會因為該資源實例已經被刪除，因此無法讓控制器來協助刪除，這樣就會形成殭屍虛擬機問題。如下圖所示。</p>
+<p><img src="https://i.imgur.com/6qecfOu.png" alt></p>
+<blockquote>
+<p>從 Controller 程式碼中也可以從<code>deleteObject()</code>看出問題，因為這邊若發生刪除錯誤，就會造成外部資源變成殭屍(或孤兒)。</p>
+</blockquote>
+<p>那麼當遇到這個問題時，該怎麼解決呢?明天我們將針對這部份來實作，以確保 API 資源實例一定要先刪除所管理的虛擬機後，才能從 Kubernetes 叢集中刪除。</p>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li><a href="https://godoc.org/github.com/docker/docker/client" target="_blank" rel="noopener">https://godoc.org/github.com/docker/docker/client</a></li>
+<li><a href="https://itnext.io/how-to-create-a-kubernetes-custom-controller-using-client-go-f36a7a7536cc" target="_blank" rel="noopener">https://itnext.io/how-to-create-a-kubernetes-custom-controller-using-client-go-f36a7a7536cc</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">動手實作 Kubernetes 自定義控制器 Part4</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2019-10-13 00:10</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2019/10/14/ironman2020/day29/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    動手實作 Kubernetes 自定義控制器 Part5
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2019/10/12/ironman2020/day27/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">動手實作 Kubernetes 自定義控制器 Part3</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2019/10/13/ironman2020/day28/" data-id="ck3ns7q6p0052wmpffdtn3ipa" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2019/10/13/ironman2020/day28/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/10/13/ironman2020/day28/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#協調資源"><span class="toc-number">2.</span> <span class="toc-text">協調資源</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#環境準備"><span class="toc-number">2.1.</span> <span class="toc-text">環境準備</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#管理虛擬機邏輯實現"><span class="toc-number">2.2.</span> <span class="toc-text">管理虛擬機邏輯實現</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#執行"><span class="toc-number">2.3.</span> <span class="toc-text">執行</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#結語"><span class="toc-number">3.</span> <span class="toc-text">結語</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Reference"><span class="toc-number">4.</span> <span class="toc-text">Reference</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2019/10/13/ironman2020/day28/';
+        
+        this.page.identifier = 'ironman2020/day28';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

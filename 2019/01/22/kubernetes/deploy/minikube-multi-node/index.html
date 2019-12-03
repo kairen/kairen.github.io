@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>利用 Minikube 快速建立測試用多節點 Kubernetes 叢集 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="本文將說明如何透過 Minikube 建立多節點 Kubernetes 叢集。一般來說 Minikube 僅提供單節點功能，即透過虛擬機建立僅有一個具備 Master/Node 節點的 Kubernetes 叢集，但由時候需要測試多節點功能，因此自己改了一下 Minikube 來支援最新版本(v1.13.2)的多節點部署，且 CNI Plugin 採用 Calico，以方便測試 Network P">
+<meta name="keywords" content="Kubernetes,Docker,Calico">
+<meta property="og:type" content="article">
+<meta property="og:title" content="利用 Minikube 快速建立測試用多節點 Kubernetes 叢集">
+<meta property="og:url" content="https://k2r2bai.com/2019/01/22/kubernetes/deploy/minikube-multi-node/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="本文將說明如何透過 Minikube 建立多節點 Kubernetes 叢集。一般來說 Minikube 僅提供單節點功能，即透過虛擬機建立僅有一個具備 Master/Node 節點的 Kubernetes 叢集，但由時候需要測試多節點功能，因此自己改了一下 Minikube 來支援最新版本(v1.13.2)的多節點部署，且 CNI Plugin 採用 Calico，以方便測試 Network P">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/k8s/multi-nodes-minikube.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.394Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="利用 Minikube 快速建立測試用多節點 Kubernetes 叢集">
+<meta name="twitter:description" content="本文將說明如何透過 Minikube 建立多節點 Kubernetes 叢集。一般來說 Minikube 僅提供單節點功能，即透過虛擬機建立僅有一個具備 Master/Node 節點的 Kubernetes 叢集，但由時候需要測試多節點功能，因此自己改了一下 Minikube 來支援最新版本(v1.13.2)的多節點部署，且 CNI Plugin 採用 Calico，以方便測試 Network P">
+<meta name="twitter:image" content="https://k2r2bai.com/images/k8s/multi-nodes-minikube.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-kubernetes/deploy/minikube-multi-node" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+            
+	
+		<img src="/images/k8s/multi-nodes-minikube.png" class="article-banner" />
+	
+
+
+
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            利用 Minikube 快速建立測試用多節點 Kubernetes 叢集
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2019/01/22/kubernetes/deploy/minikube-multi-node/">
+            <u><time datetime="2019-01-22T09:08:54.000Z" itemprop="datePublished">2019-01-22</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Calico/">Calico</a>, <a class="tag-link" href="/tags/Docker/">Docker</a>, <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>本文將說明如何透過 Minikube 建立多節點 Kubernetes 叢集。一般來說 Minikube 僅提供單節點功能，即透過虛擬機建立僅有一個具備 Master/Node 節點的 Kubernetes 叢集，但由時候需要測試多節點功能，因此自己改了一下 Minikube 來支援最新版本(v1.13.2)的多節點部署，且 CNI Plugin 採用 Calico，以方便測試 Network Policy 功能。</p>
+<a id="more"></a>
+
+<h2 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h2><p>開始部署叢集前需先確保以下條件已達成：</p>
+<ul>
+<li>在測試機器下載 Minikube 二進制執行檔：<ul>
+<li><a href="https://github.com/kairen/minikube/releases/download/v0.33.1-multi-node/minikube-linux-amd64" target="_blank" rel="noopener">Linux</a></li>
+<li><a href="https://github.com/kairen/minikube/releases/download/v0.33.1-multi-node/minikube-darwin-amd64" target="_blank" rel="noopener">Mac OS X</a></li>
+<li><a href="https://github.com/kairen/minikube/releases/download/v0.33.1-multi-node/minikube-windows-amd64.exe" target="_blank" rel="noopener">Windows</a></li>
+</ul>
+</li>
+</ul>
+<blockquote class="colorquote warning"><p>如果上面連結掛了，可以透過以下方式安裝：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://github.com/kairen/minikube.git -b multi-node <span class="variable">$GOPATH</span>/src/k8s.io/minikube</span><br><span class="line">$ <span class="built_in">cd</span> <span class="variable">$GOPATH</span>/src/k8s.io/minikube</span><br><span class="line">$ make</span><br></pre></td></tr></table></figure>
+</blockquote>
+
+<ul>
+<li>在測試機器下載 <a href="https://www.virtualbox.org/wiki/Downloads" target="_blank" rel="noopener">Virtual Box</a> 來提供給 Minikube 建立虛擬機。</li>
+</ul>
+<blockquote class="colorquote warning"><ul>
+<li><strong>IMPORTANT</strong>: 測試機器記得開啟 VT-x or AMD-v virtualization.</li>
+<li>雖然建議用 VBox，但是討厭 Oracle 的人可以改用其他虛擬化工具(ex: KVM, xhyve)，理論上可以動。</li>
+</ul>
+</blockquote>
+
+<ul>
+<li>下載所屬作業系統的 <a href="https://kubernetes.io/docs/tasks/tools/install-kubectl/" target="_blank" rel="noopener">kubeclt</a>。</li>
+</ul>
+<blockquote class="colorquote info"><ul>
+<li>目前已測試過 Ubuntu 16.04 Desktop、Mac OS X 與 Windows 10 作業系統。</li>
+<li>Windows 使用者建議用 git bash 來操作。</li>
+</ul>
+</blockquote>
+
+<h2 id="建立叢集"><a href="#建立叢集" class="headerlink" title="建立叢集"></a>建立叢集</h2><p>本節將說明如何建立 Master 與 Node 節點，並將這些節點組成一個叢集。</p>
+<p>在開始前確認之前是否已經裝過 Minikube，若有的話，就把上面下載二進制檔放任意方便你執行的位置，或者直接取代之前的，然後再開始前請先刪除 Home 目錄的<code>.minikube</code>資料夾：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> rm -rf <span class="variable">$HOME</span>/.minikube</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Master-節點"><a href="#Master-節點" class="headerlink" title="Master 節點"></a>Master 節點</h3><p>首先透過 Minikube 執行以下指令來啟動 Master 節點，並透過 kubectl 檢查：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> minikube --profile k8s-m1 start --network-plugin=cni</span></span><br><span class="line">...</span><br><span class="line">Everything looks great. Please enjoy minikube!</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> kubectl -n kube-system get po -o wide</span></span><br><span class="line">NAME                             READY   STATUS    RESTARTS   AGE     IP               NODE     NOMINATED NODE   READINESS GATES</span><br><span class="line">calico-node-8cbc6                2/2     Running   0          6m29s   192.168.99.100   k8s-m1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">coredns-86c58d9df4-4nzlx         1/1     Running   0          6m32s   10.244.0.3       k8s-m1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">coredns-86c58d9df4-9879v         1/1     Running   0          6m32s   10.244.0.2       k8s-m1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">etcd-k8s-m1                      1/1     Running   0          5m58s   192.168.99.100   k8s-m1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">kube-addon-manager-k8s-m1        1/1     Running   0          5m47s   192.168.99.100   k8s-m1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">kube-apiserver-k8s-m1            1/1     Running   0          5m43s   192.168.99.100   k8s-m1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">kube-controller-manager-k8s-m1   1/1     Running   0          5m47s   192.168.99.100   k8s-m1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">kube-proxy-qnq25                 1/1     Running   0          6m32s   192.168.99.100   k8s-m1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">kube-scheduler-k8s-m1            1/1     Running   0          5m59s   192.168.99.100   k8s-m1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">storage-provisioner              1/1     Running   0          6m30s   192.168.99.100   k8s-m1   &lt;none&gt;           &lt;none&gt;</span><br></pre></td></tr></table></figure>
+
+<blockquote class="colorquote warning"><ul>
+<li><code>--vm-driver</code> 可以選擇使用其他 VM driver 來啟動虛擬機，如 xhyve、hyperv、hyperkit 與 kvm2 等等。</li>
+</ul>
+</blockquote>
+
+<p>完成後，確認 k8s-m1 節點處於 Ready 狀態：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ kubectl get no</span><br><span class="line">NAME     STATUS   ROLES    AGE    VERSION</span><br><span class="line">k8s-m1   Ready    master   2m8s   v1.13.2</span><br></pre></td></tr></table></figure>
+
+<h3 id="Node-節點"><a href="#Node-節點" class="headerlink" title="Node 節點"></a>Node 節點</h3><p>確認 Master 完成後，這邊接著透過 Minikube 開啟新的節點來加入：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ minikube --profile k8s-n1 start --network-plugin=cni --node</span><br><span class="line">...</span><br><span class="line">Stopping extra container runtimes...</span><br><span class="line"></span><br><span class="line"><span class="comment"># 接著取得 Master IP 與 Token</span></span><br><span class="line">$ minikube --profile k8s-m1 ssh <span class="string">"ifconfig eth1"</span></span><br><span class="line">$ minikube --profile k8s-m1 ssh <span class="string">"sudo kubeadm token list"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 執行以下指令進入 k8s-n1</span></span><br><span class="line">$ minikube --profile k8s-n1 ssh</span><br><span class="line"></span><br><span class="line"><span class="comment"># 這邊為進入 k8s-n1 VM 內執行的指令</span></span><br><span class="line">$ sudo su -</span><br><span class="line">$ TOKEN=7rzqkm.1goumlnntalpxvw0</span><br><span class="line">$ MASTER_IP=192.168.99.100</span><br><span class="line">$ kubeadm join --token <span class="variable">$&#123;TOKEN&#125;</span> <span class="variable">$&#123;MASTER_IP&#125;</span>:8443 \</span><br><span class="line">    --discovery-token-unsafe-skip-ca-verification \</span><br><span class="line">    --ignore-preflight-errors=Swap \</span><br><span class="line">    --ignore-preflight-errors=DirAvailable--etc-kubernetes-manifests</span><br><span class="line"></span><br><span class="line"><span class="comment"># 看到以下結果後，即可以在 k8s-m1 context 來操作。</span></span><br><span class="line">...</span><br><span class="line">Run <span class="string">'kubectl get nodes'</span> on the master to see this node join the cluster.</span><br></pre></td></tr></table></figure>
+
+<blockquote class="colorquote warning"><ul>
+<li>另外上面的 IP 有可能會不同，請確認 Master 節點 IP。</li>
+<li>其他節點以此類推。</li>
+</ul>
+</blockquote>
+
+<p>完成後，透過 kubectl 檢查 Node 是否有加入叢集：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ kubectl config use-context k8s-m1</span><br><span class="line">Switched to context <span class="string">"k8s-m1"</span>.</span><br><span class="line"></span><br><span class="line">$ kubectl get no</span><br><span class="line">NAME     STATUS   ROLES    AGE     VERSION</span><br><span class="line">k8s-m1   Ready    master   3m44s   v1.13.2</span><br><span class="line">k8s-n1   Ready    &lt;none&gt;   80s     v1.13.2</span><br><span class="line"></span><br><span class="line">$ kubectl get csr</span><br><span class="line">NAME                                                   AGE    REQUESTOR                 CONDITION</span><br><span class="line">node-csr-Ut1k5mLXpXVsyZwjn2z2-fpie9HHyTkMU7wnrjDnD3E   118s   system:bootstrap:3qeeeu   Approved,Issued</span><br><span class="line"></span><br><span class="line">$ kubectl -n kube-system get po -o wide</span><br><span class="line">NAME                             READY   STATUS    RESTARTS   AGE     IP               NODE     NOMINATED NODE   READINESS GATES</span><br><span class="line">calico-node-qxkw5                2/2     Running   0          86s     192.168.99.101   k8s-n1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">calico-node-srhlk                2/2     Running   0          3m24s   192.168.99.100   k8s-m1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">coredns-86c58d9df4-826nz         1/1     Running   0          3m27s   10.244.0.3       k8s-m1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">coredns-86c58d9df4-9z7mr         1/1     Running   0          3m27s   10.244.0.2       k8s-m1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">etcd-k8s-m1                      1/1     Running   0          2m40s   192.168.99.100   k8s-m1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">kube-addon-manager-k8s-m1        1/1     Running   0          3m48s   192.168.99.100   k8s-m1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">kube-addon-manager-k8s-n1        1/1     Running   0          86s     192.168.99.101   k8s-n1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">kube-apiserver-k8s-m1            1/1     Running   0          2m36s   192.168.99.100   k8s-m1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">kube-controller-manager-k8s-m1   1/1     Running   0          2m50s   192.168.99.100   k8s-m1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">kube-proxy-768w8                 1/1     Running   0          86s     192.168.99.101   k8s-n1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">kube-proxy-b7ndj                 1/1     Running   0          3m27s   192.168.99.100   k8s-m1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">kube-scheduler-k8s-m1            1/1     Running   0          2m46s   192.168.99.100   k8s-m1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">storage-provisioner              1/1     Running   0          3m17s   192.168.99.100   k8s-m1   &lt;none&gt;           &lt;none&gt;</span><br></pre></td></tr></table></figure>
+
+<p>這樣一個 Kubernetes 叢集就完成了，速度快一點不到 10 分鐘就可以建立好了。</p>
+<h2 id="刪除虛擬機與檔案"><a href="#刪除虛擬機與檔案" class="headerlink" title="刪除虛擬機與檔案"></a>刪除虛擬機與檔案</h2><p>最後若想清除環境的話，直接刪除虛擬機即可：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ minikube --profile &lt;node_name&gt; delete</span><br></pre></td></tr></table></figure>
+
+<p>而檔案只要刪除 Home 目錄的<code>.minikube</code>資料夾，以及<code>minikube</code>執行檔即可。</p>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">利用 Minikube 快速建立測試用多節點 Kubernetes 叢集</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2019-1-22 17:01</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2019/04/20/kubernetes/federation-v2/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    KubeFed: Kubernetes Federation v2
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2018/10/17/container/build-docker/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">透過原始碼建構 Docker 與 NVIDIA Docker</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2019/01/22/kubernetes/deploy/minikube-multi-node/" data-id="ck3ns7qbe00hnwmpfw7r2ydg0" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2019/01/22/kubernetes/deploy/minikube-multi-node/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/01/22/kubernetes/deploy/minikube-multi-node/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#事前準備"><span class="toc-number">1.</span> <span class="toc-text">事前準備</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#建立叢集"><span class="toc-number">2.</span> <span class="toc-text">建立叢集</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Master-節點"><span class="toc-number">2.1.</span> <span class="toc-text">Master 節點</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Node-節點"><span class="toc-number">2.2.</span> <span class="toc-text">Node 節點</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#刪除虛擬機與檔案"><span class="toc-number">3.</span> <span class="toc-text">刪除虛擬機與檔案</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2019/01/22/kubernetes/deploy/minikube-multi-node/';
+        
+        this.page.identifier = 'kubernetes/deploy/minikube-multi-node';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>淺談 Kubernetes 的部署工具選擇 Part1 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="前言我們都知道 Kubernetes 有很多特性可以確保系統與應用程式能夠更加穩定、部署更加流暢與管理更加簡單，而且使用起來也相對容易，但在自建(或地端)部署時，卻與想像的不同，有很多需要關注的問題與事情，例如:高可靠性(Highly Available，HA)、如何安全地更新叢集、裸機負載平衡器(Bare-metal Load Balancer)、動態 DNS 更新、硬體設備整合、分散式儲存整合">
+<meta name="keywords" content="Kubernetes">
+<meta property="og:type" content="article">
+<meta property="og:title" content="淺談 Kubernetes 的部署工具選擇 Part1">
+<meta property="og:url" content="https://k2r2bai.com/2019/09/16/ironman2020/day01/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="前言我們都知道 Kubernetes 有很多特性可以確保系統與應用程式能夠更加穩定、部署更加流暢與管理更加簡單，而且使用起來也相對容易，但在自建(或地端)部署時，卻與想像的不同，有很多需要關注的問題與事情，例如:高可靠性(Highly Available，HA)、如何安全地更新叢集、裸機負載平衡器(Bare-metal Load Balancer)、動態 DNS 更新、硬體設備整合、分散式儲存整合">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://i.imgur.com/xMS4XfX.png">
+<meta property="og:image" content="https://i.imgur.com/C9fYkmj.png">
+<meta property="og:image" content="https://i.imgur.com/p9CAHTC.png">
+<meta property="og:image" content="https://i.imgur.com/ZwYETAL.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.387Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="淺談 Kubernetes 的部署工具選擇 Part1">
+<meta name="twitter:description" content="前言我們都知道 Kubernetes 有很多特性可以確保系統與應用程式能夠更加穩定、部署更加流暢與管理更加簡單，而且使用起來也相對容易，但在自建(或地端)部署時，卻與想像的不同，有很多需要關注的問題與事情，例如:高可靠性(Highly Available，HA)、如何安全地更新叢集、裸機負載平衡器(Bare-metal Load Balancer)、動態 DNS 更新、硬體設備整合、分散式儲存整合">
+<meta name="twitter:image" content="https://i.imgur.com/xMS4XfX.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-ironman2020/day01" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            淺談 Kubernetes 的部署工具選擇 Part1
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2019/09/16/ironman2020/day01/">
+            <u><time datetime="2019-09-15T16:00:00.000Z" itemprop="datePublished">2019-09-16</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>我們都知道 Kubernetes 有很多特性可以確保系統與應用程式能夠更加穩定、部署更加流暢與管理更加簡單，而且使用起來也相對容易，但在自建(或地端)部署時，卻與想像的不同，有很多需要關注的問題與事情，例如:高可靠性(Highly Available，HA)、如何安全地更新叢集、裸機負載平衡器(Bare-metal Load Balancer)、動態 DNS 更新、硬體設備整合、分散式儲存整合與離線安裝(Offline Installation)等等，除了上述問題外，還要為了客戶能夠對部署的 Kubernetes 更有信心，因此必須進行壓力測試、E2E 測試、一致性測試與叢集安全掃描等等。從上述簡短的描述中，可以了解到自己蓋一套可以用的 Kubernetes 叢集，並且自己維運是多麼麻煩的事，這對公司來說都是成本支出。也正因此大多數人會偏向使用公有雲的 Kubernetes 服務，如 EKS、GKE 與 AKS 等等來減少維運成本的支出。下圖顯示不同部署的方式需要管理的部分。</p>
+<a id="more"></a>
+
+<blockquote>
+<p>當然不是所有系統跟應用程式跑在 Kubernetes 就能活得好好的，整個好棒棒。</p>
+</blockquote>
+<p><img src="https://i.imgur.com/xMS4XfX.png" alt><br>(圖片擷取自：<a href="https://kubernetes.io/docs/setup/" target="_blank" rel="noopener">kubernetes.io</a>)</p>
+<!--more-->
+
+<p>而在研替剛進去那一年，我因為在學期間有接觸過 Kubernetes 手動安裝，因此在還沒進入狀況下，被公司安排處理所有 Kubernetes 相關案子，這也使我從一開始對 Kubernetes 懵懵懂懂，到現在才覺得對 Kubernetes 有一點點認知(老實說還是一知半解XDD)。由於研替是在一家人員有限的公司，再加上大多數人對於 Kubernetes 不是那麼熟悉，作為一位軟體工程師的我，因此還需要兼顧不同角色，來解決幫助客戶自建的 Kubernetes 問題，因此在過程中學習到了一點點東西，而剛好有幸參加本次鐵人賽，想透過研替最後的 30 天來盡可能把經驗分享給大家。</p>
+<p>而本系列文章將分為三大部分來分享經驗，分別為:</p>
+<ul>
+<li>On-Premise(Custom) Container 與 Kubernetes 經驗</li>
+<li>Controller 與 Operator 開發經驗</li>
+<li>Kubernetes Certification 經驗</li>
+</ul>
+<h3 id="On-Premise-Custom-Container-與-Kubernetes-經驗"><a href="#On-Premise-Custom-Container-與-Kubernetes-經驗" class="headerlink" title="On-Premise(Custom) Container 與 Kubernetes 經驗"></a>On-Premise(Custom) Container 與 Kubernetes 經驗</h3><p>本部分將說明自己在 On-Premise(Custom) 部署的經驗，就如同前言提到的那些內容，我將說明自己在協助客戶自建 Kubernetes 時，使用到與學習到的東西，並帶大家了解如何實踐。</p>
+<h3 id="Controller-與-Operator-開發經驗"><a href="#Controller-與-Operator-開發經驗" class="headerlink" title="Controller 與 Operator 開發經驗"></a>Controller 與 Operator 開發經驗</h3><p>本部分將說明如何開發 Kubernetes Controller/Operator，過程中將實現幾個範例來帶大家了解 Controller/Operator 原理，並教導如何正確使用 Finalizer、Leader election 等等機制與功能。</p>
+<h3 id="Kubernetes-Certification-經驗"><a href="#Kubernetes-Certification-經驗" class="headerlink" title="Kubernetes Certification 經驗"></a>Kubernetes Certification 經驗</h3><p>本部分將說明如何準備與通過 <code>Certified Kubernetes Administrator</code>、<code>Certified Kubernetes Application Developer</code>、<code>Kubernetes Certified Service Provider</code> 與 <code>Certified Kubernetes Conformance Program</code>，這四項都是自己有經驗的部分。</p>
+<blockquote>
+<p>由於認證題目與要求會隨著時間而改變，這邊只能盡可能提供一些 Tips 來幫助大家。</p>
+</blockquote>
+<h2 id="所以，Kubernetes-的部署工具該怎選擇"><a href="#所以，Kubernetes-的部署工具該怎選擇" class="headerlink" title="所以，Kubernetes 的部署工具該怎選擇?"></a>所以，Kubernetes 的部署工具該怎選擇?</h2><p>第一次接觸 Kubernetes 時，大多數人都會思考該用什麼工具部署比較好，因為現在市面上有太多 Kubernentes 部署方案與開源專案，因此選擇時，往往無從下手，比如說下圖內的工具，相信就夠大家花很多時間去研究與嘗試了。</p>
+<p><img src="https://i.imgur.com/C9fYkmj.png" alt="Kubernetes Tools">  </p>
+<p>而這麼多部署工具，究竟該怎麼選擇呢?哪一個才是最好的工具呢?</p>
+<p>事實上，沒有一個部署工具與方案是適用於每一間公司的，因此在自建一座 Kubernetes 叢集前，我們必須依據需求，思考以下幾件事情:</p>
+<ol>
+<li>Kubernetes 支援的版本</li>
+<li>HA(Highly Available)</li>
+<li>能夠安全地更新叢集元件</li>
+<li>叢集部署規模</li>
+<li>是否會擴展節點(能輕易地新增與刪除節點)</li>
+<li>自動化與客製化程度</li>
+<li>部署叢集使用的情境與用途</li>
+<li>支援的網路插件(CNI Plugin)</li>
+<li>該工具是否有持續更新改進</li>
+<li>團隊有沒有共識(這也很重要)</li>
+<li>是否跨不同 CPU 指令集架構</li>
+<li>是否跨不同作業系統</li>
+<li>該工具是否通過一致性測試(CNCF Certified Kubernetes)</li>
+</ol>
+<p>思考這幾點是因為部署完一座 Kubernetes 叢集後，接下來的維運才是真正的開始。當選擇了錯誤的工具與方案後，後續維運往往會受到影響，因此而增加困難性與複雜性，導致各種風險發生，比如說上述提到的 1 與 9 點，當一個工具因為無法跟上 Kubernetes 版本快速演進時，團隊就必須面臨更換的決策，而一但確定更換時，又必須面臨升級與遷移問題;又或者如 2 - 8 點沒考慮到時，隨便選擇一個工具就進行部署，結果該工具對於這些需求支援程度低，就會增加維運團隊的困難與時間成本，甚至面臨整組打掉重練的地步。</p>
+<blockquote>
+<p>Kubernetes 採用 <a href="http://semver.org/" target="_blank" rel="noopener">Semantic Versioning</a> 方式來管理版本，其中以次要版本號(Minor version)與補丁版本號(Patch version)為主。通常一個新的次要版本大約<code>3 個月</code>釋出，並持續維護約<code>9 個月</code>就會進入 EoL(End of Life)，而補丁版本則大約<code>2 - 3 週</code>釋出，除非遇到重大錯誤。</p>
+</blockquote>
+<p>而過去 Kubernetes 社區裡一直沒有足夠的重視這些問題，所以一直沒有一套完整的工具來降低 Kubernetes 部署與維運的困難。一直到 2016 年才在社區貢獻者的推動下，發起了由 Kubernetes 社區維護的部署工具 <a href="https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/" target="_blank" rel="noopener">kubeadm</a>。</p>
+<blockquote>
+<p>kubeadm 是一位名為 Lucas Käldström 芬蘭人貢獻者發起，該貢獻者在當時僅是個高中生。我想這也是開源社區魅力所在，任何人都可以對社區進行貢獻，儘管貢獻的品質可能不是最好，但跟著成熟的開源社區中頂尖貢獻者持續地改善的話，終將會往好的方向發展。</p>
+</blockquote>
+<p>而為何要提到 kubeadm 呢?</p>
+<p>相信用過的人肯定會發現這工具真的很簡單，我們只需要幾個指令就可以部署一座 Kubernetes 叢集。kubeadm 設計非常精簡，又不失最佳實踐(Best Practices)理念，使大家會覺得很有『官方原生』的感覺，事實也是如此。既然官方有維護部署工具，那為什麼還有那麼多部署工具與方案呢?事情是這樣的，kubeadm 在過去版本雖然一直在實踐最佳的 Kubernetes 組態設定，但是卻缺乏了對生產環境重要的 HA 一環支援，因此許多人僅把這個工具當作測試用叢集部署使用。</p>
+<p>然而經過 Kubernetes 社區持續的發展，kubeadm 在 2018 年 12 月的 v1.13 版本釋出時，正式進入 GA(Generally available) 階段，並被標示為 Production-Ready 的工具，且隨著後續版本的推進，對於 HA 的支援已經慢慢完善; 另一方面可以觀察到有些部署工具開始從自行實現部署方案，慢慢轉為以 kubeadm 為基礎進行部署與產生組態檔，比如說 kubespray、kops、KRIB、minikube、SUSE skuba 等等。</p>
+<p>而為什麼以 kubeadm 為基礎最近部署與產生組態檔案比較好呢?我想這是因為 kubeadm 的架構設計能夠提供各種介面與方法來進行客製化 Kubernetes 從，如 phases 能讓使用者輕易地客製化每個部署階段，也正因為這樣的好處，所以上層工具開發者(商)只需要實現符合 kubeadm 的標準或 APIs 就能夠輕易改變叢集功能，此舉可以讓開發者(商)簡化複雜性，一來又能夠減少跟進新版的功能時間成本，直接藉由 Kubernetes 官方的最佳實踐，來保持與社區工具一致性。當然，這也是 kubeadm 維護團隊 SIG cluster lifecycle 團隊希望達到的，他們希望提供一系列工具鏈與 APIs 給大家開發自家的 Cluster provisioners，因此才會有越來越多工具往這方向發展，我想這樣發展是充滿信心的，畢竟自己在參與 Kubernetes 貢獻時，覺得 Kubernetes 是一個蠻成功的開源社區。</p>
+<p><img src="https://i.imgur.com/p9CAHTC.png" alt="SIG Cluster Lifecycle Projects"><br>(圖片擷取自：<a href="https://static.sched.com/hosted_files/kccnceu19/c4/2019%20KubeConEU%20-%20SCL-Intro.pdf" target="_blank" rel="noopener">KubeCon EU 2019</a>)</p>
+<p><img src="https://i.imgur.com/ZwYETAL.png" alt="Built to be part of a higher-level solution"><br>(圖片擷取自：<a href="https://static.sched.com/hosted_files/kccnceu19/c4/2019%20KubeConEU%20-%20SCL-Intro.pdf" target="_blank" rel="noopener">KubeCon EU 2019</a>)</p>
+<p>今天僅是簡單說明選擇一個工具時，必須要思考幾件事情，並提一下目前社區的發展。或許有人看到這邊可能會想說:『現在開始選用 kubeadm 就對了?』，確實 kubeadm 能夠完成大多數事情，但當面臨不同規模的叢集時，還是要搭配不同工具與系統的結合，才能發揮最大效果，因為要考慮到部署與維運的時間成本，以及部署完節點一致性問題。比如說有大量節點需要部署作業系統，那該怎麼辦呢?因為自建叢集不像公有雲提供的服務一樣，能便利地建立所需的資源;又或者說節點太多，要如來確保節點部署的一致性呢?諸如此類問題是自建(地端)的 Kubernetes 叢集經常會遇到的，而下一篇我將依據不同情境來說明怎麼選擇工具，或如何利用 kubeadm 結合其他工具來盡可能解決，當然也會提一下自己實際上作法。</p>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li><a href="https://kubernetes.io/docs/setup/" target="_blank" rel="noopener">https://kubernetes.io/docs/setup/</a></li>
+<li><a href="https://kccnceu19.sched.com/event/MPhI/intro-cluster-lifecycle-sig-lucas-kaldstrom-independent-tim-st-clair-vmware" target="_blank" rel="noopener">https://kccnceu19.sched.com/event/MPhI/intro-cluster-lifecycle-sig-lucas-kaldstrom-independent-tim-st-clair-vmware</a></li>
+<li><a href="https://caylent.com/50-useful-kubernetes-tools" target="_blank" rel="noopener">https://caylent.com/50-useful-kubernetes-tools</a></li>
+<li><a href="https://github.com/ramitsurana/awesome-kubernetes#installers" target="_blank" rel="noopener">https://github.com/ramitsurana/awesome-kubernetes#installers</a></li>
+<li><a href="https://docs.google.com/spreadsheets/d/1LxSqBzjOxfGx3cmtZ4EbB_BGCxT_wlxW_xgHVVa23es/edit#gid=0" target="_blank" rel="noopener">https://docs.google.com/spreadsheets/d/1LxSqBzjOxfGx3cmtZ4EbB_BGCxT_wlxW_xgHVVa23es/edit#gid=0</a></li>
+<li><a href="https://kubernetes.io/docs/setup/release/version-skew-policy/" target="_blank" rel="noopener">https://kubernetes.io/docs/setup/release/version-skew-policy/</a></li>
+<li><a href="https://github.com/kubernetes/community/blob/master/contributors/design-proposals/release/versioning.md#kubernetes-release-versioning" target="_blank" rel="noopener">https://github.com/kubernetes/community/blob/master/contributors/design-proposals/release/versioning.md#kubernetes-release-versioning</a></li>
+<li><a href="https://kubernetes.io/blog/2019/06/24/automated-high-availability-in-kubeadm-v1.15-batteries-included-but-swappable/" target="_blank" rel="noopener">https://kubernetes.io/blog/2019/06/24/automated-high-availability-in-kubeadm-v1.15-batteries-included-but-swappable/</a></li>
+<li><a href="https://kubernetes.io/blog/2018/12/04/production-ready-kubernetes-cluster-creation-with-kubeadm/" target="_blank" rel="noopener">https://kubernetes.io/blog/2018/12/04/production-ready-kubernetes-cluster-creation-with-kubeadm/</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">淺談 Kubernetes 的部署工具選擇 Part1</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2019-9-16 00:09</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2019/09/17/ironman2020/day02/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    淺談 Kubernetes 的部署工具選擇 Part2
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2019/04/20/kubernetes/federation-v2/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">KubeFed: Kubernetes Federation v2</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2019/09/16/ironman2020/day01/" data-id="ck3ns7q5p002cwmpfmox0ni5r" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2019/09/16/ironman2020/day01/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/09/16/ironman2020/day01/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#On-Premise-Custom-Container-與-Kubernetes-經驗"><span class="toc-number">1.1.</span> <span class="toc-text">On-Premise(Custom) Container 與 Kubernetes 經驗</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Controller-與-Operator-開發經驗"><span class="toc-number">1.2.</span> <span class="toc-text">Controller 與 Operator 開發經驗</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Kubernetes-Certification-經驗"><span class="toc-number">1.3.</span> <span class="toc-text">Kubernetes Certification 經驗</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#所以，Kubernetes-的部署工具該怎選擇"><span class="toc-number">2.</span> <span class="toc-text">所以，Kubernetes 的部署工具該怎選擇?</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Reference"><span class="toc-number">3.</span> <span class="toc-text">Reference</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2019/09/16/ironman2020/day01/';
+        
+        this.page.identifier = 'ironman2020/day01';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

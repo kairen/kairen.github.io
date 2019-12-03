@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>Ceph 分散式儲存系統介紹 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Ceph 提供了Ceph 物件儲存以及Ceph 區塊儲存，除此之外 Ceph 也提供了自身的Ceph 檔案系統，所有的 Ceph 儲存叢集的部署都開始於 Ceph 各節點，透過網路與 Ceph 的叢集溝通。最簡單的 Ceph 儲存叢集至少要建立一個 Monitor 與兩個 OSD（Object storage daemon），但是當需要運行 Ceph 檔案系統時，就需要再加入Metadata伺服器">
+<meta name="keywords" content="Ceph,Storage,Distribution System">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Ceph 分散式儲存系統介紹">
+<meta property="og:url" content="https://k2r2bai.com/2015/11/19/ceph/introduction/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Ceph 提供了Ceph 物件儲存以及Ceph 區塊儲存，除此之外 Ceph 也提供了自身的Ceph 檔案系統，所有的 Ceph 儲存叢集的部署都開始於 Ceph 各節點，透過網路與 Ceph 的叢集溝通。最簡單的 Ceph 儲存叢集至少要建立一個 Monitor 與兩個 OSD（Object storage daemon），但是當需要運行 Ceph 檔案系統時，就需要再加入Metadata伺服器">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/ceph/ceph.jpeg">
+<meta property="og:image" content="https://k2r2bai.com/images/ceph/stack.png">
+<meta property="og:image" content="https://k2r2bai.com/images/ceph/part.png">
+<meta property="og:image" content="https://k2r2bai.com/images/ceph/figure2.gif">
+<meta property="og:image" content="https://k2r2bai.com/images/ceph/architecture.png">
+<meta property="og:image" content="https://k2r2bai.com/images/ceph/metadata.png">
+<meta property="og:image" content="https://k2r2bai.com/images/ceph/osd.png">
+<meta property="og:image" content="https://k2r2bai.com/images/ceph/pool-flow.png">
+<meta property="og:image" content="https://k2r2bai.com/images/ceph/pg.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.378Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Ceph 分散式儲存系統介紹">
+<meta name="twitter:description" content="Ceph 提供了Ceph 物件儲存以及Ceph 區塊儲存，除此之外 Ceph 也提供了自身的Ceph 檔案系統，所有的 Ceph 儲存叢集的部署都開始於 Ceph 各節點，透過網路與 Ceph 的叢集溝通。最簡單的 Ceph 儲存叢集至少要建立一個 Monitor 與兩個 OSD（Object storage daemon），但是當需要運行 Ceph 檔案系統時，就需要再加入Metadata伺服器">
+<meta name="twitter:image" content="https://k2r2bai.com/images/ceph/ceph.jpeg">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-ceph/introduction" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            Ceph 分散式儲存系統介紹
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2015/11/19/ceph/introduction/">
+            <u><time datetime="2015-11-19T09:08:54.000Z" itemprop="datePublished">2015-11-19</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Ceph/">Ceph</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Ceph/">Ceph</a>, <a class="tag-link" href="/tags/Distribution-System/">Distribution System</a>, <a class="tag-link" href="/tags/Storage/">Storage</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>Ceph 提供了<code>Ceph 物件儲存</code>以及<code>Ceph 區塊儲存</code>，除此之外 Ceph 也提供了自身的<code>Ceph 檔案系統</code>，所有的 Ceph 儲存叢集的部署都開始於 Ceph 各節點，透過網路與 Ceph 的叢集溝通。最簡單的 Ceph 儲存叢集至少要建立一個 Monitor 與兩個 OSD（Object storage daemon），但是當需要運行 Ceph 檔案系統時，就需要再加入Metadata伺服器。</p>
+<p><img src="/images/ceph/ceph.jpeg" alt="Ceph"></p>
+<a id="more"></a>
+
+<h2 id="Ceph-目標"><a href="#Ceph-目標" class="headerlink" title="Ceph 目標"></a>Ceph 目標</h2><p>開發檔案系統是一種複雜的投入，但是如果能夠準確地解決問題的話，則擁有著不可估量的價值。我們可以把 Ceph 的目標可以簡單定義為以下：</p>
+<ul>
+<li><strong>容易擴充到 <a href="http://en.wikipedia.org/wiki/Petabyte" target="_blank" rel="noopener">PB 級別</a>的儲存容量</strong></li>
+<li><strong>在不同負載情況下的高效能（每秒輸入/輸出操作數[IPOS]、帶寬）</strong></li>
+<li><strong>高可靠性</strong></li>
+</ul>
+<p>但這些目標彼此間相互矛盾(例如:可擴充性會減少或阻礙效能，或影響可靠性)。 Ceph 開發了一些有趣的概念(例如<strong>動態 metadata 分區</strong>、<strong>資料分散</strong>、<strong>複製</strong>)。</p>
+<p>Ceph 的設計也實作了<code>容錯性</code>來防止<code>單一節點故障問題（SOPF）</code>，並假設，大規模（PB 級）中儲存的故障是一種常態，而非異常。最後，它的設計沒有假設特定的工作負荷，而是包含了可變的分散式工作負荷的適應能力，從而提供最佳的效能。它以<a href="http://zh.wikipedia.org/wiki/POSIX" target="_blank" rel="noopener">POSIX</a> 兼容為目標完成這些工作，允許它透明的部署於那些依賴於 POSIX 語義上現有的應用(通過Ceph增強功能)。最後，Ceph 是開源分散式儲存和 Linux 主流核心的一部分。</p>
+<p><img src="/images/ceph/stack.png" alt="完整架構"></p>
+<p>其中最底層的 RADOS 是由 OSD、Monitor 與 MDS 三種所組成。</p>
+<h2 id="Ceph-架構"><a href="#Ceph-架構" class="headerlink" title="Ceph 架構"></a>Ceph 架構</h2><p>現在，讓我們先在上層探討 Ceph 架構及其核心元素。之後深入到其它層次，來解析 Ceph 的一些主要方面，從而進行更詳細的分析。</p>
+<p>Ceph 生態系統可以大致劃分為四部分（圖1）：</p>
+<ul>
+<li><strong>客戶端</strong> (資料使用者)</li>
+<li><strong>metadata 伺服器</strong> (快取及同步分散的metadata)</li>
+<li><strong>物件儲存叢集</strong> (以物件方式儲存資料與 metadata，實現其它主要職責)</li>
+<li><strong>叢集監控</strong> (實現監控功能)</li>
+</ul>
+<p><img src="/images/ceph/part.png" alt="part"></p>
+<p>如圖所示，客戶使用 metadata 伺服器，執行 metadata 操作(來確定資料位置)。metadata 伺服器管理資料位置，以及在何處儲存取新資料。值得注意的是，metadata 儲存在一個儲存叢集上（標記為 “metadata I/O”）。實際的檔案 I/O 發生在客戶和物件儲存叢集之間。這樣一來，提供了更高層次的 POSIX 功能(例如，開啟、關閉、重新命名)就由 metadata 伺服器管理，不過 POSIX 功能（例如讀和寫）則直接由物件儲存叢集管理。</p>
+<p><img src="/images/ceph/figure2.gif" alt="figure2.gif"></p>
+<p>上面分層視圖說明了，一系列伺服器透過一個客戶端介面存取 Ceph 生態圈系統，這就明白了 metadata 伺服器和物件級儲存之間的關係。分散式儲存系統可以在一些層面中查看，包括一個儲存設備的格式（Extent and B-tree-based Object File System [EBOFS]或者一個備選），還有一個設計用於管理資料複製、故障檢測、復原，以及隨後資料遷移的覆蓋管理層，叫做<code>Reliable Autonomic Distributed Object Storage（RADOS）</code>。最後，監視器用於區別元件中的故障，包括隨後的通知。</p>
+<h2 id="Ceph-元件成員"><a href="#Ceph-元件成員" class="headerlink" title="Ceph 元件成員"></a>Ceph 元件成員</h2><h3 id="簡單的-Ceph-生態系統"><a href="#簡單的-Ceph-生態系統" class="headerlink" title="簡單的 Ceph 生態系統"></a>簡單的 Ceph 生態系統</h3><p>了解 Ceph 概念架構後，我們來探討另一個層次，了解在 Ceph 中實現的主要元件。 Ceph 和傳統檔案系統之間的重要差異之一，就是智能部分都用在了生態環境，而不是檔案系統本身。</p>
+<p><img src="/images/ceph/architecture.png" alt="architecture"></p>
+<p>圖中顯示了一個簡單的Ceph生態系統。Ceph Client 是 Ceph 檔案系統的用戶。Ceph Metadata Daemon 提供了 metadata 伺服器，而 Ceph Object Storage Daemon 提供了實際儲存（對資料和 metadata 兩者）。最後 Ceph Monitor 提供了叢集管理。要注意的是 Ceph 客戶，物件儲存端點，metadata 伺服器（根據檔案系統的容量）可以有許多，而且至少有一對冗餘的監視器。那麼這個檔案系統是如何分散的呢？</p>
+<h3 id="Ceph-Client"><a href="#Ceph-Client" class="headerlink" title="Ceph Client"></a>Ceph Client</h3><p>因為Linux顯示檔案系統的一個共有介面（通過虛擬檔案系統交換機[VFS]），Ceph 的用戶透視圖就是透明的。然而管理者的透視圖肯定是不同的，考慮到很多伺服器會包含儲存系統這一潛在因素（要查看更多建立的 Ceph 叢集的資訊，可看參考資料部分）。從用戶的角度來看，存取大容量的儲存系統，卻不知道下面聚合成一個大容量的<strong>儲存池</strong>的 metadata 伺服器、監視器、還有獨立的對象儲存裝置。用戶只是簡單地看到一個安裝點，在這點上可以執行標准檔案 I/O。</p>
+<blockquote>
+<p>P.S <strong>核心或使用者空間</strong> : 早期版本的 Ceph 利用在 User SpacE（FUSE）的 Filesystems，它把文件系統推入到用戶空間，還可以很大程度上簡化其開發。但是今天，Ceph 已經被集成到主線內核，使其更快速，因為用戶空間上下文交換機對文件系統 I/O 已經不再需要。</p>
+</blockquote>
+<h3 id="Ceph-Metadata-Server（MDS）"><a href="#Ceph-Metadata-Server（MDS）" class="headerlink" title="Ceph Metadata Server（MDS）"></a>Ceph Metadata Server（MDS）</h3><p>作為處理 Ceph File System 的 metadata 之用，若僅使用 Block or Object storage，就不會用到這部分功能。</p>
+<p><img src="/images/ceph/metadata.png" alt="metadata"></p>
+<blockquote>
+<p><strong>P.S 若只使用 Ceph Object Storage 與 Ceph Block Device 的話，將不需要部署 MDS 節點。</strong></p>
+</blockquote>
+<h3 id="Ceph-Monitor（MON）"><a href="#Ceph-Monitor（MON）" class="headerlink" title="Ceph Monitor（MON）"></a>Ceph Monitor（MON）</h3><p>Ceph 包含實施叢集映射管理的監控者，但是故障管理的一些要素是在物件儲存本身執行的。當物件儲存裝置發生故障或者新裝置加入時，監控者就會檢測和維護一個有效的叢集映射。這個功能會按一種分散式的方法執行，這種方式中映射升級可以和當前的流量溝通。Ceph 使用<a href="http://zh.wikipedia.org/zh-tw/Paxos%E7%AE%97%E6%B3%95" target="_blank" rel="noopener">Paxos</a>，它是一系列分散式共識演算法。</p>
+<p>在每一個 Ceph 儲存中，都有一到多個 Monitor 存在，為了有效的在分散式的環境下存取檔案，每一個 Ceph Monitor daemon 維護著很多份與 叢集相關的映射資料(map)，包含：</p>
+<ul>
+<li><strong>Monitor map</strong>：包含叢集的 fsid 、位置、名稱、IP 位址和 Port，也包括目前 epoch、此狀態圖何時建立與最近修改時間。</li>
+<li><strong>OSD map</strong>：包含叢集 fsid 、此狀態圖何時建立、最近修改時間、儲存池（Pools）列表 、副本數量、放置群組（PG）數量、 OSD 列表與其狀態（如 up 、 in ）</li>
+<li><strong>Placement Group map</strong>：包含放置群組版本、其時間戳記、最新的 OSD epoch、佔用率以及各放置群組詳細，如放置群組 ID 、 up set 、 acting set 、 PG 狀態（如 active+clean），和各儲存池的資料使用情況統計。</li>
+<li><strong>CRUSH map</strong>： 包含儲存裝置列表、故障域樹狀結構（如裝置、主機、機架、row、機房等等），以及儲存資料時如何利用此樹狀結構的規則。</li>
+<li><strong>MDS map</strong>：包含當前 MDS map 的 epoch、建立於何時與最近修改時間，還包含了儲存 metadata 的儲存池、metadata 伺服器列表、還有哪些 metadata 伺服器是 <code>up</code> 且<code>in</code> 的。</li>
+</ul>
+<p>主要是用來監控 Ceph 儲存叢集上的即時狀態，確保 Ceph 可以運作無誤。</p>
+<h3 id="Ceph-Object-Storage-Daemon（OSD）"><a href="#Ceph-Object-Storage-Daemon（OSD）" class="headerlink" title="Ceph Object Storage Daemon（OSD）"></a>Ceph Object Storage Daemon（OSD）</h3><p>與傳統的物件儲存類似，Ceph 儲存節點不僅包括儲存，還包含了智能容錯與恢復。傳統的驅動是只響應來自啟動者下達的命令中簡單目標。但是物件儲存裝置是智能裝置，它能作為目標和啟動者，支持與其他物件儲存裝置的溝通與合作。</p>
+<p>實際與 Client 溝通進行資料存取的即為 OSD。每個 object 被儲存到多個 PG（Placement Group）中，每個 PG 再被存放到多個 OSD 中。為了達到 Active + Clean 的狀態，確認每份資料都有兩份的儲存，每個 Ceph 儲存叢集中至少都必須要有兩個 OSD。</p>
+<p>主要功能為實際資料（object）的儲存，處理資料複製、恢復、回填（backfilling, 通常發生於新 OSD 加入時）與重新平衡（發生於新 OSD 加入 CRUSH map 時），並向 Monitor 提供鄰近 OSD 的心跳檢查資訊。</p>
+<p><img src="/images/ceph/osd.png" alt="osd"></p>
+<h3 id="CRUSH"><a href="#CRUSH" class="headerlink" title="CRUSH"></a>CRUSH</h3><p>Ceph 透過 CRUSH（Controlled, Scalable, Decentralized Placement of Replicated Data） 演算法來計算資料儲存位置，來確認如何儲存和檢索資料，CRUSH 授權 Ceph client 可以直接連接 OSD，而不再是透過集中式伺服器或者中介者來儲存與讀取資料。該演算法與架構特性使 Ceph 可以避免單一節點故障問題、效能瓶頸與擴展的限制。</p>
+<p>CRUSH 是一種偽隨機資料分散算法，能夠再階層結構的儲存叢集很好地分散物件的副本，該演算法實作了偽隨機(確定性)的函式，會透過輸入o​​bject id、object group id等參數，來回傳一組儲存裝置（即儲存物件的副本）。CRUSH 有以下兩個重要的資訊：</p>
+<ul>
+<li><strong>Cluster Map</strong>：被用來描述儲存叢集的階層結構。</li>
+<li><strong>CRUSH Rule</strong>：被用來描述副本的分散策略。</li>
+</ul>
+<p>CRUSH 主要提供了以下功能：</p>
+<ul>
+<li>將資料有效率的存放在不同的儲存裝置中。</li>
+<li>即使移除整個 cluster中的儲存裝置，也不會影響到資料正常的存取。</li>
+<li>不需要有任何主要的管理裝置(or 節點)來做為控管之用。</li>
+<li>可依照使用者所定義的規則來處理資料分散的方式。</li>
+</ul>
+<p>透過以上資訊，CRUSH 可以將資料分散存放在不同的儲存實體位置，並避免單點錯誤造成資料無法存取的狀況發生。</p>
+<h3 id="Pools"><a href="#Pools" class="headerlink" title="Pools"></a>Pools</h3><p>Pool 是儲存物件邏輯分區。Ceph Client 從 Monitor 取得 Cluster map，並把物件寫入 Pool。Pool 的副本數、CRUSH Ruleset 和 PG 數量決定著 Ceph 該如何放置資料。</p>
+<p><img src="/images/ceph/pool-flow.png" alt></p>
+<p>一個 Pool 可以設定許多參數，但最少需要正確設定以下資訊：</p>
+<ul>
+<li>物件擁有權與存取權限</li>
+<li>Placement Group 數量</li>
+<li>CRUSH Ruleset 設定與使用</li>
+</ul>
+<h3 id="Placement-Group"><a href="#Placement-Group" class="headerlink" title="Placement Group"></a>Placement Group</h3><p>Ceph 把物件映射到放置群組（PG），PG 是一種邏輯的物件 Pool 片段，這些物件會組成一個群組後，再存到 OSD 中。PG 減少了各物件存入對應的 OSD 時 metadata 的數量，更多的 PG（如：每個OSD 有 100 個群組）可以使<code>負載平衡</code>更好。</p>
+<p><img src="/images/ceph/pg.png" alt="pg"></p>
+<blockquote>
+<p><strong>P.S 多個 PG 也可以對應到同一個 OSD，因此 PG 與 OSD 其實是種多對多的關係。</strong></p>
+</blockquote>
+<h4 id="PG-ID-計算"><a href="#PG-ID-計算" class="headerlink" title="PG ID 計算"></a>PG ID 計算</h4><p>當 Client 在綁定某個 Monitor 時，會先取得最新的 Cluster map 副本，該 map 可讓 Client 端知道叢集有多少 Monitor、OSD 與 MDS。但是無法知道要存取的物件位置。</p>
+<p>在 Ceph 中，物件的位置是透過計算得知的。因此 Client 只需要傳入 Object id 與 Pool 即可知道物件位置。當 Client 需要有名稱物件（如 mysql、archive 等）時，Ceph 會用物件名稱來計算 PG（是一個 Hash value）、 OSD 編號與 Pool。流程如下：</p>
+<ul>
+<li>Client 輸入 pool id 與 object id（e.g., pool=’vms’, object id=’instance-1’）</li>
+<li>CRUSH 取得 object id，並進行 Hash 取得值</li>
+<li>CRUSH 在以 OSD 數量對 Hash value 進行 mod 運算，來取得 pg id（e.g., 58）</li>
+<li>CRUSH 再透過取得 pool name 來取得 pool id（e.g., ‘vms’ = ‘4’）<br>5* CRUSH 在把 pool id 加到 pg id 前面（e.g, 4.58）</li>
+</ul>
+<p>透過計算物件位置的方式，改善了傳統查詢定位的效能問題。CRUSH 演算法讓 Client 計算物件應該存放到哪裡，並連接該 Primary OSD 進行物件儲存與檢索。</p>
+<h2 id="Ceph-三大儲存服務系統特性與功能"><a href="#Ceph-三大儲存服務系統特性與功能" class="headerlink" title="Ceph 三大儲存服務系統特性與功能"></a>Ceph 三大儲存服務系統特性與功能</h2><p>Ceph  是一個統一的儲存系統，提供了物件、區塊與檔案系統功能，且擁有高可靠、高擴展。該三大儲存服務功能與特性如下：</p>
+<table>
+<thead>
+<tr>
+<th>CEPH 物件儲存</th>
+<th>CEPH 區塊裝置</th>
+<th>CEPH 檔案系統</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RESTful 介面</td>
+<td>精簡空間配置</td>
+<td>與 POSIX 語意相容</td>
+</tr>
+<tr>
+<td>與 S3 和 Swift 相容的 API</td>
+<td>映像檔大小最大支援 16 EB（exabytes）</td>
+<td>Metadata 與資料分離</td>
+</tr>
+<tr>
+<td>S3 風格的子域名</td>
+<td>可組態的等量化（Configurable striping）</td>
+<td>動態重新平衡(Dynamic rebalancing)</td>
+</tr>
+<tr>
+<td>統一的 S3/Swift 命名空間</td>
+<td>記憶體快取</td>
+<td>子目錄快照</td>
+</tr>
+<tr>
+<td>使用者管理</td>
+<td>快照</td>
+<td>可組態的等量化（Configurable striping）</td>
+</tr>
+<tr>
+<td>利用率追蹤</td>
+<td>寫入時複製 cloning</td>
+<td>核心驅動的支援</td>
+</tr>
+<tr>
+<td>等量化物件（Striped objects）</td>
+<td>支援 KVM 與 libvirt</td>
+<td>支援使用者空間檔案系統（FUSE）</td>
+</tr>
+<tr>
+<td>雲端解決方案整合</td>
+<td>可作為雲端解決方案的後端</td>
+<td>可作為 NFS/CIFS 部署</td>
+</tr>
+<tr>
+<td>多站點部署</td>
+<td>累積備份</td>
+<td>可用於 Hadoop 上（替代 HDFS ）</td>
+</tr>
+<tr>
+<td>災難復原</td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<h2 id="參考"><a href="#參考" class="headerlink" title="參考"></a>參考</h2><ul>
+<li><a href="http://mirrors.myccdn.info/ceph/doc/docs_zh/output/html/" target="_blank" rel="noopener">Ceph中文文件</a></li>
+<li><a href="http://godleon.blogspot.tw/2014/10/ceph.html" target="_blank" rel="noopener">小信豬 Ceph</a></li>
+<li><a href="http://ceph.com/docs/master/" target="_blank" rel="noopener">Ceph 官方文件</a></li>
+<li><a href="http://ceph.com/resources/development/" target="_blank" rel="noopener">Ceph Development</a></li>
+<li><a href="http://cloud.51cto.com/art/201504/470780_all.htm" target="_blank" rel="noopener">Ceph 整合案例</a></li>
+<li><a href="https://books.google.com.tw/books?hl=zh-TW&lr&id=HftzBgAAQBAJ&oi=fnd&pg=PP1&dq=openstack%20ceph&ots=OWwptmw5Mm&sig=d1uC5NThemjRudfktDXmuQ6TqA0&redir_esc=y#v=onepage&q=openstack%20ceph&f=false" target="_blank" rel="noopener">Ceph Book</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">Ceph 分散式儲存系統介紹</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2015-11-19 17:11</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2015/11/20/ceph/deploy/ceph-deploy/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    使用 ceph-deploy 工具部署 Ceph 叢集
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2015/11/17/data-engineer/apache-cassandra/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">Apache Cassandra 分散式資料庫</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2015/11/19/ceph/introduction/" data-id="ck3ns7q4v000bwmpfpcoxxytq" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2015/11/19/ceph/introduction/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2015/11/19/ceph/introduction/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Ceph-目標"><span class="toc-number">1.</span> <span class="toc-text">Ceph 目標</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Ceph-架構"><span class="toc-number">2.</span> <span class="toc-text">Ceph 架構</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Ceph-元件成員"><span class="toc-number">3.</span> <span class="toc-text">Ceph 元件成員</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#簡單的-Ceph-生態系統"><span class="toc-number">3.1.</span> <span class="toc-text">簡單的 Ceph 生態系統</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Ceph-Client"><span class="toc-number">3.2.</span> <span class="toc-text">Ceph Client</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Ceph-Metadata-Server（MDS）"><span class="toc-number">3.3.</span> <span class="toc-text">Ceph Metadata Server（MDS）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Ceph-Monitor（MON）"><span class="toc-number">3.4.</span> <span class="toc-text">Ceph Monitor（MON）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Ceph-Object-Storage-Daemon（OSD）"><span class="toc-number">3.5.</span> <span class="toc-text">Ceph Object Storage Daemon（OSD）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CRUSH"><span class="toc-number">3.6.</span> <span class="toc-text">CRUSH</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Pools"><span class="toc-number">3.7.</span> <span class="toc-text">Pools</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Placement-Group"><span class="toc-number">3.8.</span> <span class="toc-text">Placement Group</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Ceph-三大儲存服務系統特性與功能"><span class="toc-number">4.</span> <span class="toc-text">Ceph 三大儲存服務系統特性與功能</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#參考"><span class="toc-number">5.</span> <span class="toc-text">參考</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2015/11/19/ceph/introduction/';
+        
+        this.page.identifier = 'ceph/introduction';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

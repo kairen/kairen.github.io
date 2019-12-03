@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>簡單部署 Docker Swarm 測試叢集 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Docker Swarm 是 Docker 公司的 Docker 編配引擎，最早是在 2014 年 12 月發佈。Docker Swarm 目的即管理多台節點的 Docker 上應用程式與節點資源的排程等，並提供標準的 Docker API 介面當作前端存取入口，因此可以跟現有 Docker 工具與函式庫進行整合，本篇將介紹簡單的建立 Swarm cluster。 Docker Swarm 具備了">
+<meta name="keywords" content="Container,Docker,Container Orchestration">
+<meta property="og:type" content="article">
+<meta property="og:title" content="簡單部署 Docker Swarm 測試叢集">
+<meta property="og:url" content="https://k2r2bai.com/2016/11/16/container/docker-swarm/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Docker Swarm 是 Docker 公司的 Docker 編配引擎，最早是在 2014 年 12 月發佈。Docker Swarm 目的即管理多台節點的 Docker 上應用程式與節點資源的排程等，並提供標準的 Docker API 介面當作前端存取入口，因此可以跟現有 Docker 工具與函式庫進行整合，本篇將介紹簡單的建立 Swarm cluster。 Docker Swarm 具備了">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/docker/docker-swarm-architecture.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.381Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="簡單部署 Docker Swarm 測試叢集">
+<meta name="twitter:description" content="Docker Swarm 是 Docker 公司的 Docker 編配引擎，最早是在 2014 年 12 月發佈。Docker Swarm 目的即管理多台節點的 Docker 上應用程式與節點資源的排程等，並提供標準的 Docker API 介面當作前端存取入口，因此可以跟現有 Docker 工具與函式庫進行整合，本篇將介紹簡單的建立 Swarm cluster。 Docker Swarm 具備了">
+<meta name="twitter:image" content="https://k2r2bai.com/images/docker/docker-swarm-architecture.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-container/docker-swarm" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            簡單部署 Docker Swarm 測試叢集
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2016/11/16/container/docker-swarm/">
+            <u><time datetime="2016-11-16T09:08:54.000Z" itemprop="datePublished">2016-11-16</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Container/">Container</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Container/">Container</a>, <a class="tag-link" href="/tags/Container-Orchestration/">Container Orchestration</a>, <a class="tag-link" href="/tags/Docker/">Docker</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>Docker Swarm 是 Docker 公司的 Docker 編配引擎，最早是在 2014 年 12 月發佈。Docker Swarm 目的即管理多台節點的 Docker 上應用程式與節點資源的排程等，並提供標準的 Docker API 介面當作前端存取入口，因此可以跟現有 Docker 工具與函式庫進行整合，本篇將介紹簡單的建立 Swarm cluster。</p>
+<p>Docker Swarm 具備了以下幾個特性：</p>
+<ul>
+<li>Docker engine 原生支援。(Docker 1.12+)。</li>
+<li>去中心化設計。</li>
+<li>宣告式服務模型(Declarative Service Model)。</li>
+<li>服務可擴展與容錯。</li>
+<li>可協調預期狀態與實際狀態的一致性。</li>
+<li>多種網路支援。</li>
+<li>提供服務發現、負載平衡與安全策略。</li>
+<li>支援滾動升級(Rolling Update)。</li>
+</ul>
+<a id="more"></a>
+
+<h2 id="基本架構"><a href="#基本架構" class="headerlink" title="基本架構"></a>基本架構</h2><p>Docker Swarm 具備基本叢集功能，能讓多個 Docker 組合成一個群組，來提供容器服務。Docker 採用標準 Docker API 來管理容器的生命週期，而 Swarm 最主要核心是處理容器如何選擇一台主機來啟動容器這件事。以下為 Docker Swarm 架構：</p>
+<p><img src="/images/docker/docker-swarm-architecture.png" alt="Docker"></p>
+<p>Docker Swarm 一般分為兩個角色<code>Manager</code>與<code>Worker</code>，兩者主要工作如下：</p>
+<ul>
+<li><strong>Manager</strong>: 主要負責排程 Task，Task 可以表示為 Swarm 節點中的 Node 上啟動的容器。同時還負責編配容器與叢集管理功能，簡單說就是 Manager 具備管理 Node 的工作，除了以上外，Manager 還會維護叢集狀態。另外 Manager 也具備 Worker 的功能，當然也可以設定只做管理 Node 的職務。</li>
+<li><strong>Worker</strong>: Worker 主要接收來自 Manager 的 Task 指派，並依據指派內容啟動 Docker 容器服務，並在完成後向 Manager 匯報 Task 執行狀態。</li>
+</ul>
+<h2 id="預先準備資訊"><a href="#預先準備資訊" class="headerlink" title="預先準備資訊"></a>預先準備資訊</h2><p>本教學將以下列節點數與規格來進行部署 Kubernetes 叢集，作業系統可採用<code>Ubuntu 16.x</code>與<code>CentOS 7.x</code>：</p>
+<table>
+<thead>
+<tr>
+<th>IP Address</th>
+<th>Role</th>
+<th>CPU</th>
+<th>Memory</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>172.16.35.12</td>
+<td>manager</td>
+<td>1</td>
+<td>2G</td>
+</tr>
+<tr>
+<td>172.16.35.10</td>
+<td>node1</td>
+<td>1</td>
+<td>2G</td>
+</tr>
+<tr>
+<td>172.16.35.11</td>
+<td>node2</td>
+<td>1</td>
+<td>2G</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>這邊 Manager 為主要控制節點，node 為應用程式工作節點。</p>
+</blockquote>
+<p>首先安裝前要確認以下幾項都已將準備完成：</p>
+<ul>
+<li>所有節點彼此網路互通，並且不需要 SSH 密碼即可登入。</li>
+<li>所有防火牆與 SELinux 已關閉。如 CentOS：</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ systemctl stop firewalld &amp;&amp; systemctl <span class="built_in">disable</span> firewalld</span><br><span class="line">$ setenforce 0</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>所有節點需要設定<code>/etc/host</code>解析到所有主機。</li>
+<li>所有節點需要安裝<code>Docker</code>引擎，安裝方式如下：</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl -fsSL <span class="string">"https://get.docker.com/"</span> | sh</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>不管是在 <code>Ubuntu</code> 或 <code>CentOS</code> 都只需要執行該指令就會自動安裝最新版 Docker。<br>CentOS 安裝完成後，需要再執行以下指令：</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ systemctl <span class="built_in">enable</span> docker &amp;&amp; systemctl start docker</span><br></pre></td></tr></table></figure>
+
+<h2 id="Manager-節點建置"><a href="#Manager-節點建置" class="headerlink" title="Manager 節點建置"></a>Manager 節點建置</h2><p>當我們完成安裝 Docker Engine 後，就可以透過 Docker 指令來初始化 Manager 節點：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker swarm init --advertise-addr 172.16.35.12</span><br><span class="line"></span><br><span class="line">Swarm initialized: current node (olluuvvz340ze64zhjpw03uke) is now a manager.</span><br><span class="line"></span><br><span class="line">To add a worker to this swarm, run the following <span class="built_in">command</span>:</span><br><span class="line"></span><br><span class="line">    docker swarm join --token SWMTKN-1-0q0ohnexs40lb9z4kmvqb6zcrmp22hul9tmh6zpfztxzv5cv61-73yubitun1ufm0yhwx7h38p85 172.16.35.12:2377</span><br><span class="line"></span><br><span class="line">To add a manager to this swarm, run <span class="string">'docker swarm join-token manager'</span> and follow the instructions.</span><br></pre></td></tr></table></figure>
+
+<p>當看到上述內容，表示 Manager 初始化完成，這時候可以透過以下指令檢查：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker info</span><br><span class="line">$ docker node ls</span><br><span class="line">ID                            HOSTNAME            STATUS              AVAILABILITY        MANAGER STATUS</span><br><span class="line">olluuvvz340ze64zhjpw03uke *   manager             Ready               Active              Leader</span><br></pre></td></tr></table></figure>
+
+<p>接著建立 Docker swarm network 來提供容器跨節點的溝通：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Deploy network</span></span><br><span class="line">$ docker network create --driver=overlay --attachable cnblogs</span><br><span class="line"></span><br><span class="line"><span class="comment"># Docker flow proxy network</span></span><br><span class="line">$ docker network create --driver overlay proxy</span><br></pre></td></tr></table></figure>
+
+<p>檢查 Docker 網路狀態：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker network ls | grep swarm</span><br><span class="line">NETWORK ID          NAME                DRIVER              SCOPE</span><br><span class="line">57nq0rux7akh        cnblogs             overlay             swarm</span><br><span class="line">ihyg6uixeiov        ingress             overlay             swarm</span><br><span class="line">b8vqturisod8        proxy               overlay             swarm</span><br></pre></td></tr></table></figure>
+
+<h2 id="Worker-節點建置"><a href="#Worker-節點建置" class="headerlink" title="Worker 節點建置"></a>Worker 節點建置</h2><p>完成 Manager 初始化後，就可以透過以下指令來將節點加入叢集：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker swarm join --token SWMTKN-1-0q0ohnexs40lb9z4kmvqb6zcrmp22hul9tmh6zpfztxzv5cv61-73yubitun1ufm0yhwx7h38p85 172.16.35.12:2377</span><br><span class="line"></span><br><span class="line">This node joined a swarm as a worker.</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>P.S. 其他節點一樣請用上述指令加入。</p>
+</blockquote>
+<p>在<code>Manager</code>節點，查看節點狀態：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker node ls</span><br><span class="line">ID                            HOSTNAME            STATUS              AVAILABILITY        MANAGER STATUS</span><br><span class="line">cwkta4o37daxed3otrqab9zdq     node2               Ready               Active</span><br><span class="line">olluuvvz340ze64zhjpw03uke *   manager             Ready               Active              Leader</span><br><span class="line">sfs49249kv8mad2qzr4ev4fy0     node1               Ready               Active</span><br></pre></td></tr></table></figure>
+
+<p>(option)將節點改為 Manager：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker node promote &lt;HOSTNAME&gt;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>另外降級為<code>docker node demote &lt;HOSTNAME&gt;</code>。</p>
+</blockquote>
+<h2 id="透過指令建立簡單服務"><a href="#透過指令建立簡單服務" class="headerlink" title="透過指令建立簡單服務"></a>透過指令建立簡單服務</h2><p>要建立 Docker 服務，可以使用<code>docker service</code>指令來達成，如下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker service create --replicas 1 --name ping alpine ping 8.8.8.8</span><br><span class="line">$ docker service logs ping</span><br><span class="line">ping.1.auqefe3iq9yk@node2    | PING 8.8.8.8 (8.8.8.8): 56 data bytes</span><br><span class="line">ping.1.auqefe3iq9yk@node2    | 64 bytes from 8.8.8.8: seq=0 ttl=61 time=7.042 ms</span><br><span class="line">ping.1.auqefe3iq9yk@node2    | 64 bytes from 8.8.8.8: seq=1 ttl=61 time=7.029 ms</span><br><span class="line">ping.1.auqefe3iq9yk@node2    | 64 bytes from 8.8.8.8: seq=2 ttl=61 time=7.668 m</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>建立兩份副本數的應用，如以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker service create --replicas 2 --name redis redis</span><br><span class="line">$ docker service ps redis</span><br><span class="line">ID                  NAME                IMAGE               NODE                DESIRED STATE       CURRENT STATE            ERROR               PORTS</span><br><span class="line">ngtegx9vk4gu        redis.1             redis:latest        node1               Running             Running 43 seconds ago</span><br><span class="line">n95vu3dzewu7        redis.2             redis:latest        manager             Running             Running 44 seconds ago</span><br></pre></td></tr></table></figure>
+
+<p>完成後，想要刪除可以使用以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker service rm ping</span><br><span class="line">$ docker service rm redis</span><br></pre></td></tr></table></figure>
+
+<h2 id="部署簡單的-Stack"><a href="#部署簡單的-Stack" class="headerlink" title="部署簡單的 Stack"></a>部署簡單的 Stack</h2><p>這邊利用簡單範例來部署應用程式於 Swarm 叢集中，首先新增<code>stack.yml</code>檔案，並加入以下內容：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">'3.2'</span></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line"><span class="attr">  api:</span></span><br><span class="line"><span class="attr">    image:</span> <span class="attr">open-api:latest</span></span><br><span class="line"><span class="attr">    deploy:</span></span><br><span class="line"><span class="attr">      replicas:</span> <span class="number">2</span></span><br><span class="line"><span class="attr">      update_config:</span></span><br><span class="line"><span class="attr">        delay:</span> <span class="number">5</span><span class="string">s</span></span><br><span class="line"><span class="attr">      labels:</span></span><br><span class="line"><span class="bullet">        -</span> <span class="string">com.df.notify=true</span></span><br><span class="line"><span class="bullet">        -</span> <span class="string">com.df.distribute=true</span></span><br><span class="line"><span class="bullet">        -</span> <span class="string">com.df.serviceDomain=api.cnblogs.com</span></span><br><span class="line"><span class="bullet">        -</span> <span class="string">com.df.port=80</span></span><br><span class="line"><span class="attr">    networks:</span></span><br><span class="line"><span class="bullet">      -</span> <span class="string">cnblogs</span></span><br><span class="line"><span class="bullet">      -</span> <span class="string">proxy</span></span><br><span class="line"><span class="attr">networks:</span></span><br><span class="line"><span class="attr">  cnblogs:</span></span><br><span class="line"><span class="attr">    external:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">  proxy:</span></span><br><span class="line"><span class="attr">    external:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<p>完成後，透過以下指令來進行部署：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker stack deploy -c stack.yml openapi</span><br></pre></td></tr></table></figure>
+
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">簡單部署 Docker Swarm 測試叢集</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2016-11-16 17:11</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2016/11/28/ceph/deploy/ceph-deploy-bluestore/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    Using bluestore in Kraken
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2016/10/23/kubernetes/deploy/minikube/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">Minikube 部署 Local 測試環境</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2016/11/16/container/docker-swarm/" data-id="ck3ns7q570012wmpfnxewmyga" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2016/11/16/container/docker-swarm/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2016/11/16/container/docker-swarm/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#基本架構"><span class="toc-number">1.</span> <span class="toc-text">基本架構</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#預先準備資訊"><span class="toc-number">2.</span> <span class="toc-text">預先準備資訊</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Manager-節點建置"><span class="toc-number">3.</span> <span class="toc-text">Manager 節點建置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Worker-節點建置"><span class="toc-number">4.</span> <span class="toc-text">Worker 節點建置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#透過指令建立簡單服務"><span class="toc-number">5.</span> <span class="toc-text">透過指令建立簡單服務</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#部署簡單的-Stack"><span class="toc-number">6.</span> <span class="toc-text">部署簡單的 Stack</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2016/11/16/container/docker-swarm/';
+        
+        this.page.identifier = 'container/docker-swarm';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

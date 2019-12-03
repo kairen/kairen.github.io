@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>Kubernetes exec API 串接分析 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="本篇將說明 Kubernetes exec API 的運作方式，並以簡單範例進行開發在前後端上。雖然 Kubernetes 提供了不同資源的 RESTful API 來進行 CRUD 操作，但是部分 API 並非單純的回傳一個資料，有些是需要透過 SPDY 或 WebSocket 建立長連線串流，這種 API 以 exec、attach 為主，目標是對一個 Pod 執行指定指令，或者進入該 Pod">
+<meta name="keywords" content="Kubernetes">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kubernetes exec API 串接分析">
+<meta property="og:url" content="https://k2r2bai.com/2018/06/25/kubernetes/coding/exec-api/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="本篇將說明 Kubernetes exec API 的運作方式，並以簡單範例進行開發在前後端上。雖然 Kubernetes 提供了不同資源的 RESTful API 來進行 CRUD 操作，但是部分 API 並非單純的回傳一個資料，有些是需要透過 SPDY 或 WebSocket 建立長連線串流，這種 API 以 exec、attach 為主，目標是對一個 Pod 執行指定指令，或者進入該 Pod">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://i.imgur.com/wMcqqMe.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.392Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Kubernetes exec API 串接分析">
+<meta name="twitter:description" content="本篇將說明 Kubernetes exec API 的運作方式，並以簡單範例進行開發在前後端上。雖然 Kubernetes 提供了不同資源的 RESTful API 來進行 CRUD 操作，但是部分 API 並非單純的回傳一個資料，有些是需要透過 SPDY 或 WebSocket 建立長連線串流，這種 API 以 exec、attach 為主，目標是對一個 Pod 執行指定指令，或者進入該 Pod">
+<meta name="twitter:image" content="https://i.imgur.com/wMcqqMe.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-kubernetes/coding/exec-api" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            Kubernetes exec API 串接分析
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2018/06/25/kubernetes/coding/exec-api/">
+            <u><time datetime="2018-06-25T09:08:54.000Z" itemprop="datePublished">2018-06-25</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>本篇將說明 Kubernetes exec API 的運作方式，並以簡單範例進行開發在前後端上。雖然 Kubernetes 提供了不同資源的 RESTful API 來進行 CRUD 操作，但是部分 API 並非單純的回傳一個資料，有些是需要透過 SPDY 或 WebSocket 建立長連線串流，這種 API 以 exec、attach 為主，目標是對一個 Pod 執行指定指令，或者進入該 Pod 進行互動等等。</p>
+<a id="more"></a>
+
+<h2 id="Exec-API-Endpoint"><a href="#Exec-API-Endpoint" class="headerlink" title="Exec API Endpoint"></a>Exec API Endpoint</h2><p>首先了解一下 Kubernetes exec API endpoint，由於 Kubernetes 官方文件並未提供相關資訊，因此這邊透過 kubectl 指令來了解 API 的結構：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ cat &lt;&lt;EOF | kubectl create -f -</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: ubuntu</span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">  - name: ubuntu</span><br><span class="line">    image: ubuntu:16.04</span><br><span class="line">    <span class="built_in">command</span>: [<span class="string">'/bin/bash'</span>, <span class="string">'-c'</span>, <span class="string">'while :; do  echo Hello; sleep 1; done '</span>]</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line">$ kubectl -v=8 <span class="built_in">exec</span> -ti ubuntu bash</span><br><span class="line">...</span><br><span class="line">I0625 10:39:33.716271   93099 round_trippers.go:383] POST https://xxx.xxx.xxx.xxx:8443/api/v1/namespaces/default/pods/ubuntu/<span class="built_in">exec</span>?<span class="built_in">command</span>=bash&amp;container=ubuntu&amp;container=ubuntu&amp;stdin=<span class="literal">true</span>&amp;stdout=<span class="literal">true</span>&amp;tty=<span class="literal">true</span></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>從上述得知 exec API 結構大致如下圖所示：</p>
+<p><img src="https://i.imgur.com/wMcqqMe.png" alt></p>
+<p>其中 API 中的 Queries 又可細分以下資訊：</p>
+<ul>
+<li><strong>command</strong>：將被執行的指令。若指令為<code>ping 8.8.8.8</code>，則 API 為<code>command=ping&amp;command=8.8.8.8</code>。類型為<code>string</code>值。</li>
+<li><strong>container</strong>：哪個容器將被執行指令。若 Pod 只有一個容器，一般會用 API 找出名稱塞到該參數中，若多個則選擇讓人輸入名稱。類型為<code>string</code>值。</li>
+<li><strong>stdin</strong>：是否開啟標準輸入，通常由使用者決定是否開啟。類型為<code>bool</code>值。</li>
+<li><strong>stdout</strong>：是否開啟標準輸出，通常是<code>預設開啟</code>。類型為<code>bool</code>值。</li>
+<li><strong>stderr</strong>：是否開啟標準錯誤輸出，通常是<code>預設開啟</code>。類型為<code>bool</code>值。</li>
+<li><strong>tty</strong>：是否分配一個偽終端設備(Pseudo TTY, PTY)。ㄒ為<code>bool</code>值。</li>
+</ul>
+<h2 id="Protocol"><a href="#Protocol" class="headerlink" title="Protocol"></a>Protocol</h2><p>Execute 是利用 SPDY 與 WebSocket 協定進行串流溝通的 API，其中 SPDY 在 Kubernetes 官方的 client-go 已經有實現(參考 <a href="https://github.com/kubernetes/client-go/blob/master/tools/remotecommand/remotecommand.go" target="_blank" rel="noopener">Remote command</a>)，而 kubectl 正是使用 SPDY，但是 SPDY 目前已經規劃在未來將被<a href="https://github.com/kubernetes/features/issues/384" target="_blank" rel="noopener">移棄</a>，因此建議選擇使用 WebSocket 來作為串流溝通。但而無論是使用哪一個協定，都要注意請求的 Header 必須有<code>Connection: Upgrade</code>、<code>Upgrade: xxx</code>等，不然 API Server 會拒絕存取請求。</p>
+<h2 id="HTTP-Headers"><a href="#HTTP-Headers" class="headerlink" title="HTTP Headers"></a>HTTP Headers</h2><p>除了 SPDY 與 WebSocket 所需要的 Headers(如 Upgrade 等)外，使用者與開發者還必須提供兩個 Headers 來確保能夠正確授權並溝通：</p>
+<ul>
+<li><strong>Authorization</strong>：該 Header 是用來提供給 API Server 做認證請求的資訊，通常會是以<code>Authorization: Bearer &lt;token&gt;</code>的形式。</li>
+<li><strong>Accept</strong>：指定客戶端能夠接收的內容類型，一般為<code>Accept: application/json</code>，若輸入不支援的類型將會被 API 以<code>406 Not Acceptable</code> 拒絕請求。</li>
+</ul>
+<h2 id="溝通協定"><a href="#溝通協定" class="headerlink" title="溝通協定"></a>溝通協定</h2><p>一旦符合上述所有資訊後，WebSocket(或 SPDY)就能夠建立連線，並且與 API Server 進行溝通。而當寫入 WebSocket 時，資料將被傳送到標準輸入(stdin)，而 WebSocket 的接收將會是標準輸出(stdout)與輸出錯誤(stderr)。Kubernetes API Server 簡單定義了一個協定來復用 stdout 與 stderr。因此可以理解當 WebSocket 建立連線後，傳送資料時需要再 Buffer 的第一個字元定義為 stdin(buf[0] = 0)，而接收資料時要判斷 stdout(buf[0] = 1) 與 stderr(buf[0] = 2)。其資訊如下：</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>標準串流</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0</td>
+<td>stdin</td>
+</tr>
+<tr>
+<td>1</td>
+<td>stdout</td>
+</tr>
+<tr>
+<td>2</td>
+<td>stderr</td>
+</tr>
+</tbody></table>
+<p>下面簡單以發送<code>ls</code>指令為例：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 傳送`ls`指令，必須 buf[0] 自行塞入 0 字元來表示 stdin。</span></span><br><span class="line">buf = [0 108 115 10]</span><br><span class="line"></span><br><span class="line"><span class="comment"># Receive</span></span><br><span class="line">buf = [1 108 115 13 10 27 91 48 109 27 91 ...]</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>最後需要注意 Timeout 問題，由於可能對 WebSocket 設定 TCP Timeout，因此建議每一段時間發送一個 stdin 空訊息來保持連線。</p>
+</blockquote>
+<p>實作參考一些專案自行練習寫了 Go 語言版本 <a href="https://github.com/kubedev/k8s-ws-exec" target="_blank" rel="noopener">CLI</a>。</p>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">Kubernetes exec API 串接分析</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2018-6-25 17:06</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2018/06/27/devops/prometheus/prometheus-storage/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    Prometheus 儲存系統解析
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2018/06/23/devops/prometheus/prometheus-operator/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">Prometheus Operator 介紹與安裝</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2018/06/25/kubernetes/coding/exec-api/" data-id="ck3ns7qb000gowmpfx18dvzsz" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2018/06/25/kubernetes/coding/exec-api/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2018/06/25/kubernetes/coding/exec-api/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Exec-API-Endpoint"><span class="toc-number">1.</span> <span class="toc-text">Exec API Endpoint</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Protocol"><span class="toc-number">2.</span> <span class="toc-text">Protocol</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#HTTP-Headers"><span class="toc-number">3.</span> <span class="toc-text">HTTP Headers</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#溝通協定"><span class="toc-number">4.</span> <span class="toc-text">溝通協定</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2018/06/25/kubernetes/coding/exec-api/';
+        
+        this.page.identifier = 'kubernetes/coding/exec-api';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

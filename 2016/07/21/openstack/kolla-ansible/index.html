@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>OpenStack Kolla 初體驗 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Kolla 提供 OpenStack 生產環境就緒的容器與部署工具，其具備快速、擴展、可靠等特性，並提供社群版本的最佳本版升級實現。">
+<meta name="keywords" content="Docker,OpenStack,Ansible">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OpenStack Kolla 初體驗">
+<meta property="og:url" content="https://k2r2bai.com/2016/07/21/openstack/kolla-ansible/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Kolla 提供 OpenStack 生產環境就緒的容器與部署工具，其具備快速、擴展、可靠等特性，並提供社群版本的最佳本版升級實現。">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.400Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="OpenStack Kolla 初體驗">
+<meta name="twitter:description" content="Kolla 提供 OpenStack 生產環境就緒的容器與部署工具，其具備快速、擴展、可靠等特性，並提供社群版本的最佳本版升級實現。">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-openstack/kolla-ansible" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            OpenStack Kolla 初體驗
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2016/07/21/openstack/kolla-ansible/">
+            <u><time datetime="2016-07-21T08:23:01.000Z" itemprop="datePublished">2016-07-21</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/OpenStack/">OpenStack</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Ansible/">Ansible</a>, <a class="tag-link" href="/tags/Docker/">Docker</a>, <a class="tag-link" href="/tags/OpenStack/">OpenStack</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>Kolla 提供 OpenStack 生產環境就緒的容器與部署工具，其具備快速、擴展、可靠等特性，並提供社群版本的最佳本版升級實現。</p>
+<a id="more"></a>
+
+<h2 id="節點配置"><a href="#節點配置" class="headerlink" title="節點配置"></a>節點配置</h2><p>本安裝將使用三台實體主機與一台虛擬機器來進行簡單叢集部署，主機規格如以下所示：</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>RAM</th>
+<th>CPUs</th>
+<th>Disk</th>
+<th>IP Address</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>controller1</td>
+<td>8 GB</td>
+<td>4vCPU</td>
+<td>250 GB</td>
+<td>10.0.0.11</td>
+</tr>
+<tr>
+<td>network1</td>
+<td>2 GB</td>
+<td>1vCPU</td>
+<td>250 GB</td>
+<td>10.0.0.21</td>
+</tr>
+<tr>
+<td>compute1</td>
+<td>8 GB</td>
+<td>8vCPU</td>
+<td>500 GB</td>
+<td>10.0.0.31</td>
+</tr>
+<tr>
+<td>docker-registry</td>
+<td>2 GB</td>
+<td>1vCPU</td>
+<td>50 GB</td>
+<td>10.0.0.90</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>作業系統皆為<code>Ubuntu Server 14.04</code>。</p>
+</blockquote>
+<p>另外每台實體主機的網卡網路分別為以下：</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Management</th>
+<th>Tunnel</th>
+<th>Public</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>controller1</td>
+<td>eth0</td>
+<td>eth1</td>
+<td>eth2</td>
+</tr>
+<tr>
+<td>network1</td>
+<td>eth0</td>
+<td>eth1</td>
+<td>eth2</td>
+</tr>
+<tr>
+<td>compute1</td>
+<td>eth0</td>
+<td>eth1</td>
+<td>eth2</td>
+</tr>
+</tbody></table>
+<p>網卡若是實體主機，請設定為固定 IP，如以下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">auto eth0</span><br><span class="line">iface eth0 inet static</span><br><span class="line">       	address 10.0.0.11</span><br><span class="line">       	netmask	255.255.255.0</span><br><span class="line">       	gateway	10.0.0.1</span><br><span class="line">       	dns-nameservers 8.8.8.8</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若想修改主機的網卡名稱，可以編輯<code>/etc/udev/rules.d/70-persistent-net.rules</code>。</p>
+</blockquote>
+<p>其中<code>network</code>節點的 Public 需設定網卡為以下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">auto &lt;ethx&gt;</span><br><span class="line">iface &lt;ethx&gt; inet manual</span><br><span class="line">        up ip link set dev $IFACE up</span><br><span class="line">        down ip link set dev $IFACE down</span><br></pre></td></tr></table></figure>
+
+<h2 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h2><p>在開始部署 OpenStack 之前，我們需要先將一些相依軟體與函式庫安裝完成，並且需要部署一用於存取映像檔的倉庫(Docker registry)。</p>
+<h3 id="部署-Docker-Registry"><a href="#部署-Docker-Registry" class="headerlink" title="部署 Docker Registry"></a>部署 Docker Registry</h3><p>首先進入到 <code>docker-registry</code> 節點，本教學採用一台虛擬機作為部署使用，並安裝 Docker engine：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl -fsSL <span class="string">"https://get.docker.com/"</span> | sh</span><br></pre></td></tr></table></figure>
+
+<p>安裝完成 Docker engine 後，透過以下指令建置 Docker registry：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker run -d -p 5000:5000 --restart=always --name registry \</span><br><span class="line">-v $(<span class="built_in">pwd</span>)/data:/var/lib/registry \</span><br><span class="line">registry:2</span><br></pre></td></tr></table></figure>
+
+<p>接著為了方便檢視 Docker image，這邊另外部署 Docker registry UI：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker run -d -p 8080:80 \</span><br><span class="line">-e ENV_DOCKER_REGISTRY_HOST=10.26.1.49 \</span><br><span class="line">-e ENV_DOCKER_REGISTRY_PORT=5000 \</span><br><span class="line">konradkleine/docker-registry-frontend:v2</span><br></pre></td></tr></table></figure>
+
+<p>完成以上即可透過瀏覽器查看該主機 <code>8080</code> Port。也可以透過以下指令檢查是否部署成功：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker pull ubuntu:14.04</span><br><span class="line">$ docker tag ubuntu:14.04 localhost:5000/ubuntu:14.04</span><br><span class="line">$ docker push localhost:5000/ubuntu:14.04</span><br><span class="line"></span><br><span class="line">The push refers to a repository [localhost:5000/ubuntu]</span><br><span class="line">447f88c8358f: Pushed</span><br><span class="line">df9a135a6949: Pushed</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>其他 Docker registry 列表：</p>
+<ul>
+<li><a href="https://github.com/SUSE/Portus" target="_blank" rel="noopener">Portus</a></li>
+<li><a href="http://www.projectatomic.io/registry/" target="_blank" rel="noopener">Atomic Registry</a></li>
+<li><a href="https://docs.rancher.com/os/configuration/private-registries/" target="_blank" rel="noopener">Private Registries in RancherOS</a></li>
+</ul>
+</blockquote>
+<h3 id="部署節點準備"><a href="#部署節點準備" class="headerlink" title="部署節點準備"></a>部署節點準備</h3><p>當完成上述後，即可進行部署節點的相依軟體安裝，首先在<code>每台節點</code>透過以下指令更新與安裝一些套件：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get update -y &amp;&amp; sudo apt-get upgrade -y</span><br><span class="line">$ sudo apt-get install -y python-pip python-dev</span><br><span class="line">$ curl -fsSL <span class="string">"https://get.docker.com/"</span> | sh</span><br><span class="line">$ sudo timedatectl <span class="built_in">set</span>-timezone Asia/Taipei</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>由於使用<code>Ubuntu server 14.04</code>，故需要更新 Kernel:</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get install -y linux-image-generic-lts-wily</span><br></pre></td></tr></table></figure>
+
+<p>接著更新 pip，並安裝 docker-python 函式庫：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo pip install -U pip docker-py</span><br></pre></td></tr></table></figure>
+
+<p>編輯每台節點的<code>/etc/default/docker</code>檔案，加入以下內容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">DOCKER_OPTS=&quot;--insecure-registry &lt;registry-ip&gt;:5000&quot;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊<code>{registry-ip}</code>為 Docker registry 的 IP 位址。若使用 Ubuntu Server 16.04 版本的話，需要編輯<code>/lib/systemd/system/docker.service</code>檔案，修改以下：</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">EnvironmentFile=-/etc/default/%p</span><br><span class="line">ExecStart=/usr/bin/dockerd -H fd:// \</span><br><span class="line">                           $DOCKER_OPTS</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>完成上述後，需要 reload service：</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo systemctl daemon-reload</span><br></pre></td></tr></table></figure>
+
+<p>接著編輯每台節點的<code>/etc/rc.local</code>檔案，加入以下內容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mount --make-shared /run</span><br><span class="line"></span><br><span class="line"># 在 compute 節點額外加入</span><br><span class="line">mount --make-shared /var/lib/nova/mnt</span><br></pre></td></tr></table></figure>
+
+<p>接著在<code>compute1</code>節點執行以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">sudo mkdir -p /var/lib/nova/mnt /var/lib/nova/mnt1</span><br><span class="line">sudo mount --<span class="built_in">bind</span> /var/lib/nova/mnt1 /var/lib/nova/mnt</span><br><span class="line">sudo mount --make-shared /var/lib/nova/mnt</span><br></pre></td></tr></table></figure>
+
+<p>完成後<code>重新啟動每台節點</code>。</p>
+<p>當上述步驟都完成後，進入到<code>controller1</code>的<code>root</code>使用者執行以下指令安裝與設定額外套件：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get install -y software-properties-common</span><br><span class="line">$ sudo apt-add-repository -y ppa:ansible/ansible &amp;&amp; sudo apt-get update</span><br><span class="line">$ sudo apt-get install -y ansible libffi-dev libssl-dev gcc git</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>NTP 部分可自行設定，這邊不再說明。</p>
+</blockquote>
+<p>接著繼續在<code>controller1</code>節點的<code>root</code>使用者執行以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ssh-keygen -t rsa</span><br><span class="line">$ cat .ssh/id_rsa.pub &gt;&gt; .ssh/authorized_keys</span><br></pre></td></tr></table></figure>
+
+<p>複製<code>controller1</code>節點的<code>root</code>底下的<code>.ssh/id_rsa.pub</code>公有金鑰到其他節點的<code>root</code>使用者底下的<code>.ssh/authorized_keys</code>。</p>
+<h2 id="建立-OpenStack-Kolla-Docker-映像檔"><a href="#建立-OpenStack-Kolla-Docker-映像檔" class="headerlink" title="建立 OpenStack Kolla Docker 映像檔"></a>建立 OpenStack Kolla Docker 映像檔</h2><p>在使用 Kolla 部署 OpenStack 叢集之前，我們需要預先建立用於部署的映像檔，才能進行節點的部署。首先進入到<code>controller1</code>節點，並下載 Kolla 專案：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> <span class="string">"https://github.com/openstack/kolla.git"</span> -b stable/newton</span><br><span class="line">$ <span class="built_in">cd</span> kolla &amp;&amp; pip install .</span><br><span class="line">$ pip install tox python-openstackclient &amp;&amp; tox -e genconfig</span><br><span class="line">$ cp -r etc/kolla /etc/</span><br></pre></td></tr></table></figure>
+
+<p>接著執行指令進行建立 Docker 映像檔，若不指定名稱預設下將建立全部映像檔，如以下：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kolla-build --base ubuntu --<span class="built_in">type</span> <span class="built_in">source</span> --registry &#123;registry-ip&#125;:5000 --push</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊<code>{registry-ip}</code>為 Docker registry 的 IP 位址。</p>
+</blockquote>
+<blockquote>
+<p>若要改變 OS 與版本，可以編輯<code>/etc/kolla/kolla-build.conf</code>檔案修改以下內容：</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">base = centos</span><br><span class="line">base_tag = 3.0.3</span><br><span class="line">push = true</span><br><span class="line">install_type = rdo</span><br><span class="line">registry = &#123;registry-ip&#125;:5000</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>可參考官方文件 <a href="http://docs.openstack.org/developer/kolla/image-building.html" target="_blank" rel="noopener">Building Container Images</a>。</p>
+</blockquote>
+<p>當映像檔建置完成後，即可查看<code>docker-regisrtry</code>節點的 UI 介面，來確認是否上傳成功。</p>
+<h2 id="部署-OpenStack-節點"><a href="#部署-OpenStack-節點" class="headerlink" title="部署 OpenStack 節點"></a>部署 OpenStack 節點</h2><p>當完成映像檔建立後，即可開始進行部署 OpenStack 節點。</p>
+<p>首先到<code>controller1</code>進入剛下載的<code>kolla-ansible</code>專案目錄，並編輯<code>ansible/inventory/multinode</code>檔案，修改以下內容：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">[control]</span><br><span class="line">controller1</span><br><span class="line"></span><br><span class="line">[network]</span><br><span class="line">network1</span><br><span class="line"></span><br><span class="line">[compute]</span><br><span class="line">compute1</span><br><span class="line"></span><br><span class="line">[storage]</span><br><span class="line">controller1</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊由於機器不夠，所以將 storage 也放到 controller。</p>
+</blockquote>
+<p>接著編輯<code>/etc/kolla/globals.yml</code>檔案，修改以下內容：</p>
+<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">config_strategy:</span> <span class="string">"COPY_ALWAYS"</span></span><br><span class="line"><span class="attr">kolla_base_distro:</span> <span class="string">"ubuntu"</span></span><br><span class="line"><span class="attr">kolla_install_type:</span> <span class="string">"source"</span></span><br><span class="line"><span class="attr">openstack_release:</span> <span class="string">"3.0.3"</span></span><br><span class="line"><span class="attr">kolla_internal_vip_address:</span> <span class="string">"10.0.0.10"</span></span><br><span class="line"><span class="attr">docker_registry:</span> <span class="string">"10.0.0.90:5000"</span></span><br><span class="line"><span class="attr">network_interface:</span> <span class="string">"eth0"</span></span><br><span class="line"><span class="attr">tunnel_interface:</span> <span class="string">"eth1"</span></span><br><span class="line"><span class="attr">neutron_external_interface:</span> <span class="string">"eth2"</span></span><br><span class="line"><span class="attr">neutron_plugin_agent:</span> <span class="string">"openvswitch"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># OpenStack service</span></span><br><span class="line"><span class="attr">enable_cinder:</span> <span class="string">"yes"</span></span><br><span class="line"><span class="attr">enable_neutron_lbaas:</span> <span class="string">"yes"</span></span><br><span class="line"><span class="attr">cinder_volume_group:</span> <span class="string">"cinder-volumes"</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若要將 API 開放給 Public network 存取的話，需要設定以下內容：</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">kolla_external_vip_address: &quot;10.26.1.251&quot;</span><br><span class="line">kolla_external_vip_interface: &quot;eth3&quot;</span><br></pre></td></tr></table></figure>
+
+<p>(Option)建立 Cinder LVM volume group:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get install lvm2 -y</span><br><span class="line">$ sudo pvcreate /dev/sdb</span><br><span class="line">$ sudo vgcreate cinder-volumes /dev/sdb</span><br><span class="line">$ sudo  pvdisplay</span><br><span class="line"></span><br><span class="line">--- Physical volume ---</span><br><span class="line">PV Name               /dev/sdb</span><br><span class="line">VG Name               cinder-volumes</span><br><span class="line">PV Size               465.76 GiB / not usable 4.02 MiB</span><br><span class="line">Allocatable           yes</span><br><span class="line">PE Size               4.00 MiB</span><br><span class="line">Total PE              119234</span><br><span class="line">Free PE               119234</span><br><span class="line">Allocated PE          0</span><br><span class="line">PV UUID               5g01hz-Ebds-EVSF-yGm4-evNm-5Kfp-2h8kUR</span><br></pre></td></tr></table></figure>
+
+<p>然後透過以下指令產生亂數密碼：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kolla-genpwd</span><br></pre></td></tr></table></figure>
+
+<p>接著要執行預先檢查確認節點是否可以進行部署，透過以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kolla-ansible prechecks -i ansible/inventory/multinode</span><br><span class="line"></span><br><span class="line">PLAY RECAP *********************************************************************</span><br><span class="line">compute1                   : ok=8    changed=0    unreachable=0    failed=0</span><br><span class="line">controller1                : ok=35   changed=0    unreachable=0    failed=0</span><br><span class="line">network1                   : ok=29   changed=0    unreachable=0    failed=0</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若中途發生錯誤，請檢查錯誤訊息。</p>
+</blockquote>
+<p>確認沒問題後即可部署 OpenStack，透過以下指令進行：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kolla-ansible deploy -i ansible/inventory/multinode</span><br><span class="line">PLAY RECAP *********************************************************************</span><br><span class="line">compute1                   : ok=44   changed=31   unreachable=0    failed=0</span><br><span class="line">controller1                : ok=154  changed=96   unreachable=0    failed=0</span><br><span class="line">network1                   : ok=37   changed=28   unreachable=0    failed=0</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>P.S. 若發生映像檔無法下載，請自行透過以下指令傳到該節點：</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker save &#123;image&#125; &gt; image.tar</span><br><span class="line">$ scp image.tar network1:~/</span><br><span class="line">$ ssh network1 <span class="string">"docker load &lt; image.tar"</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="驗證服務"><a href="#驗證服務" class="headerlink" title="驗證服務"></a>驗證服務</h2><p>完成後，就可以產生 Credential 檔案來進行系統驗證：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kolla-ansible post-deploy</span><br><span class="line">$ <span class="built_in">source</span> /etc/kolla/admin-openrc.sh</span><br></pre></td></tr></table></figure>
+
+<p>透過 OpenStack Client 來檢查 Keystone，並查看所有使用者：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ openstack user list</span><br><span class="line"></span><br><span class="line">+----------------------------------+-------------------+</span><br><span class="line">| ID                               | Name              |</span><br><span class="line">+----------------------------------+-------------------+</span><br><span class="line">| 19af62000d334c4d9de3aa29b9fd06df | heat_domain_admin |</span><br><span class="line">| 83fa8ba1deff46e58e716470dbdaeb03 | heat              |</span><br><span class="line">| 9661e2a4b1f648a6a3ed5c52f22c52bb | nova              |</span><br><span class="line">| 9fa2a71716d046a893dcbaef3d7375ce | admin             |</span><br><span class="line">| acdfdc4fae2248b0af4c8788a9858cf3 | glance            |</span><br><span class="line">| b683b3c611dd4bdba2c25321a0f03cf0 | cinder            |</span><br><span class="line">| dc57ebf4e6c548e990767f00ffda19d8 | neutron           |</span><br><span class="line">+----------------------------------+-------------------+</span><br></pre></td></tr></table></figure>
+
+<p>透過 OpenStack Client 檢查 Nova 的服務列表：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ openstack compute service list</span><br><span class="line"></span><br><span class="line">+----+------------------+-------------+----------+---------+-------+----------------------------+-----------------+</span><br><span class="line">| Id | Binary           | Host        | Zone     | Status  | State | Updated_at                 | Disabled Reason |</span><br><span class="line">+----+------------------+-------------+----------+---------+-------+----------------------------+-----------------+</span><br><span class="line">| 3  | nova-consoleauth | controller1 | internal | enabled | up    | 2016-08-16T05:40:16.000000 | -               |</span><br><span class="line">| 5  | nova-scheduler   | controller1 | internal | enabled | up    | 2016-08-16T05:40:20.000000 | -               |</span><br><span class="line">| 6  | nova-conductor   | controller1 | internal | enabled | up    | 2016-08-16T05:40:12.000000 | -               |</span><br><span class="line">| 10 | nova-compute     | compute1    | nova     | enabled | up    | 2016-08-16T05:40:16.000000 | -               |</span><br><span class="line">+----+------------------+-------------+----------+---------+-------+----------------------------+-----------------+</span><br></pre></td></tr></table></figure>
+
+<p>透過 OpenStack Client 檢查 Neutron 的服務列表：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ openstack network agent list</span><br><span class="line">+------------------+------------------+----------+-------------------+-------+----------------+------------------+</span><br><span class="line">| id               | agent_type       | host     | availability_zone | alive | admin_state_up | binary           |</span><br><span class="line">+------------------+------------------+----------+-------------------+-------+----------------+------------------+</span><br><span class="line">| 2254dcb0-9d5b-   | Open vSwitch     | network1 |                   | :-)   | True           | neutron-         |</span><br><span class="line">| 46da-b1f2-b03719 | agent            |          |                   |       |                | openvswitch-     |</span><br><span class="line">| 5913b1           |                  |          |                   |       |                | agent            |</span><br><span class="line">| acb81021-2efd-4b | DHCP agent       | network1 | nova              | :-)   | True           | neutron-dhcp-    |</span><br><span class="line">| b6-9af7-a3df95ce |                  |          |                   |       |                | agent            |</span><br><span class="line">| 479b             |                  |          |                   |       |                |                  |</span><br><span class="line">| b564c005-779d-   | Metadata agent   | network1 |                   | :-)   | True           | neutron-         |</span><br><span class="line">| 45f4-b10f-       |                  |          |                   |       |                | metadata-agent   |</span><br><span class="line">| 788bb788491b     |                  |          |                   |       |                |                  |</span><br><span class="line">| d95d75e5-6429-44 | Open vSwitch     | compute1 |                   | :-)   | True           | neutron-         |</span><br><span class="line">| 65-aef1-a6a9f4e7 | agent            |          |                   |       |                | openvswitch-     |</span><br><span class="line">| 995f             |                  |          |                   |       |                | agent            |</span><br><span class="line">| e0dbbff4-d7a7-4f | L3 agent         | network1 | nova              | :-)   | True           | neutron-l3-agent |</span><br><span class="line">| a2-8fa2-b3d3de42 |                  |          |                   |       |                |                  |</span><br><span class="line">| d899             |                  |          |                   |       |                |                  |</span><br><span class="line">+------------------+------------------+----------+-------------------+-------+----------------+------------------+</span><br></pre></td></tr></table></figure>
+
+<p>從網路上下載一個測試用映像檔<code>cirros-0.3.4-x86_64</code>，並上傳至 Glance 服務：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ wget <span class="string">"http://download.cirros-cloud.net/0.3.4/cirros-0.3.4-x86_64-disk.img"</span></span><br><span class="line">$ openstack image create <span class="string">"cirros-0.3.4-x86_64"</span> \</span><br><span class="line">--file cirros-0.3.4-x86_64-disk.img \</span><br><span class="line">--disk-format qcow2 --container-format bare \</span><br><span class="line">--public</span><br></pre></td></tr></table></figure>
+
+<p>這邊可以透過 Neutron client 來查看建立外部網路：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ openstack network create --external \</span><br><span class="line">--provider-physical-network physnet1 \</span><br><span class="line">--provider-network-type flat public1</span><br><span class="line"></span><br><span class="line">$ openstack subnet create --no-dhcp --network public1 \</span><br><span class="line">--allocation-pool start=10.26.1.230,end=10.26.1.240 \</span><br><span class="line">--subnet-range 10.26.1.0/24 --gateway 10.26.1.254 public1-subnet</span><br><span class="line"></span><br><span class="line">$ openstack network create --provider-network-type vxlan admin-net</span><br><span class="line"></span><br><span class="line">$ openstack subnet create --subnet-range 192.168.10.0/24 \</span><br><span class="line">--network admin-net --gateway 192.168.10.1 \</span><br><span class="line">--dns-nameserver 8.8.8.8 admin-subnet</span><br><span class="line"></span><br><span class="line">$ openstack router create admin-router</span><br><span class="line">$ openstack router add subnet admin-router admin-subnet</span><br><span class="line">$ openstack router <span class="built_in">set</span> --external-gateway public1 admin-router</span><br></pre></td></tr></table></figure>
+
+<p>建立 flavor 來提供虛擬機樣板：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">openstack flavor create --id 1 --ram 512 --disk 1 --vcpus 1 m1.tiny</span><br><span class="line">openstack flavor create --id 2 --ram 2048 --disk 20 --vcpus 1 m1.small</span><br><span class="line">openstack flavor create --id 3 --ram 4096 --disk 40 --vcpus 2 m1.medium</span><br><span class="line">openstack flavor create --id 4 --ram 8192 --disk 80 --vcpus 4 m1.large</span><br><span class="line">openstack flavor create --id 5 --ram 16384 --disk 160 --vcpus 8 m1.xlarge</span><br></pre></td></tr></table></figure>
+
+<p>上傳 Keypair 來提供虛擬機 SSH 登入認證用：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ openstack keypair create --public-key ~/.ssh/id_rsa.pub mykey</span><br></pre></td></tr></table></figure>
+
+<p>開啟一台虛擬機進行測試：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ openstack server create --image cirros-0.3.4-x86_64 \</span><br><span class="line">--flavor m1.tiny \</span><br><span class="line">--nic net-id=admin-net \</span><br><span class="line">--key-name mykey \</span><br><span class="line">admin-instance</span><br></pre></td></tr></table></figure>
+
+<p>查看 instance 列表：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ openstack server list</span><br><span class="line"></span><br><span class="line">+--------------------------------------+----------------+--------+------------------------+---------------------+</span><br><span class="line">| ID                                   | Name           | Status | Networks               | Image Name          |</span><br><span class="line">+--------------------------------------+----------------+--------+------------------------+---------------------+</span><br><span class="line">| bb3b31b6-56a4-4c68-bd53-b7efb451f0fc | admin-instance | ACTIVE | admin-net=192.168.10.6 | cirros-0.3.4-x86_64 |</span><br><span class="line">+--------------------------------------+----------------+--------+------------------------+---------------------+</span><br></pre></td></tr></table></figure>
+
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">OpenStack Kolla 初體驗</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2016-7-21 16:07</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2016/08/17/data-engineer/dcos-install/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    簡單部署 DC/OS 於 CentOS 上
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2016/07/17/data-engineer/spark-perf/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">Databricks spark-perf Benchmark</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2016/07/21/openstack/kolla-ansible/" data-id="ck3ns7q6x005rwmpfm5m9ax2k" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2016/07/21/openstack/kolla-ansible/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2016/07/21/openstack/kolla-ansible/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#節點配置"><span class="toc-number">1.</span> <span class="toc-text">節點配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#事前準備"><span class="toc-number">2.</span> <span class="toc-text">事前準備</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#部署-Docker-Registry"><span class="toc-number">2.1.</span> <span class="toc-text">部署 Docker Registry</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#部署節點準備"><span class="toc-number">2.2.</span> <span class="toc-text">部署節點準備</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#建立-OpenStack-Kolla-Docker-映像檔"><span class="toc-number">3.</span> <span class="toc-text">建立 OpenStack Kolla Docker 映像檔</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#部署-OpenStack-節點"><span class="toc-number">4.</span> <span class="toc-text">部署 OpenStack 節點</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#驗證服務"><span class="toc-number">5.</span> <span class="toc-text">驗證服務</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2016/07/21/openstack/kolla-ansible/';
+        
+        this.page.identifier = 'openstack/kolla-ansible';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

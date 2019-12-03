@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>利用 Graphite 監控系統資料 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Graphite 是一款開源的監控繪圖工具。Graphite 可以實時收集、存儲、顯示時間序列類型的數據（time series data）。它主要有三個部分構成：  Carbon：基於 Twisted 的行程，用來接收資料。 Whisper：專門儲存時間序列類型資料的小型資料庫。 Graphite webapp：基於 Django 的網頁應用程式。">
+<meta name="keywords" content="Monitoring,DevOps,Data Collect">
+<meta property="og:type" content="article">
+<meta property="og:title" content="利用 Graphite 監控系統資料">
+<meta property="og:url" content="https://k2r2bai.com/2016/02/11/devops/monitoring/graphite/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Graphite 是一款開源的監控繪圖工具。Graphite 可以實時收集、存儲、顯示時間序列類型的數據（time series data）。它主要有三個部分構成：  Carbon：基於 Twisted 的行程，用來接收資料。 Whisper：專門儲存時間序列類型資料的小型資料庫。 Graphite webapp：基於 Django 的網頁應用程式。">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.385Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="利用 Graphite 監控系統資料">
+<meta name="twitter:description" content="Graphite 是一款開源的監控繪圖工具。Graphite 可以實時收集、存儲、顯示時間序列類型的數據（time series data）。它主要有三個部分構成：  Carbon：基於 Twisted 的行程，用來接收資料。 Whisper：專門儲存時間序列類型資料的小型資料庫。 Graphite webapp：基於 Django 的網頁應用程式。">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-devops/monitoring/graphite" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            利用 Graphite 監控系統資料
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2016/02/11/devops/monitoring/graphite/">
+            <u><time datetime="2016-02-11T04:23:01.000Z" itemprop="datePublished">2016-02-11</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/DevOps/">DevOps</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Data-Collect/">Data Collect</a>, <a class="tag-link" href="/tags/DevOps/">DevOps</a>, <a class="tag-link" href="/tags/Monitoring/">Monitoring</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>Graphite 是一款開源的監控繪圖工具。Graphite 可以實時收集、存儲、顯示時間序列類型的數據（time series data）。它主要有三個部分構成：</p>
+<ol>
+<li><strong>Carbon</strong>：基於 Twisted 的行程，用來接收資料。</li>
+<li><strong>Whisper</strong>：專門儲存時間序列類型資料的小型資料庫。</li>
+<li><strong>Graphite</strong> webapp：基於 Django 的網頁應用程式。</li>
+</ol>
+<a id="more"></a>
+
+<h2 id="安裝-Graphite"><a href="#安裝-Graphite" class="headerlink" title="安裝 Graphite"></a>安裝 Graphite</h2><p>在開始配置 Graphite 之前，需要先安裝系統相依套件：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get install build-essential graphite-web graphite-carbon python-dev apache2 libapache2-mod-wsgi libpq-dev python-psycopg2</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>在安裝期間<code>graphite-carbon</code>會詢問是否要刪除 whisper database files，這邊回答<code>YES</code>。</p>
+</blockquote>
+<h3 id="配置-Carbon"><a href="#配置-Carbon" class="headerlink" title="配置 Carbon"></a>配置 Carbon</h3><p>透過增加<code>[test]</code>到 Carbon 的<code>/etc/carbon/storage-schemas.conf</code> 檔案，這部分單純用於測試使用，如果不需要可以直接跳過：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[carbon]</span><br><span class="line">pattern = ^carbon\.</span><br><span class="line">retentions = 60:90d</span><br><span class="line"></span><br><span class="line">[test]</span><br><span class="line">pattern = ^test\.</span><br><span class="line">retentions = 5s:3h,1m:1d</span><br><span class="line"></span><br><span class="line">[default_1min_for_1day]</span><br><span class="line">pattern = .*</span><br><span class="line">retentions = 60s:1d</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>更多如何配置 Carbon storage 的資訊，可以參考 <a href="http://graphite.readthedocs.org/en/latest/config-carbon.html#storage-schemas-conf" target="_blank" rel="noopener"> storage-schemas.con</a>。</p>
+</blockquote>
+<p>之後複製預設的聚合組態到<code>/etc/carbon</code>：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo cp /usr/share/doc/graphite-carbon/examples/storage-aggregation.conf.example /etc/carbon/storage-aggregation.conf</span><br></pre></td></tr></table></figure>
+
+<p>設定在開機時，啟動 Carbon 快取，編輯<code>/etc/default/graphite-carbon</code>：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">CARBON_CACHE_ENABLED=<span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<p>啟動 Carbon 服務：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo service carbon-cache start</span><br></pre></td></tr></table></figure>
+
+<h3 id="安裝與配置-PostgreSQL"><a href="#安裝與配置-PostgreSQL" class="headerlink" title="安裝與配置 PostgreSQL"></a>安裝與配置 PostgreSQL</h3><p>安裝 PostgreSQL 讓 graphite-web 應用程式使用：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get install postgresql</span><br></pre></td></tr></table></figure>
+
+<p>切換到<code>postgres</code>使用者，並建立資料庫使用者給 Graphite：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ sudo su - postgres</span><br><span class="line">postgres# createuser graphite --pwprompt</span><br></pre></td></tr></table></figure>
+
+<p>建立<code>graphite</code>與<code>grafana</code>資料庫：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">postgres<span class="comment"># createdb -O graphite graphite</span></span><br><span class="line">postgres<span class="comment"># createdb -O graphite grafana</span></span><br></pre></td></tr></table></figure>
+
+<p>切換<code>graphite</code>來檢查配置是否成功：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo su - graphite</span><br></pre></td></tr></table></figure>
+
+<h3 id="設定-Graphite"><a href="#設定-Graphite" class="headerlink" title="設定 Graphite"></a>設定 Graphite</h3><p>更新 Graphite web 使用的後端資料庫與其他設定，編輯<code>/etc/graphite/local_settings.py</code>，加入以下：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">DATABASES = &#123;</span><br><span class="line"><span class="string">'default'</span>: &#123;</span><br><span class="line">    <span class="string">'NAME'</span>: <span class="string">'graphite'</span>,</span><br><span class="line">    <span class="string">'ENGINE'</span>: <span class="string">'django.db.backends.postgresql_psycopg2'</span>,</span><br><span class="line">    <span class="string">'USER'</span>: <span class="string">'graphite'</span>,</span><br><span class="line">    <span class="string">'PASSWORD'</span>: <span class="string">'graphiteuserpassword'</span>,</span><br><span class="line">    <span class="string">'HOST'</span>: <span class="string">'127.0.0.1'</span>,</span><br><span class="line">    <span class="string">'PORT'</span>: <span class="string">''</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">USE_REMOTE_USER_AUTHENTICATION = True</span><br><span class="line">TIME_ZONE = <span class="string">'UTC'</span></span><br><span class="line">SECRET_KEY = <span class="string">'some-secret-key'</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li><code>TIME_ZONE</code> 可以查詢 <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones" target="_blank" rel="noopener">Wikipedia’s timezone database</a></li>
+<li><code>SECRET_KEY</code>可以使用<code>openssl rand -hex 10</code>指令來建立。</li>
+</ul>
+</blockquote>
+<p>初始化資料庫：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo graphite-manage syncdb</span><br></pre></td></tr></table></figure>
+
+<h3 id="設定-Graphite-使用-Apache"><a href="#設定-Graphite-使用-Apache" class="headerlink" title="設定 Graphite 使用 Apache"></a>設定 Graphite 使用 Apache</h3><p>首先複製 Graphite 的 Apache 配置樣板到 Apache sites-available 目錄：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo cp /usr/share/graphite-web/apache2-graphite.conf /etc/apache2/sites-available</span><br></pre></td></tr></table></figure>
+
+<p>編輯<code>/etc/apache2/sites-available/apache2-graphite.conf</code>，修改預設監聽的 port：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&lt;VirtualHost *:8080&gt;</span><br></pre></td></tr></table></figure>
+
+<p>編輯<code>/etc/apache2/ports.conf</code>加入監聽的 port：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">Listen 80</span><br><span class="line">Listen 8080</span><br></pre></td></tr></table></figure>
+
+<p>取消預設 Apache 的 site：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo a2dissite 000-default</span><br></pre></td></tr></table></figure>
+
+<p>啟用 Graphite 的虛擬 site，並重新載入：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo a2ensite apache2-graphite</span><br><span class="line">$ sudo service apache2 reload</span><br></pre></td></tr></table></figure>
+
+<p>重新啟動 apache 服務：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo service apache2 restart</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>完成後，即可登入<code>example_domain.com:8080</code>。</p>
+</blockquote>
+<p>測試一個簡單資料：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="keyword">for</span> i <span class="keyword">in</span> 4 6 8 16 2; <span class="keyword">do</span> <span class="built_in">echo</span> <span class="string">"test.count <span class="variable">$i</span> `date +%s`"</span> | nc -q0 127.0.0.1 2003; sleep 6; <span class="keyword">done</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="參考連結"><a href="#參考連結" class="headerlink" title="參考連結"></a>參考連結</h2><ul>
+<li><a href="https://www.linode.com/docs/uptime/monitoring/deploy-graphite-with-grafana-on-ubuntu-14-04" target="_blank" rel="noopener">Deploy Graphite with Grafana on Ubuntu 14.04</a></li>
+<li><a href="https://www.digitalocean.com/community/tutorials/how-to-install-and-use-graphite-on-an-ubuntu-14-04-server" target="_blank" rel="noopener">How To Install and Use Graphite on an Ubuntu 14.04 Server</a></li>
+<li><a href="http://www.vpsee.com/2015/03/a-modern-monitoring-system-built-with-grafana-collected-influxdb/" target="_blank" rel="noopener">Grafana＋collectd＋InfluxDB</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">利用 Graphite 監控系統資料</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2016-2-11 12:02</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2016/02/11/ceph/deploy/ceph-docker/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    Docker 快速部署 Ceph 測試叢集
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2016/01/16/kubernetes/deploy/kubeup-deploy/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">kube-up 腳本部署 Kubernetes 叢集(Deprecated)</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2016/02/11/devops/monitoring/graphite/" data-id="ck3ns7qav00gewmpf6d11bju6" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2016/02/11/devops/monitoring/graphite/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2016/02/11/devops/monitoring/graphite/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#安裝-Graphite"><span class="toc-number">1.</span> <span class="toc-text">安裝 Graphite</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#配置-Carbon"><span class="toc-number">1.1.</span> <span class="toc-text">配置 Carbon</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#安裝與配置-PostgreSQL"><span class="toc-number">1.2.</span> <span class="toc-text">安裝與配置 PostgreSQL</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#設定-Graphite"><span class="toc-number">1.3.</span> <span class="toc-text">設定 Graphite</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#設定-Graphite-使用-Apache"><span class="toc-number">1.4.</span> <span class="toc-text">設定 Graphite 使用 Apache</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#參考連結"><span class="toc-number">2.</span> <span class="toc-text">參考連結</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2016/02/11/devops/monitoring/graphite/';
+        
+        this.page.identifier = 'devops/monitoring/graphite';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

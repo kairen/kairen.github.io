@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>在 AWS 上建立跨地區的 Kubernetes Federation 叢集 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="本文章已被棄用，請不要參考。(This post is being deprecated. Don’t refer it.)   本篇延續先前 On-premises Federation 與 Kops 經驗來嘗試在 AWS 上建立 Federaion 叢集，這邊架構如下圖所示：">
+<meta name="keywords" content="Kubernetes,AWS,Kops,Federation">
+<meta property="og:type" content="article">
+<meta property="og:title" content="在 AWS 上建立跨地區的 Kubernetes Federation 叢集">
+<meta property="og:url" content="https://k2r2bai.com/2018/04/21/kubernetes/aws-federation-v1/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="本文章已被棄用，請不要參考。(This post is being deprecated. Don’t refer it.)   本篇延續先前 On-premises Federation 與 Kops 經驗來嘗試在 AWS 上建立 Federaion 叢集，這邊架構如下圖所示：">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/kops-fed/fed-clusters.png">
+<meta property="og:image" content="https://k2r2bai.com/images/kops/iam-user2.png">
+<meta property="og:image" content="https://k2r2bai.com/images/kops-fed/godday-ns.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.392Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="在 AWS 上建立跨地區的 Kubernetes Federation 叢集">
+<meta name="twitter:description" content="本文章已被棄用，請不要參考。(This post is being deprecated. Don’t refer it.)   本篇延續先前 On-premises Federation 與 Kops 經驗來嘗試在 AWS 上建立 Federaion 叢集，這邊架構如下圖所示：">
+<meta name="twitter:image" content="https://k2r2bai.com/images/kops-fed/fed-clusters.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-kubernetes/aws-federation-v1" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            在 AWS 上建立跨地區的 Kubernetes Federation 叢集
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2018/04/21/kubernetes/aws-federation-v1/">
+            <u><time datetime="2018-04-21T09:08:54.000Z" itemprop="datePublished">2018-04-21</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/AWS/">AWS</a>, <a class="tag-link" href="/tags/Federation/">Federation</a>, <a class="tag-link" href="/tags/Kops/">Kops</a>, <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <hr>
+<blockquote class="colorquote danger"><p>本文章已被棄用，請不要參考。<br>(This post is being deprecated. Don’t refer it.)</p>
+</blockquote>
+
+<p>本篇延續先前 On-premises Federation 與 Kops 經驗來嘗試在 AWS 上建立 Federaion 叢集，這邊架構如下圖所示：</p>
+<p><img src="/images/kops-fed/fed-clusters.png" alt></p>
+<a id="more"></a>
+
+<p>本次安裝的軟體版本：</p>
+<ul>
+<li>Kubernetes v1.9.3</li>
+<li>kops v1.9.0</li>
+<li>kubefed v1.10</li>
+</ul>
+<h2 id="節點資訊"><a href="#節點資訊" class="headerlink" title="節點資訊"></a>節點資訊</h2><p>測試環境為 AWS EC2 虛擬機器，共有三組叢集：</p>
+<p>US West(Oregon) 叢集，也是 Federation 控制平面叢集：</p>
+<table>
+<thead>
+<tr>
+<th>Host</th>
+<th>vCPU</th>
+<th>RAM</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>us-west-m1</td>
+<td>1</td>
+<td>2G</td>
+</tr>
+<tr>
+<td>us-west-n1</td>
+<td>1</td>
+<td>2G</td>
+</tr>
+<tr>
+<td>us-west-n2</td>
+<td>1</td>
+<td>2G</td>
+</tr>
+</tbody></table>
+<p>US East(Ohio) 叢集:</p>
+<table>
+<thead>
+<tr>
+<th>Host</th>
+<th>vCPU</th>
+<th>RAM</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>us-east-m1</td>
+<td>1</td>
+<td>2G</td>
+</tr>
+<tr>
+<td>us-east-n1</td>
+<td>1</td>
+<td>2G</td>
+</tr>
+<tr>
+<td>us-east-n2</td>
+<td>1</td>
+<td>2G</td>
+</tr>
+</tbody></table>
+<p>Asia Pacific(Tokyo) 叢集:</p>
+<table>
+<thead>
+<tr>
+<th>Host</th>
+<th>vCPU</th>
+<th>RAM</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ap-northeast-m1</td>
+<td>1</td>
+<td>2G</td>
+</tr>
+<tr>
+<td>ap-northeast-n1</td>
+<td>1</td>
+<td>2G</td>
+</tr>
+<tr>
+<td>ap-northeast-n2</td>
+<td>1</td>
+<td>2G</td>
+</tr>
+</tbody></table>
+<h2 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h2><p>開始前，需要先安裝下列工具到操作機器上來提供使用：</p>
+<ul>
+<li><a href="https://kubernetes.io/docs/tasks/tools/install-kubectl/" target="_blank" rel="noopener">kubectl</a>：用來操作部署完成的 Kubernetes 叢集。</li>
+<li><a href="https://github.com/kubernetes/kops" target="_blank" rel="noopener">kops</a>：用來部署與管理公有雲上的 Kubernetes 叢集。</li>
+</ul>
+<p>Mac OS X：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ brew update &amp;&amp; brew install kops</span><br></pre></td></tr></table></figure>
+
+<p>Linux distro：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl -LO https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d <span class="string">'"'</span> -f 4)/kops-linux-amd64</span><br><span class="line">$ chmod +x kops-linux-amd64 &amp;&amp; sudo mv kops-linux-amd64 /usr/<span class="built_in">local</span>/bin/kops</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><a href="https://github.com/kubernetes/federation" target="_blank" rel="noopener">kubefed</a>：用來建立 Federation 控制平面與管理 Federation 叢集的工具。</li>
+</ul>
+<p>Mac OS X：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://github.com/kubernetes/federation.git <span class="variable">$GOPATH</span>/src/k8s.io/federation</span><br><span class="line">$ <span class="built_in">cd</span> <span class="variable">$GOPATH</span>/src/k8s.io/federation</span><br><span class="line">$ make quick-release</span><br><span class="line">$ cp _output/dockerized/bin/linux/amd64/kubefed /usr/<span class="built_in">local</span>/bin/kubefed</span><br></pre></td></tr></table></figure>
+
+<p>Linux distro：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ wget https://storage.googleapis.com/kubernetes-federation-release/release/v1.9.0-alpha.3/federation-client-linux-amd64.tar.gz</span><br><span class="line">$ tar xvf federation-client-linux-amd64.tar.gz</span><br><span class="line">$ cp federation/client/bin/kubefed /usr/<span class="built_in">local</span>/bin/</span><br><span class="line">$ kubefed version</span><br><span class="line">Client Version: version.Info&#123;Major:<span class="string">"1"</span>, Minor:<span class="string">"9+"</span>, GitVersion:<span class="string">"v1.9.0-alpha.3"</span>, GitCommit:<span class="string">"85c06145286da663755b140efa2b65f793cce9ec"</span>, GitTreeState:<span class="string">"clean"</span>, BuildDate:<span class="string">"2018-02-14T12:54:40Z"</span>, GoVersion:<span class="string">"go1.9.1"</span>, Compiler:<span class="string">"gc"</span>, Platform:<span class="string">"linux/amd64"</span>&#125;</span><br><span class="line">Server Version: version.Info&#123;Major:<span class="string">"1"</span>, Minor:<span class="string">"9"</span>, GitVersion:<span class="string">"v1.9.6"</span>, GitCommit:<span class="string">"9f8ebd171479bec0ada837d7ee641dec2f8c6dd1"</span>, GitTreeState:<span class="string">"clean"</span>, BuildDate:<span class="string">"2018-03-21T15:13:31Z"</span>, GoVersion:<span class="string">"go1.9.3"</span>, Compiler:<span class="string">"gc"</span>, Platform:<span class="string">"linux/amd64"</span>&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><a href="https://aws.amazon.com/cli/?nc1=h_ls" target="_blank" rel="noopener">AWS CLI</a>：用來操作 AWS 服務的工具。</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo pip install awscli</span><br><span class="line">$ aws --version</span><br><span class="line">aws-cli/1.15.4</span><br></pre></td></tr></table></figure>
+
+<p>上述工具完成後，我們還要準備一下資訊：</p>
+<ul>
+<li>申請 AWS 帳號，並在 IAM 服務新增一個 User 設定存取所有服務(AdministratorAccess)。另外這邊要記住 AccessKey 與 SecretKey。<blockquote>
+<p>一般來說只需開啟 S3、Route53、EC2、EBS、ELB 與 VPC 就好，但由於偷懶就全開。以下為各 AWS 服務在本次安裝的用意：</p>
+<ul>
+<li>IAM: 提供身份認證與存取管理。</li>
+<li>EC2: Kubernetes 叢集部署的虛擬機環境。</li>
+<li>ELB: Kubernetes 元件與 Service 負載平衡。</li>
+<li>Route53: 提供 Public domain 存取 Kubernetes 環境。</li>
+<li>S3: 儲存 Kops 狀態。</li>
+<li>VPC: 提供 Kubernetes 與 EC2 的網路環境。</li>
+</ul>
+</blockquote>
+</li>
+</ul>
+<p><img src="/images/kops/iam-user2.png" alt></p>
+<ul>
+<li>擁有自己的 Domain Name，這邊可以在 AWS Route53 註冊，或者是到 GoDaddy 購買。</li>
+</ul>
+<h2 id="部署-Kubernetes-Federation-叢集"><a href="#部署-Kubernetes-Federation-叢集" class="headerlink" title="部署 Kubernetes Federation 叢集"></a>部署 Kubernetes Federation 叢集</h2><p>本節將說明如何利用自己撰寫好的腳本 <a href="https://github.com/kairen/aws-k8s-federation" target="_blank" rel="noopener">aws-k8s-federation</a> 來部署 Kubernetes 叢集與 Federation 叢集。首先在操作節點下載：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://github.com/kairen/aws-k8s-federation</span><br><span class="line">$ <span class="built_in">cd</span> aws-k8s-federation</span><br><span class="line">$ cp .env.sample .env</span><br></pre></td></tr></table></figure>
+
+<p>編輯<code>.env</code>檔案來提供後續腳本的環境變數：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 你的 Domain Name(這邊為 &lt;hoste_dzone_name&gt;.&lt;domain_name&gt;)</span></span><br><span class="line"><span class="built_in">export</span> DOMAIN_NAME=<span class="string">"k8s.example.com"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Regions and zones</span></span><br><span class="line"><span class="built_in">export</span> US_WEST_REGION=<span class="string">"us-west-2"</span></span><br><span class="line"><span class="built_in">export</span> US_EAST_REGION=<span class="string">"us-east-2"</span></span><br><span class="line"><span class="built_in">export</span> AP_NORTHEAST_REGION=<span class="string">"ap-northeast-1"</span></span><br><span class="line"><span class="built_in">export</span> ZONE=<span class="string">"a"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Cluster contexts name</span></span><br><span class="line"><span class="built_in">export</span> FED_CONTEXT=<span class="string">"aws-fed"</span></span><br><span class="line"><span class="built_in">export</span> US_WEST_CONTEXT=<span class="string">"us-west.<span class="variable">$&#123;DOMAIN_NAME&#125;</span>"</span></span><br><span class="line"><span class="built_in">export</span> US_EAST_CONTEXT=<span class="string">"us-east.<span class="variable">$&#123;DOMAIN_NAME&#125;</span>"</span></span><br><span class="line"><span class="built_in">export</span> AP_NORTHEAST_CONTEXT=<span class="string">"ap-northeast.<span class="variable">$&#123;DOMAIN_NAME&#125;</span>"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># S3 buckets name</span></span><br><span class="line"><span class="built_in">export</span> US_WEST_BUCKET_NAME=<span class="string">"us-west-k8s"</span></span><br><span class="line"><span class="built_in">export</span> US_EAST_BUCKET_NAME=<span class="string">"us-east-k8s"</span></span><br><span class="line"><span class="built_in">export</span> AP_NORTHEAST_BUCKET_NAME=<span class="string">"ap-northeast-k8s"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Get domain name id</span></span><br><span class="line"><span class="built_in">export</span> HOSTED_ZONE_ID=$(aws route53 list-hosted-zones \</span><br><span class="line">       | jq -r <span class="string">'.HostedZones[] | select(.Name=="'</span><span class="variable">$&#123;DOMAIN_NAME&#125;</span><span class="string">'.") | .Id'</span> \</span><br><span class="line">       | sed <span class="string">'s/\/hostedzone\///'</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Kubernetes master and node size, and node count.</span></span><br><span class="line"><span class="built_in">export</span> MASTER_SIZE=<span class="string">"t2.micro"</span></span><br><span class="line"><span class="built_in">export</span> NODE_SIZE=<span class="string">"t2.micro"</span></span><br><span class="line"><span class="built_in">export</span> NODE_COUNT=<span class="string">"2"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Federation simple apps deploy and service name</span></span><br><span class="line"><span class="built_in">export</span> DNS_RECORD_PREFIX=<span class="string">"nginx"</span></span><br><span class="line"><span class="built_in">export</span> SERVICE_NAME=<span class="string">"nginx"</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="建立-Route53-Hosted-Zone"><a href="#建立-Route53-Hosted-Zone" class="headerlink" title="建立 Route53 Hosted Zone"></a>建立 Route53 Hosted Zone</h3><p>首先透過 aws 工具進行設定使用指定 AccessKey 與 SecretKey：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ aws configure</span><br><span class="line">AWS Access Key ID [****************QGEA]:</span><br><span class="line">AWS Secret Access Key [****************zJ+w]:</span><br><span class="line">Default region name [None]:</span><br><span class="line">Default output format [None]:</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>設定的 Keys 可以在<code>~/.aws/credentials</code>找到。</p>
+</blockquote>
+<p>接著需要在 Route53 建立一個 Hosted Zone，並在 Domain Name 供應商上設定 <code>NameServers</code>：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ./0-create-hosted-domain.sh</span><br><span class="line"><span class="comment"># output</span></span><br><span class="line">...</span><br><span class="line">&#123;</span><br><span class="line">    <span class="string">"HostedZone"</span>: &#123;</span><br><span class="line">        <span class="string">"ResourceRecordSetCount"</span>: 2,</span><br><span class="line">        <span class="string">"CallerReference"</span>: <span class="string">"2018-04-25-16:16"</span>,</span><br><span class="line">        <span class="string">"Config"</span>: &#123;</span><br><span class="line">            <span class="string">"PrivateZone"</span>: <span class="literal">false</span></span><br><span class="line">        &#125;,</span><br><span class="line">        <span class="string">"Id"</span>: <span class="string">"/hostedzone/Z2JR49ADZ0P3WC"</span>,</span><br><span class="line">        <span class="string">"Name"</span>: <span class="string">"k8s.example.com."</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="string">"DelegationSet"</span>: &#123;</span><br><span class="line">        <span class="string">"NameServers"</span>: [</span><br><span class="line">            <span class="string">"ns-1547.awsdns-01.co.uk"</span>,</span><br><span class="line">            <span class="string">"ns-1052.awsdns-03.org"</span>,</span><br><span class="line">            <span class="string">"ns-886.awsdns-46.net"</span>,</span><br><span class="line">            <span class="string">"ns-164.awsdns-20.com"</span></span><br><span class="line">        ]</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="string">"Location"</span>: <span class="string">"https://route53.amazonaws.com/2013-04-01/hostedzone/Z2JR49ADZ0P3WC"</span>,</span><br><span class="line">    <span class="string">"ChangeInfo"</span>: &#123;</span><br><span class="line">        <span class="string">"Status"</span>: <span class="string">"PENDING"</span>,</span><br><span class="line">        <span class="string">"SubmittedAt"</span>: <span class="string">"2018-04-25T08:16:57.462Z"</span>,</span><br><span class="line">        <span class="string">"Id"</span>: <span class="string">"/change/C3802PE0C1JVW2"</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>之後將上述<code>NameServers</code>新增至自己的 Domain name 的 record 中，如 Godaddy：</p>
+<p><img src="/images/kops-fed/godday-ns.png" alt></p>
+<h3 id="在每個-Region-建立-Kubernetes-叢集"><a href="#在每個-Region-建立-Kubernetes-叢集" class="headerlink" title="在每個 Region 建立 Kubernetes 叢集"></a>在每個 Region 建立 Kubernetes 叢集</h3><p>當 Hosted Zone 建立完成後，就可以接著建立每個 Region 的 Kubernetes 叢集，這邊腳本已包含建立叢集與 S3 Bucket 指令，因此只需要執行以下腳本即可：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ./1-create-clusters.sh</span><br><span class="line">....</span><br><span class="line">Cluster is starting.  It should be ready <span class="keyword">in</span> a few minutes.</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊會需要等待一點時間進行初始化與部署，也可以到 AWS Console 查看狀態。</p>
+</blockquote>
+<p>完成後，即可透過 kubectl 來操作叢集：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ./us-east/kc get no</span><br><span class="line">+ kubectl --context=us-east.k8s.example.com get no</span><br><span class="line">NAME                                          STATUS    ROLES     AGE       VERSION</span><br><span class="line">ip-172-20-43-26.us-east-2.compute.internal    Ready     node      1m        v1.9.3</span><br><span class="line">ip-172-20-56-167.us-east-2.compute.internal   Ready     master    3m        v1.9.3</span><br><span class="line">ip-172-20-63-133.us-east-2.compute.internal   Ready     node      2m        v1.9.3</span><br><span class="line"></span><br><span class="line">$ ./ap-northeast/kc get no</span><br><span class="line">+ kubectl --context=ap-northeast.k8s.example.com get no</span><br><span class="line">NAME                                               STATUS    ROLES     AGE       VERSION</span><br><span class="line">ip-172-20-42-184.ap-northeast-1.compute.internal   Ready     master    2m        v1.9.3</span><br><span class="line">ip-172-20-52-176.ap-northeast-1.compute.internal   Ready     node      20s       v1.9.3</span><br><span class="line">ip-172-20-56-88.ap-northeast-1.compute.internal    Ready     node      22s       v1.9.3</span><br><span class="line"></span><br><span class="line">$ ./us-west/kc get no</span><br><span class="line">+ kubectl --context=us-west.k8s.example.com get no</span><br><span class="line">NAME                                          STATUS    ROLES     AGE       VERSION</span><br><span class="line">ip-172-20-33-22.us-west-2.compute.internal    Ready     node      1m        v1.9.3</span><br><span class="line">ip-172-20-55-237.us-west-2.compute.internal   Ready     master    2m        v1.9.3</span><br><span class="line">ip-172-20-63-77.us-west-2.compute.internal    Ready     node      35s       v1.9.3</span><br></pre></td></tr></table></figure>
+
+<h3 id="建立-Kubernetes-Federation-叢集"><a href="#建立-Kubernetes-Federation-叢集" class="headerlink" title="建立 Kubernetes Federation 叢集"></a>建立 Kubernetes Federation 叢集</h3><p>當三個地區的叢集建立完成後，接著要在 US West 的叢集上部署 Federation 控制平面元件：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ./2-init-federation.sh</span><br><span class="line">...</span><br><span class="line">Federation API server is running at: abba6864f490111e8b4bd028106a7a79-793027324.us-west-2.elb.amazonaws.com</span><br><span class="line"></span><br><span class="line">$ ./us-west/kc -n federation-system get po</span><br><span class="line">+ kubectl --context=us-west.k8s.example.com -n federation-system get po</span><br><span class="line">NAME                                  READY     STATUS    RESTARTS   AGE</span><br><span class="line">apiserver-5d46898995-tmzvl            2/2       Running   0          1m</span><br><span class="line">controller-manager-6cc78c68d5-2pbg5   0/1       Error     3          1m</span><br></pre></td></tr></table></figure>
+
+<p>這邊會發現<code>controller-manager</code>會一直掛掉，這是因為它需要取得 AWS 相關權限，因此需要透過 Patch 方式來把 AccessKey 與 SecretKey 注入到 Deployment 中：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ./3-path-federation.sh</span><br><span class="line">Switched to context <span class="string">"us-west.k8s.example.com"</span>.</span><br><span class="line">deployment <span class="string">"controller-manager"</span> patched</span><br><span class="line"></span><br><span class="line">$ ./us-west/kc -n federation-system get po</span><br><span class="line">+ kubectl --context=us-west.k8s.example.com -n federation-system get po</span><br><span class="line">NAME                                  READY     STATUS        RESTARTS   AGE</span><br><span class="line">apiserver-5d46898995-tmzvl            2/2       Running       0          3m</span><br><span class="line">controller-manager-769bd95fbc-dkssr   1/1       Running       0          21s</span><br></pre></td></tr></table></figure>
+
+<p>確認上述沒問題後，透過 kubectl 確認 contexts：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl config get-contexts</span><br><span class="line">CURRENT   NAME                           CLUSTER                        AUTHINFO                       NAMESPACE</span><br><span class="line">          ap-northeast.k8s.example.com   ap-northeast.k8s.example.com   ap-northeast.k8s.example.com</span><br><span class="line">          aws-fed                        aws-fed                        aws-fed</span><br><span class="line">          us-east.k8s.example.com        us-east.k8s.example.com        us-east.k8s.example.com</span><br><span class="line">*         us-west.k8s.example.com        us-west.k8s.example.com        us-west.k8s.example.com</span><br></pre></td></tr></table></figure>
+
+<p>接著透過以下腳本來加入<code>us-west</code>叢集至 aws-fed 的 Federation 中：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ./4-join-us-west.sh</span><br><span class="line">+ kubectl config use-context aws-fed</span><br><span class="line">Switched to context <span class="string">"aws-fed"</span>.</span><br><span class="line">+ kubefed join us-west --host-cluster-context=us-west.k8s.example.com --cluster-context=us-west.k8s.example.com</span><br><span class="line">cluster <span class="string">"us-west"</span> created</span><br></pre></td></tr></table></figure>
+
+<p>加入<code>ap-northeast</code>叢集至 aws-fed 的 Federation 中：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ./5-join-ap-northeast.sh</span><br><span class="line">+ kubectl config use-context aws-fed</span><br><span class="line">Switched to context <span class="string">"aws-fed"</span>.</span><br><span class="line">+ kubefed join ap-northeast --host-cluster-context=us-west.k8s.example.com --cluster-context=ap-northeast.k8s.example.com</span><br><span class="line">cluster <span class="string">"ap-northeast"</span> created</span><br></pre></td></tr></table></figure>
+
+<p>加入<code>us-east</code>叢集至 aws-fed 的 Federation 中：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ./6-join-us-east.sh</span><br><span class="line">+ kubectl config use-context aws-fed</span><br><span class="line">Switched to context <span class="string">"aws-fed"</span>.</span><br><span class="line">+ kubefed join us-east --host-cluster-context=us-west.k8s.example.com --cluster-context=us-east.k8s.example.com</span><br><span class="line">cluster <span class="string">"us-east"</span> created</span><br></pre></td></tr></table></figure>
+
+<p>完成後，在 Federation 建立 Federated Namespace，並列出叢集：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ./7-create-fed-ns.sh</span><br><span class="line">+ kubectl --context=aws-fed create namespace default</span><br><span class="line">namespace <span class="string">"default"</span> created</span><br><span class="line">+ kubectl --context=aws-fed get clusters</span><br><span class="line">NAME           AGE</span><br><span class="line">ap-northeast   2m</span><br><span class="line">us-east        1m</span><br><span class="line">us-west        2m</span><br></pre></td></tr></table></figure>
+
+<p>完成這些過程表示你已經建立了一套 Kubernetes Federation 叢集了，接下來就可以進行測試。</p>
+<h2 id="測試叢集"><a href="#測試叢集" class="headerlink" title="測試叢集"></a>測試叢集</h2><p>首先建立一個簡單的 Nginx 來提供服務的測試，這邊可以透過以下腳本達成：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ./8-deploy-fed-nginx.sh</span><br><span class="line">+ cat</span><br><span class="line">+ kubectl --context=aws-fed apply -f -</span><br><span class="line">deployment <span class="string">"nginx"</span> created</span><br><span class="line">+ cat</span><br><span class="line">+ kubectl --context=aws-fed apply -f -</span><br><span class="line">service <span class="string">"nginx"</span> created</span><br><span class="line"></span><br><span class="line">$ kubectl get deploy,svc</span><br><span class="line">NAME           DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE</span><br><span class="line">deploy/nginx   3         3         3            3           3m</span><br><span class="line"></span><br><span class="line">NAME        TYPE           CLUSTER-IP   EXTERNAL-IP        PORT(S)   AGE</span><br><span class="line">svc/nginx   LoadBalancer   &lt;none&gt;       a4d86547a4903...   80/TCP    2m</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這裡的 nginx deployment 有設定<code>deployment-preferences</code>，因此在 scale 時會依據下面資訊來分配：</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">       <span class="string">"rebalance"</span>: <span class="literal">true</span>,</span><br><span class="line">       <span class="string">"clusters"</span>: &#123;</span><br><span class="line">         <span class="string">"us-west"</span>: &#123;</span><br><span class="line">           <span class="string">"minReplicas"</span>: 2,</span><br><span class="line">           <span class="string">"maxReplicas"</span>: 10,</span><br><span class="line">           <span class="string">"weight"</span>: 200</span><br><span class="line">         &#125;,</span><br><span class="line">         <span class="string">"us-east"</span>: &#123;</span><br><span class="line">           <span class="string">"minReplicas"</span>: 0,</span><br><span class="line">           <span class="string">"maxReplicas"</span>: 2,</span><br><span class="line">           <span class="string">"weight"</span>: 150</span><br><span class="line">         &#125;,</span><br><span class="line">         <span class="string">"ap-northeast"</span>: &#123;</span><br><span class="line">           <span class="string">"minReplicas"</span>: 1,</span><br><span class="line">           <span class="string">"maxReplicas"</span>: 5,</span><br><span class="line">           <span class="string">"weight"</span>: 150</span><br><span class="line">         &#125;</span><br><span class="line">       &#125;</span><br><span class="line">     &#125;</span><br></pre></td></tr></table></figure>
+
+<p>檢查每個叢集的 Pod：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># us-west context(這邊策略為 2 - 10)</span></span><br><span class="line">$ ./us-west/kc get po</span><br><span class="line">+ kubectl --context=us-west.k8s.example.com get po</span><br><span class="line">NAME                     READY     STATUS    RESTARTS   AGE</span><br><span class="line">nginx-679dc9c764-4x78c   1/1       Running   0          3m</span><br><span class="line">nginx-679dc9c764-fzv9z   1/1       Running   0          3m</span><br><span class="line"></span><br><span class="line"><span class="comment"># us-east context(這邊策略為 0 - 2)</span></span><br><span class="line">$ ./us-east/kc get po</span><br><span class="line">+ kubectl --context=us-east.k8s.example.com get po</span><br><span class="line">No resources found.</span><br><span class="line"></span><br><span class="line"><span class="comment"># ap-northeast context(這邊策略為 1 - 5)</span></span><br><span class="line">$ ./ap-northeast/kc get po</span><br><span class="line">+ kubectl --context=ap-northeast.k8s.example.com get po</span><br><span class="line">NAME                     READY     STATUS    RESTARTS   AGE</span><br><span class="line">nginx-679dc9c764-hmwzq   1/1       Running   0          4m</span><br></pre></td></tr></table></figure>
+
+<p>透過擴展副本數來查看分配狀況：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ./9-scale-fed-nginx.sh</span><br><span class="line">+ kubectl --context=aws-fed scale deploy nginx --replicas=10</span><br><span class="line">deployment <span class="string">"nginx"</span> scaled</span><br><span class="line"></span><br><span class="line">$ kubectl get deploy</span><br><span class="line">NAME      DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE</span><br><span class="line">nginx     10        10        10           10          8m</span><br></pre></td></tr></table></figure>
+
+<p>再次檢查每個叢集的 Pod：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># us-west context(這邊策略為 2 - 10)</span></span><br><span class="line">$ ./us-west/kc get po</span><br><span class="line">+ kubectl --context=us-west.k8s.example.com get po</span><br><span class="line">NAME                     READY     STATUS    RESTARTS   AGE</span><br><span class="line">nginx-679dc9c764-4x78c   1/1       Running   0          8m</span><br><span class="line">nginx-679dc9c764-7958k   1/1       Running   0          50s</span><br><span class="line">nginx-679dc9c764-fzv9z   1/1       Running   0          8m</span><br><span class="line">nginx-679dc9c764-j6kc9   1/1       Running   0          50s</span><br><span class="line">nginx-679dc9c764-t6rvj   1/1       Running   0          50s</span><br><span class="line"></span><br><span class="line"><span class="comment"># us-east context(這邊策略為 0 - 2)</span></span><br><span class="line">$ ./us-east/kc get po</span><br><span class="line">+ kubectl --context=us-east.k8s.example.com get po</span><br><span class="line">NAME                     READY     STATUS    RESTARTS   AGE</span><br><span class="line">nginx-679dc9c764-8t7qz   1/1       Running   0          1m</span><br><span class="line">nginx-679dc9c764-zvqmx   1/1       Running   0          1m</span><br><span class="line"></span><br><span class="line"><span class="comment"># ap-northeast context(這邊策略為 1 - 5)</span></span><br><span class="line">$ ./ap-northeast/kc get po</span><br><span class="line">+ kubectl --context=ap-northeast.k8s.example.com get po</span><br><span class="line">NAME                     READY     STATUS    RESTARTS   AGE</span><br><span class="line">nginx-679dc9c764-f79v7   1/1       Running   0          1m</span><br><span class="line">nginx-679dc9c764-hmwzq   1/1       Running   0          9m</span><br><span class="line">nginx-679dc9c764-vj7hb   1/1       Running   0          1m</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>可以看到結果符合我們預期範圍內。</p>
+</blockquote>
+<p>最後因為服務是透過 ELB 來提供，為了統一透過 Domain name 存取相同服務，這邊更新 Hosted Zone Record 來轉發：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ./10-update-fed-nginx-record.sh</span><br></pre></td></tr></table></figure>
+
+<p>完成後透過 cURL 工作來測試：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl nginx.k8s.example.com</span><br><span class="line">...</span><br><span class="line">&lt;title&gt;Welcome to nginx!&lt;/title&gt;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>最後透過該腳本來清楚叢集與 AWS 服務上建立的東西：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ./99-purge.sh</span><br></pre></td></tr></table></figure>
+
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">在 AWS 上建立跨地區的 Kubernetes Federation 叢集</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2018-4-21 17:04</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2018/05/30/kubernetes/keystone-auth/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    以 Keystone 作為 Kubernetes 使用者認證
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2018/04/18/kubernetes/deploy/kops-aws/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">使用 Kops 部署 Kubernetes 至公有雲(AWS)</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2018/04/21/kubernetes/aws-federation-v1/" data-id="ck3ns7q6k004rwmpfckwp1qoq" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2018/04/21/kubernetes/aws-federation-v1/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2018/04/21/kubernetes/aws-federation-v1/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#節點資訊"><span class="toc-number">1.</span> <span class="toc-text">節點資訊</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#事前準備"><span class="toc-number">2.</span> <span class="toc-text">事前準備</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#部署-Kubernetes-Federation-叢集"><span class="toc-number">3.</span> <span class="toc-text">部署 Kubernetes Federation 叢集</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#建立-Route53-Hosted-Zone"><span class="toc-number">3.1.</span> <span class="toc-text">建立 Route53 Hosted Zone</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#在每個-Region-建立-Kubernetes-叢集"><span class="toc-number">3.2.</span> <span class="toc-text">在每個 Region 建立 Kubernetes 叢集</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#建立-Kubernetes-Federation-叢集"><span class="toc-number">3.3.</span> <span class="toc-text">建立 Kubernetes Federation 叢集</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#測試叢集"><span class="toc-number">4.</span> <span class="toc-text">測試叢集</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2018/04/21/kubernetes/aws-federation-v1/';
+        
+        this.page.identifier = 'kubernetes/aws-federation-v1';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

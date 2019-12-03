@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>[Knative] 初探基本功能與概念 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Knative 是基於 Kubernetes 平台建構、部署與管理現代 Serverless 工作負載的開源專案，其目標是要幫助雲端供應商與企業平臺營運商替任何雲端環境的開發者、操作者等提供 Serverless 服務體驗。Knative 採用了 Kubernetes 概念來建構函式與應用程式，並以 Istio 實現了叢集內的網路路由，以及進入服務的外部連接，這讓開發者在部署或執行變得更加簡單。而">
+<meta name="keywords" content="Container,Knative,Serverless,Istio">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[Knative] 初探基本功能與概念">
+<meta property="og:url" content="https://k2r2bai.com/2018/08/24/kubernetes/knative/quick-start/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Knative 是基於 Kubernetes 平台建構、部署與管理現代 Serverless 工作負載的開源專案，其目標是要幫助雲端供應商與企業平臺營運商替任何雲端環境的開發者、操作者等提供 Serverless 服務體驗。Knative 採用了 Kubernetes 概念來建構函式與應用程式，並以 Istio 實現了叢集內的網路路由，以及進入服務的外部連接，這讓開發者在部署或執行變得更加簡單。而">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/k8s/knative-logo.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.396Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="[Knative] 初探基本功能與概念">
+<meta name="twitter:description" content="Knative 是基於 Kubernetes 平台建構、部署與管理現代 Serverless 工作負載的開源專案，其目標是要幫助雲端供應商與企業平臺營運商替任何雲端環境的開發者、操作者等提供 Serverless 服務體驗。Knative 採用了 Kubernetes 概念來建構函式與應用程式，並以 Istio 實現了叢集內的網路路由，以及進入服務的外部連接，這讓開發者在部署或執行變得更加簡單。而">
+<meta name="twitter:image" content="https://k2r2bai.com/images/k8s/knative-logo.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-kubernetes/knative/quick-start" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+            
+	
+		<img src="/images/k8s/knative-logo.png" class="article-banner" />
+	
+
+
+
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            [Knative] 初探基本功能與概念
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2018/08/24/kubernetes/knative/quick-start/">
+            <u><time datetime="2018-08-24T09:08:54.000Z" itemprop="datePublished">2018-08-24</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Container/">Container</a>, <a class="tag-link" href="/tags/Istio/">Istio</a>, <a class="tag-link" href="/tags/Knative/">Knative</a>, <a class="tag-link" href="/tags/Serverless/">Serverless</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p><a href="https://github.com/knative" target="_blank" rel="noopener">Knative</a> 是基於 Kubernetes 平台建構、部署與管理現代 Serverless 工作負載的開源專案，其目標是要幫助雲端供應商與企業平臺營運商替任何雲端環境的開發者、操作者等提供 Serverless 服務體驗。Knative 採用了 Kubernetes 概念來建構函式與應用程式，並以 Istio 實現了叢集內的網路路由，以及進入服務的外部連接，這讓開發者在部署或執行變得更加簡單。而目前 Knative 元件焦距在解決許多平凡但困難的事情，例如以下：</p>
+<a id="more"></a>
+
+<ul>
+<li>部署一個容器。</li>
+<li>在 Kubernetes 上編排 Source-to-URL 的工作流程。</li>
+<li>使用 Blue/Green 部署來路由與管理流量。</li>
+<li>按需自動擴展與調整工作負載的大小。</li>
+<li>將運行服務(Running services)綁定到事件生態系統(Eventing ecosystems)。</li>
+<li>利用原始碼建構應用程式與函式。</li>
+<li>讓應用程式能夠零停機升級。</li>
+<li>自動增減應用程式與函式實例。</li>
+<li>透過 HTTP request 觸發函式的呼叫。</li>
+<li>為函式、應用程式與容器建立事件。</li>
+</ul>
+<p>而 Knative 的設計考慮了不同的工作角色使用情境：</p>
+<p><img src="/images/k8s/knative-audience.png" alt></p>
+<p>然而 Knative 不只使用 Kubernetes 與 Istio 的功能，也自行開發了三個元件以提供更完整的 Serverless 平台。而下節將針對這三個元件進行說明。</p>
+<h2 id="Knative-元件與概念"><a href="#Knative-元件與概念" class="headerlink" title="Knative 元件與概念"></a>Knative 元件與概念</h2><p>目前 Knative 提供了以下幾個元件來處理不同的功能需求，本節我們將針對這些元件進行說明。</p>
+<h3 id="Build"><a href="#Build" class="headerlink" title="Build"></a>Build</h3><p><a href="https://github.com/knative/build" target="_blank" rel="noopener">Build</a> 是 Knative 中的自定義資源，並提供了 Build API object 來處理從原始碼(Sources)建構容器的可插拔(Pluggable)模型，這是基於 Google 的容器建構服務(Container Build Service) 而來，這允許開發者定義容器的來源來打包，例如 Git、Registery(ex: Docker hub)，另外也能將 Buildpacks 當作一種建構的插件來使用，這使 Knative 在建構功能上有更靈活的擴展。</p>
+<blockquote class="colorquote info"><p>除了 Buildpacks 外，也能夠將 Google Container Builder、Bazel、Kaniko 與 Jib 等等當作建構插件使用。</p>
+</blockquote>
+
+<p>而一個 Knative builds 的主要特性如下：</p>
+<ul>
+<li>一個<code>Build</code>可以包含多個 step，其中每個 step 會指定一個<code>Builder</code>。</li>
+<li>一個<code>Builder</code>是一種容器映像檔，可以建立該映像檔來完成任何任務，如流程中的單一 step，或是整個流程本身。</li>
+<li><code>Build</code> 中的 steps 可以推送(push)到一個儲存庫(repository)。</li>
+<li>一個<code>BuildTemplate</code>可用在定義重用的模板。</li>
+<li>可以定義<code>Build</code>中的<code>source</code>來將檔案或專案掛載到 Kubernetes Volume(會掛載成<code>/workspace</code>)。目前支援：<ul>
+<li>Git 儲存庫</li>
+<li>Google Cloud Storage</li>
+<li>任意的容器映像檔</li>
+</ul>
+</li>
+<li>利用 Kubernetes Secrets 結合 ServiceAccount 進行身份認證</li>
+</ul>
+<blockquote class="colorquote info"><p>這邊的<code>step</code>可以看作是 Kubernetes 的 init-container。</p>
+</blockquote>
+
+<p>以下是一個提供使用者身份認證的 Build 範例，該範例包含多個 step 與 Git repo：</p>
+<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">build.knative.dev/v1alpha1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Build</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">example-build</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  serviceAccountName:</span> <span class="string">build-auth-example</span></span><br><span class="line"><span class="attr">  source:</span></span><br><span class="line"><span class="attr">    git:</span></span><br><span class="line"><span class="attr">      url:</span> <span class="attr">https://github.com/example/build-example.git</span></span><br><span class="line"><span class="attr">      revision:</span> <span class="string">master</span></span><br><span class="line"><span class="attr">  steps:</span></span><br><span class="line"><span class="attr">  - name:</span> <span class="string">ubuntu-example</span></span><br><span class="line"><span class="attr">    image:</span> <span class="string">ubuntu</span></span><br><span class="line"><span class="attr">    args:</span> <span class="string">["ubuntu-build-example",</span> <span class="string">"SECRETS-example.md"</span><span class="string">]</span></span><br><span class="line"><span class="attr">  steps:</span></span><br><span class="line"><span class="attr">  - image:</span> <span class="string">gcr.io/example-builders/build-example</span></span><br><span class="line"><span class="attr">    args:</span> <span class="string">['echo',</span> <span class="string">'hello-example'</span><span class="string">,</span> <span class="string">'build'</span><span class="string">]</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Serving"><a href="#Serving" class="headerlink" title="Serving"></a>Serving</h3><p><a href="https://github.com/knative/serving" target="_blank" rel="noopener">Serving</a> 以 Kubernetes 與 Istio 為基礎，實現了中介軟體原語(Middleware Primitives)來達到自動化從容器到函式執行的整個流程，另外也支援了快速部署容器並進行伸縮的功能，甚至能根據請求來讓容器實例降到 0，而 Serving 也會利用 Istio 在修訂版本之間路由流量，或是將流量傳送到同一個應用程式的多個修訂版本中，除了上述功能外， Serving 也能實現了不停機更新、Bule/Green 部署、部分負載測試，以及程式碼回滾等功能。</p>
+<p><img src="/images/k8s/object_model.png" alt></p>
+<p>從上圖，可以得知 Serving 利用了 Kubernetes CRD 新增一組 API 來定義與控制在 Kubernetes 上的 Serverless 的行為，其分別為以下：</p>
+<ul>
+<li><p><strong>Service</strong>：該資源用來自動管理整個工作負載的生命週期，並提供單點控制。它控制了其他物件的建立，以確保應用程式與函式具備每次 Service 更新的 Route、Configuration 與 Revision，而 Service 也可以定義流量路由到最新 Revision 或固定的 Revision。</p>
+<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">serving.knative.dev/v1alpha1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Service</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">   name:</span> <span class="string">service-example</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">   runLatest:</span></span><br><span class="line"><span class="attr">     configuration:</span></span><br><span class="line"><span class="attr">       revisionTemplate:</span></span><br><span class="line"><span class="attr">         spec:</span></span><br><span class="line"><span class="attr">           container:</span></span><br><span class="line"><span class="attr">             image:</span> <span class="string">gcr.io/knative-samples/helloworld-go</span></span><br><span class="line"><span class="attr">             env:</span></span><br><span class="line"><span class="attr">             - name:</span> <span class="string">TARGET</span></span><br><span class="line"><span class="attr">               value:</span> <span class="string">"Go Sample v1"</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>Route</strong>：該資源將網路端點映射到一個或多個 revision，並且能透過多種方式來管理流量，如部分的流量(fractional traffic)、命名路由(named routes)。</p>
+<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">serving.knative.dev/v1alpha1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Route</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">   name:</span> <span class="string">route-example</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">   traffic:</span></span><br><span class="line"><span class="attr">   - configurationName:</span> <span class="string">stock-configuration-example</span></span><br><span class="line"><span class="attr">     percent:</span> <span class="number">100</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>Configuration</strong>：該資源維護部屬所需的狀態，它提供了程式碼與組態檔之間的分離，並遵循 Twelve-Factor  App 方法，若修改 Configuration 會建立新 revision。</p>
+<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">serving.knative.dev/v1alpha1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Configuration</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">configuration-example</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  revisionTemplate:</span></span><br><span class="line"><span class="attr">    metadata:</span></span><br><span class="line"><span class="attr">      labels:</span></span><br><span class="line">        <span class="string">knative.dev/type:</span> <span class="string">container</span></span><br><span class="line"><span class="attr">    spec:</span></span><br><span class="line"><span class="attr">      container:</span></span><br><span class="line"><span class="attr">        image:</span> <span class="string">github.com/knative/docs/serving/samples/rest-api-go</span></span><br><span class="line"><span class="attr">        env:</span></span><br><span class="line"><span class="attr">          - name:</span> <span class="string">RESOURCE</span></span><br><span class="line"><span class="attr">            value:</span> <span class="string">stock</span></span><br><span class="line"><span class="attr">        readinessProbe:</span></span><br><span class="line"><span class="attr">          httpGet:</span></span><br><span class="line"><span class="attr">            path:</span> <span class="string">/</span></span><br><span class="line"><span class="attr">          initialDelaySeconds:</span> <span class="number">3</span></span><br><span class="line"><span class="attr">          periodSeconds:</span> <span class="number">3</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>Revision</strong>：該資源是記錄每個工作負載修改的程式碼與組態的時間點快照，而 Revision 是不可變物件，並且只要它還有用處，就會被長時間保留。</p>
+<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">serving.knative.dev/v1alpha1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Revision</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  labels:</span></span><br><span class="line">    <span class="string">serving.knative.dev/configuration:</span> <span class="string">helloworld-go</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">revision-example</span></span><br><span class="line"><span class="attr">  namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  concurrencyModel:</span> <span class="string">Multi</span></span><br><span class="line"><span class="attr">  container:</span></span><br><span class="line"><span class="attr">    env:</span></span><br><span class="line"><span class="attr">    - name:</span> <span class="string">TARGET</span></span><br><span class="line"><span class="attr">      value:</span> <span class="string">Go</span> <span class="string">Sample</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">    image:</span> <span class="string">gcr.io/knative-samples/helloworld-go</span></span><br><span class="line"><span class="attr">  generation:</span> <span class="number">1</span></span><br><span class="line"><span class="attr">  servingState:</span> <span class="string">Active</span></span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<h3 id="Eventing"><a href="#Eventing" class="headerlink" title="Eventing"></a>Eventing</h3><p><a href="https://github.com/knative/eventing" target="_blank" rel="noopener">Eventing</a> 提供用於 Consuming 以及 Producing 的事件建構區塊，並遵守著 <a href="https://github.com/cloudevents" target="_blank" rel="noopener">CloudEvents</a> 規範來實現，而該元件目標是對事件進行抽象處理，以讓開發者不需要關注後端相關具體細節，這樣開發者就不需要思考使用哪一套訊息佇列系統。</p>
+<p><img src="/images/k8s/knative-event-arch.png" alt></p>
+<p>而 Knative Eventing 也透過 Kubernetes CRD 定義了一組新資源，這些資源被用在事件的 Producing 與 Consuming 上，而這類資源主要分成以下：</p>
+<ul>
+<li><p><strong>Channels</strong></p>
+<ul>
+<li>這些是發布者(Publishers)向其發送訊息的 Pub/Sub Topics，因此 Channel 可視為獲取或放置事件的位置目錄。</li>
+<li>Bus。Channels 的後端供應者，即支援事件的訊息服務平台，如 Google Cloud PubSub、Apache Kafka 與 NATS 等等。</li>
+</ul>
+<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">channels.knative.dev/v1alpha1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Bus</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">kafka</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  dispatcher:</span></span><br><span class="line"><span class="attr">    args:</span></span><br><span class="line"><span class="bullet">    -</span> <span class="bullet">-logtostderr</span></span><br><span class="line"><span class="bullet">    -</span> <span class="bullet">-stderrthreshold</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">INFO</span></span><br><span class="line"><span class="attr">    env:</span></span><br><span class="line"><span class="attr">    - name:</span> <span class="string">KAFKA_BROKERS</span></span><br><span class="line"><span class="attr">      valueFrom:</span></span><br><span class="line"><span class="attr">        configMapKeyRef:</span></span><br><span class="line"><span class="attr">          key:</span> <span class="string">KAFKA_BROKERS</span></span><br><span class="line"><span class="attr">          name:</span> <span class="string">kafka-bus-config</span></span><br><span class="line"><span class="attr">    image:</span> <span class="string">gcr.io/knative-releases/github.com/knative/eventing/pkg/buses/kafka/dispatcher@sha256:d925663bb965001287b042c8d3ebdf8b4d3f0e7aa2a9e1528ed39dc78978bcdb</span></span><br><span class="line"><span class="attr">    name:</span> <span class="string">dispatcher</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>為應用程式與函式指定 Knative Service，並指明 Channel 所要傳遞的具體訊息。為程式與函式的進入位址。</li>
+</ul>
+</li>
+<li><p><strong>Feeds</strong>: 提供一個抽象層來讓外部可以提供資料來源，並將之路由到叢集中。會將事件來源中的單個事件類型附加到某一個行為。</p>
+<ul>
+<li>EventSource 與 ClusterEventSource 是一個 Kubernetes 資源，被用來描述可能產生的 EventTypes 外部系統。</li>
+</ul>
+<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">feeds.knative.dev/v1alpha1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">EventSource</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">github</span></span><br><span class="line"><span class="attr">  namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  image:</span> <span class="string">gcr.io/knative-releases/github.com/knative/eventing/pkg/sources/github@sha256:a5f6733797d934cd4ba83cf529f02ee83e42fa06fd0e7a9d868dd684056f5db0</span></span><br><span class="line"><span class="attr">  source:</span> <span class="string">github</span></span><br><span class="line"><span class="attr">  type:</span> <span class="string">github</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>EventType 與 ClusterEventType 同樣是 Kubernetes 資源，被用來表示不同 EventSource 支援的事件類型。</li>
+</ul>
+<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">feeds.knative.dev/v1alpha1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">EventType</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">pullrequest</span></span><br><span class="line"><span class="attr">  namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  description:</span> <span class="string">notifications</span> <span class="string">on</span> <span class="string">pullrequests</span></span><br><span class="line"><span class="attr">  eventSource:</span> <span class="string">github</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>Flows</strong>: 該資源會將事件綁定到 Route(應用程式與函式端點)上，並選擇使用哪種事件路由的 Channel 與 Bus。</p>
+<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">flows.knative.dev/v1alpha1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Flow</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">k8s-event-flow</span></span><br><span class="line"><span class="attr">  namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  serviceAccountName:</span> <span class="string">feed-sa</span></span><br><span class="line"><span class="attr">  trigger:</span></span><br><span class="line"><span class="attr">    eventType:</span> <span class="string">dev.knative.k8s.event</span></span><br><span class="line"><span class="attr">    resource:</span> <span class="string">k8sevents/dev.knative.k8s.event</span></span><br><span class="line"><span class="attr">    service:</span> <span class="string">k8sevents</span></span><br><span class="line"><span class="attr">    parameters:</span></span><br><span class="line"><span class="attr">      namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">  action:</span></span><br><span class="line"><span class="attr">    target:</span></span><br><span class="line"><span class="attr">      kind:</span> <span class="string">Route</span></span><br><span class="line"><span class="attr">      apiVersion:</span> <span class="string">serving.knative.dev/v1alpha1</span></span><br><span class="line"><span class="attr">      name:</span> <span class="string">read-k8s-events</span></span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<p>以上是簡單介紹，接下來我們將透過 Minikube 來初步玩玩 Knative 功能。</p>
+<h2 id="透過-Minikube-初步入門"><a href="#透過-Minikube-初步入門" class="headerlink" title="透過 Minikube 初步入門"></a>透過 Minikube 初步入門</h2><p>本節將安裝 Minikube 來建立 Knative 環境，透過完成簡單範例來體驗。</p>
+<h3 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h3><ul>
+<li><p>在測試機器安裝 Minikube 二進制執行檔，請至 <a href="https://github.com/kubernetes/minikube/releases" target="_blank" rel="noopener">Minikube Releases</a> 下載。</p>
+</li>
+<li><p>在測試機器下載 <a href="https://www.virtualbox.org/wiki/Downloads" target="_blank" rel="noopener">Virtual Box</a> 來提供給 Minikube 建立虛擬機。</p>
+</li>
+</ul>
+<blockquote class="colorquote warning"><ul>
+<li><strong>IMPORTANT</strong>: 測試機器記得開啟 VT-x or AMD-v virtualization.</li>
+<li>雖然建議用 vbox，但是討厭 Oracle 的人可以改用其他虛擬化工具(ex: kvm, xhyve)，理論上可以動。</li>
+</ul>
+</blockquote>
+
+<ul>
+<li>下載 Kubernetes CLI 工具 <a href="https://kubernetes.io/docs/tasks/tools/install-kubectl/" target="_blank" rel="noopener">kubeclt</a>。</li>
+</ul>
+<h3 id="啟動-Minukube"><a href="#啟動-Minukube" class="headerlink" title="啟動 Minukube"></a>啟動 Minukube</h3><p>首天透過 Minikube 來啟動一台 VM 部署單節點 Kubernetes，由於這邊會用到很多系統服務，因此需要開多一點系統資源：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ minikube start --memory=8192 --cpus=4 \</span><br><span class="line">  --kubernetes-version=v1.10.5 \</span><br><span class="line">  --extra-config=apiserver.admission-control=<span class="string">"LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook"</span></span><br></pre></td></tr></table></figure>
+
+<p>完成後，透過 kubectl 檢查：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl get no</span><br><span class="line">NAME       STATUS    ROLES     AGE       VERSION</span><br><span class="line">minikube   Ready     master    1m        v1.10.5</span><br></pre></td></tr></table></figure>
+
+<h3 id="部署-Knative"><a href="#部署-Knative" class="headerlink" title="部署 Knative"></a>部署 Knative</h3><p>由於 Knative 是基於 Istio 所開發，因此需要先部署相關服務，這邊透過 kubectl 來建立：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl -L https://storage.googleapis.com/knative-releases/serving/latest/istio.yaml \</span><br><span class="line">  | sed <span class="string">'s/LoadBalancer/NodePort/'</span> \</span><br><span class="line">  | kubectl apply -f -</span><br><span class="line"></span><br><span class="line"><span class="comment"># 設定 inject namespace</span></span><br><span class="line">$ kubectl label namespace default istio-injection=enabled</span><br></pre></td></tr></table></figure>
+
+<p>這邊會需要一點時間下載映像檔，並啟動 Istio 服務，完成後會如下所示：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl -n istio-system get po</span><br><span class="line">NAME                                       READY     STATUS      RESTARTS   AGE</span><br><span class="line">istio-citadel-7bdc7775c7-jn2bw             1/1       Running     0          5m</span><br><span class="line">istio-cleanup-old-ca-msvkn                 0/1       Completed   0          5m</span><br><span class="line">istio-egressgateway-795fc9b47-4nz7j        1/1       Running     0          6m</span><br><span class="line">istio-ingress-84659cf44c-pvqd5             1/1       Running     0          6m</span><br><span class="line">istio-ingressgateway-7d89dbf85f-tgm24      1/1       Running     0          6m</span><br><span class="line">istio-mixer-post-install-lvrjv             0/1       Completed   0          6m</span><br><span class="line">istio-pilot-66f4dd866c-zmbv5               2/2       Running     0          6m</span><br><span class="line">istio-policy-76c8896799-cqmdn              2/2       Running     0          6m</span><br><span class="line">istio-sidecar-injector-645c89bc64-9mdwx    1/1       Running     0          5m</span><br><span class="line">istio-statsd-prom-bridge-949999c4c-qhdgf   1/1       Running     0          6m</span><br><span class="line">istio-telemetry-6554768879-b6vss           2/2       Running     0          6m</span><br></pre></td></tr></table></figure>
+
+<p>接著部署 Knative 元件至 Kubernetes 叢集，官方提供了一個<code>release-lite.yaml</code>檔案來協助建立輕量的測試環境，因此可以直接透過 kubectl 來建立：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl -L https://storage.googleapis.com/knative-releases/serving/latest/release-lite.yaml \</span><br><span class="line">  | sed <span class="string">'s/LoadBalancer/NodePort/'</span> \</span><br><span class="line">  | kubectl apply -f -</span><br></pre></td></tr></table></figure>
+
+<blockquote class="colorquote info"><ul>
+<li>這邊會部署以 Prometheus 組成的 Monitoring 系統，以及 Knative Serving 與 Build。</li>
+<li>若是其他環境上的 Kubernetes 可以參考 <a href="https://github.com/knative/docs/tree/master/install" target="_blank" rel="noopener">Knative Install</a>。</li>
+</ul>
+</blockquote>
+
+<p>這邊同樣需要一點時間來下載映像檔，並啟動相關服務，一但完成後會如下所示：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Monitoring</span></span><br><span class="line">$ kubectl -n monitoring get po</span><br><span class="line">NAME                                  READY     STATUS    RESTARTS   AGE</span><br><span class="line">grafana-798cf569ff-m8w9c              1/1       Running   0          4m</span><br><span class="line">kube-state-metrics-77597b45f8-mxhxv   4/4       Running   0          1m</span><br><span class="line">node-exporter-8wbxd                   2/2       Running   0          4m</span><br><span class="line">prometheus-system-0                   1/1       Running   0          4m</span><br><span class="line">prometheus-system-1                   1/1       Running   0          4m</span><br><span class="line"></span><br><span class="line"><span class="comment"># Knative build</span></span><br><span class="line">$ kubectl -n knative-build get po</span><br><span class="line">NAME                                READY     STATUS    RESTARTS   AGE</span><br><span class="line">build-controller-5cb4f5cb67-bs94k   1/1       Running   0          6m</span><br><span class="line">build-webhook-6b4c65546b-fzffg      1/1       Running   0          6m</span><br><span class="line"></span><br><span class="line"><span class="comment"># Knative serving</span></span><br><span class="line">$ kubectl -n knative-serving get po</span><br><span class="line">NAME                          READY     STATUS    RESTARTS   AGE</span><br><span class="line">activator-869d7d76c5-fngdm    2/2       Running   0          7m</span><br><span class="line">autoscaler-65855c89f6-pmzhr   2/2       Running   0          7m</span><br><span class="line">controller-5fbcf79dfb-q8cb8   1/1       Running   0          7m</span><br><span class="line">webhook-c98c7c654-lpnjj       1/1       Running   0          7m</span><br></pre></td></tr></table></figure>
+
+<p>到這邊已完成部署 Knative 元件，接下來將透過一些範例來了解 Knative 功能。</p>
+<h3 id="部署-Knative-應用程式"><a href="#部署-Knative-應用程式" class="headerlink" title="部署 Knative 應用程式"></a>部署 Knative 應用程式</h3><p>當上述元件部署完成後，就可以開始建立 Knative 應用程式與函式，這邊將利用簡單 HTTP Server + Slack 來實作一個簡單 Channel 訊息傳送，過程中將會使用到 Build、BuildTemplate 與 Knative Service 等資源。在開始前，先透過 Git 來取得範例專案，這邊主要是使用裡面的 Kubernetes 部署檔案：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://github.com/kairen/knative-slack-app</span><br><span class="line">$ <span class="built_in">cd</span> knative-slack-app</span><br></pre></td></tr></table></figure>
+
+<p>由於本範例會利用 Kaniko 來建構應用程式的容器映像檔，並將自動將建構好的映像檔上傳至 DockeHub，因此這邊為了確保能夠上傳到自己的 DockerHub，需要建立 Secert 與 Service Account 來提供 Docker ID 與 Passwrod 給 Knative serving 使用：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">export</span> DOCKER_ID=$(<span class="built_in">echo</span> -n <span class="string">"username"</span> | base64)</span><br><span class="line">$ <span class="built_in">export</span> DOCKER_PWD=$(<span class="built_in">echo</span> -n <span class="string">"password"</span> | base64)</span><br><span class="line">$ cat deploy/docker-secret.yml | \</span><br><span class="line">  sed <span class="string">"s/BASE64_ENCODED_USERNAME/<span class="variable">$&#123;DOCKER_ID&#125;</span>/"</span> | \</span><br><span class="line">  sed <span class="string">"s/BASE64_ENCODED_PASSWORD/<span class="variable">$&#123;DOCKER_PWD&#125;</span>/"</span> | \</span><br><span class="line">  kubectl apply -f -</span><br><span class="line"></span><br><span class="line">$ kubectl apply -f deploy/kaniko-sa.yml</span><br></pre></td></tr></table></figure>
+
+<p>接著建立一個 Secret 來保存 Slack 的資訊以提供給 Slack App 使用，如 Token：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">export</span> SLACK_TOKEN=$(<span class="built_in">echo</span> -n <span class="string">"slack-token"</span> | base64)</span><br><span class="line">$ <span class="built_in">export</span> SLACK_CHANNEL_ID=$(<span class="built_in">echo</span> -n <span class="string">"slack-channel-id"</span> | base64)</span><br><span class="line">$ cat deploy/slack-secret.yml | \</span><br><span class="line">  sed <span class="string">"s/BASE64_ENCODED_SLACK_TOKEN/<span class="variable">$&#123;SLACK_TOKEN&#125;</span>/"</span> | \</span><br><span class="line">  sed <span class="string">"s/BASE64_ENCODED_SLACK_CHANNEL_ID/<span class="variable">$&#123;SLACK_CHANNEL_ID&#125;</span>/"</span> | \</span><br><span class="line">  kubectl apply -f -</span><br></pre></td></tr></table></figure>
+
+<p>接著建立 Kaniko Build template 來提供給 Knative Service 建構使用：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl apply -f deploy/kaniko-buildtemplate.yml</span><br><span class="line">$ kubectl get buildtemplate</span><br><span class="line">NAME      CREATED AT</span><br><span class="line">kaniko    7s</span><br></pre></td></tr></table></figure>
+
+<p>上面完成後，建立 Knative service 與 Istio HTTPS Service Entry 來提供應用程式，以及讓 Pod 能夠存取 Slack HTTPs API：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl apply -f deploy/slack-https-sn.yml</span><br><span class="line">$ kubectl apply -f deploy/slack-app-service.yml</span><br><span class="line">$ kubectl get po -w</span><br><span class="line">NAME                    READY     STATUS     RESTARTS   AGE</span><br><span class="line">slack-app-00001-9htqm   0/1       Init:2/3   0          8s</span><br><span class="line">slack-app-00001-9htqm   0/1       Init:2/3   0         8s</span><br><span class="line">slack-app-00001-9htqm   0/1       PodInitializing   0         3m</span><br><span class="line">slack-app-00001-9htqm   0/1       Completed   0         4m</span><br><span class="line">slack-app-00001-deployment-75f7f8dd8c-tskq8   0/3       Pending   0         0s</span><br><span class="line">slack-app-00001-deployment-75f7f8dd8c-tskq8   0/3       Pending   0         0s</span><br><span class="line">slack-app-00001-deployment-75f7f8dd8c-tskq8   0/3       Init:0/1   0         0s</span><br><span class="line">slack-app-00001-deployment-75f7f8dd8c-tskq8   0/3       PodInitializing   0         7s</span><br><span class="line">slack-app-00001-deployment-75f7f8dd8c-tskq8   2/3       Running   0         33s</span><br></pre></td></tr></table></figure>
+
+<blockquote class="colorquote info"><p>這邊第一次執行會比較慢，因為需要下載 knative build 相關映像檔。</p>
+</blockquote>
+
+<p>經過一段時間完成後，透過以下指令來確認服務是否正常：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">export</span> IP_ADDRESS=$(minikube ip):$(kubectl get svc knative-ingressgateway -n istio-system   -o <span class="string">'jsonpath=&#123;.spec.ports[?(@.port==80)].nodePort&#125;'</span>)</span><br><span class="line">$ <span class="built_in">export</span> DOMAIN=$(kubectl get services.serving.knative.dev slack-app -o=jsonpath=<span class="string">'&#123;.status.domain&#125;'</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 透過 cURL 工具以 Get method 存取</span></span><br><span class="line">$ curl -X GET -H <span class="string">"Host: <span class="variable">$&#123;DOMAIN&#125;</span>"</span> <span class="variable">$&#123;IP_ADDRESS&#125;</span></span><br><span class="line">&lt;h1&gt;Hello slack app <span class="keyword">for</span> Knative!!&lt;/h1&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 透過 cURL 工具以 Post method 傳送 msg</span></span><br><span class="line">$ curl -X POST \</span><br><span class="line">  -H <span class="string">'Content-type: application/json'</span> \</span><br><span class="line">  -H <span class="string">"Host: <span class="variable">$&#123;DOMAIN&#125;</span>"</span> \</span><br><span class="line">  --data <span class="string">'&#123;"msg":"Hello, World!"&#125;'</span> \</span><br><span class="line">  <span class="variable">$&#123;IP_ADDRESS&#125;</span></span><br><span class="line"></span><br><span class="line">success</span><br></pre></td></tr></table></figure>
+
+<p>若成功的話，可以查看 Slack channel 是否有傳送訊息：</p>
+<p><img src="/images/k8s/slack-send-msg.png" alt></p>
+<p>最後由於 Knative Serving 是 Request-driven，因此經過長時間沒有任何 request 時，將會自動縮減至 0 副本，直到再次收到 request 才會再次啟動一個實例，然而 Knative 也將大多資訊以 Prometheus 進行監控，因此我們能透過 Prometheus 來觀察狀態變化。</p>
+<p>首先透過 kubectl 取得 Grafana NodePort 資訊：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl -n monitoring get svc</span><br><span class="line">NAME                          TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)               AGE</span><br><span class="line">...</span><br><span class="line">grafana                       NodePort    10.96.197.116   &lt;none&gt;        30802:30326/TCP       1h</span><br><span class="line">prometheus-system-np          NodePort    10.99.64.228    &lt;none&gt;        8080:32628/TCP        1h</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>透過瀏覽器開啟 <a href="http://minikube_ip:port" target="_blank" rel="noopener">http://minikube_ip:port</a> 來查看。</p>
+<p><img src="https://i.imgur.com/IBR4rMO.png" alt></p>
+<p>另外也可以查看 HTTP request 狀態。</p>
+<p><img src="https://i.imgur.com/TIlIMhX.png" alt></p>
+<p>由於 Knative 是蠻大的系統，這邊先暫時使用基本 Knative 的 Build 與 Serving，而 Eventing 將會在之後補充範例。</p>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">[Knative] 初探基本功能與概念</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2018-8-24 17:08</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2018/09/12/kubernetes/deploy/kube-ansible/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    開發 Ansible Playbooks 部署 Kubernetes v1.11.x HA 叢集
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2018/07/17/kubernetes/deploy/manual-install/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">Kubernetes v1.11.x HA 全手動苦工安裝教學(TL;DR)</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2018/08/24/kubernetes/knative/quick-start/" data-id="ck3ns7qbm00i8wmpfce3rz076" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2018/08/24/kubernetes/knative/quick-start/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2018/08/24/kubernetes/knative/quick-start/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Knative-元件與概念"><span class="toc-number">1.</span> <span class="toc-text">Knative 元件與概念</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Build"><span class="toc-number">1.1.</span> <span class="toc-text">Build</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Serving"><span class="toc-number">1.2.</span> <span class="toc-text">Serving</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Eventing"><span class="toc-number">1.3.</span> <span class="toc-text">Eventing</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#透過-Minikube-初步入門"><span class="toc-number">2.</span> <span class="toc-text">透過 Minikube 初步入門</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#事前準備"><span class="toc-number">2.1.</span> <span class="toc-text">事前準備</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#啟動-Minukube"><span class="toc-number">2.2.</span> <span class="toc-text">啟動 Minukube</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#部署-Knative"><span class="toc-number">2.3.</span> <span class="toc-text">部署 Knative</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#部署-Knative-應用程式"><span class="toc-number">2.4.</span> <span class="toc-text">部署 Knative 應用程式</span></a></li></ol></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2018/08/24/kubernetes/knative/quick-start/';
+        
+        this.page.identifier = 'kubernetes/knative/quick-start';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

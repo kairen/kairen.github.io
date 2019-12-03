@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>探討 Kubernetes 自定義控制器是如何運作 Part1 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="前言Kubernetes 控制器主要目的是協調(Reconcile)某個 API 資源的狀態，從實際狀態轉換為期望狀態，換句話說，在 Kubernetes API 資源上的說法，就是讓 API 資源的.status狀態，達到.spec所定義內容。而為了達到這點，控制器會透過 client-go 一直監視這兩種狀態的變化，並在發現變化時，觸發協調邏輯的循環，以更改當前狀態所需的任何操作，並使其往資源">
+<meta name="keywords" content="Kubernetes">
+<meta property="og:type" content="article">
+<meta property="og:title" content="探討 Kubernetes 自定義控制器是如何運作 Part1">
+<meta property="og:url" content="https://k2r2bai.com/2019/10/08/ironman2020/day23/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="前言Kubernetes 控制器主要目的是協調(Reconcile)某個 API 資源的狀態，從實際狀態轉換為期望狀態，換句話說，在 Kubernetes API 資源上的說法，就是讓 API 資源的.status狀態，達到.spec所定義內容。而為了達到這點，控制器會透過 client-go 一直監視這兩種狀態的變化，並在發現變化時，觸發協調邏輯的循環，以更改當前狀態所需的任何操作，並使其往資源">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://i.imgur.com/NYo9CsO.png">
+<meta property="og:image" content="https://i.imgur.com/RZAuO0K.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.390Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="探討 Kubernetes 自定義控制器是如何運作 Part1">
+<meta name="twitter:description" content="前言Kubernetes 控制器主要目的是協調(Reconcile)某個 API 資源的狀態，從實際狀態轉換為期望狀態，換句話說，在 Kubernetes API 資源上的說法，就是讓 API 資源的.status狀態，達到.spec所定義內容。而為了達到這點，控制器會透過 client-go 一直監視這兩種狀態的變化，並在發現變化時，觸發協調邏輯的循環，以更改當前狀態所需的任何操作，並使其往資源">
+<meta name="twitter:image" content="https://i.imgur.com/NYo9CsO.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-ironman2020/day23" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            探討 Kubernetes 自定義控制器是如何運作 Part1
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2019/10/08/ironman2020/day23/">
+            <u><time datetime="2019-10-07T16:00:00.000Z" itemprop="datePublished">2019-10-08</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>Kubernetes 控制器主要目的是協調(Reconcile)某個 API 資源的狀態，從實際狀態轉換為期望狀態，換句話說，在 Kubernetes API 資源上的說法，就是讓 API 資源的<code>.status</code>狀態，達到<code>.spec</code>所定義內容。而為了達到這點，控制器會透過 client-go 一直監視這兩種狀態的變化，並在發現變化時，觸發協調邏輯的循環，以更改當前狀態所需的任何操作，並使其往資源的預期狀態進展。Kubernetes 為了實現這樣機制，在 API 提供了一組 List 與 Watch 方法，用於監視任何 API 資源的事件。而自定義控制器就是以 client-go 操作這些 API 方法，監視其主要的自定義資源與其他任何相關的資源。</p>
+<a id="more"></a>
+
+<p>舉例，想要實現管理 TensorFlow 分散式訓練的控制器。這個控制器不僅要監視 TensorFlowJob(這是自定義資源) 物件的變化，而必須響應 Pod 事件，以確保 Pod 能再發生狀況時，處理對應狀況。當然這種追蹤 API 資源之間關聯的機制，也能利用 Kubernetes 的 Owner references 機制達成。這機制允許控制器在任何 API 資源上，設定資源的父子關析(如 Deployment 與 Pod 關聯這樣)，而當子資源事件發生時，就能反應給控制器，以知道哪個 TensorFlowJob 物件已受到影響，這時再由控制器的檢查與協調循環，來解決狀態的變化。</p>
+<p>但講這麼多，一個控制器內部究竟是如何運作呢?今天就是要來聊聊這個內容。</p>
+<h2 id="控制器如何運作"><a href="#控制器如何運作" class="headerlink" title="控制器如何運作?"></a>控制器如何運作?</h2><p>這部分將解釋 Kubernetes 自定義控制器運作流程，如下圖所示。一個自定義控制器是由 client-go 中的幾個主要功能實現，並結合自己實現的邏輯來達成。因此在開發前，必須先理解這些名詞與功能是做什麼用的。</p>
+<p><img src="https://i.imgur.com/NYo9CsO.png" alt="Kubernetes controller diagram"><br>(圖片擷取自：<a href="https://github.com/kubernetes/sample-controller/blob/master/docs/images/client-go-controller-interaction.jpeg" target="_blank" rel="noopener">Kubernetes sample-controller</a>)</p>
+<p>從架構圖來看，主要的 client-go 會有以下三者處理:</p>
+<ul>
+<li><strong>Reflector</strong>: 會透過 List/Watch API 監視著 Kubernetes 中指定的資源類型(Kind)，而這些資源可以是既有的資源(如 Pod、Deployment)，也可以是自定義資源。當 Reflector 透過 Watch API 收到新資源實例建立通知時，會將透過該資源的 List API 取得新建立的物件，並將物件放到 Delta Fifo 佇列中。</li>
+<li><strong>Informer</strong>: 是控制器機制的基礎，它會在協調循環中，從 Delta Fifo 佇列取出 API 資源，將其儲存成物件提供給 Indexer 快取，並提供物件事件的處理介面(Add、Update 與 Delete)。</li>
+<li><strong>Indexer</strong>: 為 API 資源物件提供檢索功能。利用執行緒安全的資料儲存中，將物件儲存成鍵(Key)/值(Value)形式，其 Key 的格式為 <code>namespace/name</code>。</li>
+</ul>
+<p>而除了上面 client-go 元件外，在開發一個自定義控制器時，還會有以下幾個元件會被使用到:</p>
+<ul>
+<li><strong>Informer reference</strong>: 在自定義控制器使用的 Informer 引用。在開發自定義控制器時，通常會宣告一個 Informer 實例用於多個 API 資源監聽使用，但自定義控制器有可能會需要監聽不同 API 資源，因此可能有多個子控制器，這時就可以用工廠模式(Factory Pattern)傳遞進去，並設定該控制器監聽的 API 資源。</li>
+<li><strong>Indexer reference</strong>: 同 Informer 概念。用於處理不同 API 資源的檢索。</li>
+<li><strong>Resource Event Handlers</strong>: 這些 Informer 的回呼函式(callback functions)，分別有<code>onAdd()</code>、<code>onUpdate()</code>與<code>onDelete()</code>。當 Informer 收到 API 資源物件事件時，就會呼叫這些函式，這時自定義控制器就能在函式中處理接下來事情。</li>
+<li><strong>Work queue</strong>: 當 Resource Event Handlers 被呼叫時，會將 Key 寫到這個佇列中，以確保 API 資源物件能被依序處理。在 client-go 支援不同的 Workqueue 類型，而這邊通常會以 RateLimiting 為主。</li>
+<li><strong>Process Item</strong>: 從 Workqueue 中取出物件 Key 的過程。</li>
+<li><strong>Handle Object</strong>: 處理物件的實際邏輯，在開發自定義控制器時，通常會在這邊撰寫功能邏輯。一般來說會利用一個 Indexer reference 從取得的 Key 來檢索指定 API 資源物件的內容，並依據內容當前狀態與預期狀態處理。</li>
+</ul>
+<blockquote>
+<p>TODO: 補充更多細節</p>
+</blockquote>
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>今天理解了自定義控制器使用到的元件，以及其運作方式，從中可以發現 Kubernetes client-go 幾乎是整個控制器的核心，許多功能實現都是圍繞著該函式庫。明天將部署 <a href="https://github.com/kubernetes/sample-controller" target="_blank" rel="noopener">sample-controller</a> 到 Minikube 上，以釐清一些功能運作流程，這些知識與觀念將用於後續範例開發中。</p>
+<p>雖然 Kubernetes 控制器看起來似乎很複雜，事實上簡化來看，大概也就長這個樣子:</p>
+<p><img src="https://i.imgur.com/RZAuO0K.png" alt></p>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li><a href="https://itnext.io/how-to-create-a-kubernetes-custom-controller-using-client-go-f36a7a7536cc" target="_blank" rel="noopener">https://itnext.io/how-to-create-a-kubernetes-custom-controller-using-client-go-f36a7a7536cc</a></li>
+<li><a href="https://github.com/kubernetes/sample-controller" target="_blank" rel="noopener">https://github.com/kubernetes/sample-controller</a></li>
+<li><a href="https://learning.oreilly.com/library/view/programming-kubernetes/9781492047094/" target="_blank" rel="noopener">https://learning.oreilly.com/library/view/programming-kubernetes/9781492047094/</a></li>
+<li><a href="http://www.edwardesire.com/2019/05/14/kubernetesbian-controller-pattern/" target="_blank" rel="noopener">http://www.edwardesire.com/2019/05/14/kubernetesbian-controller-pattern/</a></li>
+<li><a href="https://kubernetes.io/docs/reference/using-api/client-libraries/" target="_blank" rel="noopener">https://kubernetes.io/docs/reference/using-api/client-libraries/</a></li>
+<li><a href="https://speakerdeck.com/chanyilin/k8s-metacontroller" target="_blank" rel="noopener">https://speakerdeck.com/chanyilin/k8s-metacontroller</a></li>
+<li><a href="https://toutiao.io/posts/4rnwh6/preview" target="_blank" rel="noopener">https://toutiao.io/posts/4rnwh6/preview</a></li>
+<li><a href="https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources" target="_blank" rel="noopener">https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources</a></li>
+<li><a href="https://www.oreilly.com/library/view/cloud-native-infrastructure/9781491984291/ch04.html" target="_blank" rel="noopener">https://www.oreilly.com/library/view/cloud-native-infrastructure/9781491984291/ch04.html</a></li>
+<li><a href="https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/" target="_blank" rel="noopener">https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/</a></li>
+<li><a href="https://github.com/opsnull/kubernetes-dev-docs/tree/master/client-go" target="_blank" rel="noopener">https://github.com/opsnull/kubernetes-dev-docs/tree/master/client-go</a></li>
+<li><a href="https://blog.csdn.net/weixin_42663840/article/details/81482553" target="_blank" rel="noopener">https://blog.csdn.net/weixin_42663840/article/details/81482553</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">探討 Kubernetes 自定義控制器是如何運作 Part1</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2019-10-8 00:10</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2019/10/09/ironman2020/day24/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    探討 Kubernetes 自定義控制器是如何運作 Part2
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2019/10/07/ironman2020/day22/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">開發自定義控制器前，需要先了解的東西 Part3</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2019/10/08/ironman2020/day23/" data-id="ck3ns7q6d0044wmpfr7iogj5s" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2019/10/08/ironman2020/day23/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/10/08/ironman2020/day23/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#控制器如何運作"><span class="toc-number">2.</span> <span class="toc-text">控制器如何運作?</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#結語"><span class="toc-number">3.</span> <span class="toc-text">結語</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Reference"><span class="toc-number">4.</span> <span class="toc-text">Reference</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2019/10/08/ironman2020/day23/';
+        
+        this.page.identifier = 'ironman2020/day23';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

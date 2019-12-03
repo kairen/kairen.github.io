@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>學習 Docker Network 之間的差別 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Docker 的網路是透過 Linux 的網路命名空間與虛擬網路裝置(Veth pair)實現而成。然而 Docker 的網路支援了不同類型功能，每一種都有其用意，本篇將針對以下幾項 Docker network mode 進行實作與介紹：  Bridge Mode (default) Host Mode None Mode Container Mode">
+<meta name="keywords" content="Container,Docker">
+<meta property="og:type" content="article">
+<meta property="og:title" content="學習 Docker Network 之間的差別">
+<meta property="og:url" content="https://k2r2bai.com/2016/01/05/container/docker-network/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Docker 的網路是透過 Linux 的網路命名空間與虛擬網路裝置(Veth pair)實現而成。然而 Docker 的網路支援了不同類型功能，每一種都有其用意，本篇將針對以下幾項 Docker network mode 進行實作與介紹：  Bridge Mode (default) Host Mode None Mode Container Mode">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/docker/network/bridge-mode-host-interface.png">
+<meta property="og:image" content="https://k2r2bai.com/images/docker/network/bridge-mode-container-interface.png">
+<meta property="og:image" content="https://k2r2bai.com/images/docker/network/bridge-mode-bridge.png">
+<meta property="og:image" content="https://k2r2bai.com/images/docker/network/bridge-mode.png">
+<meta property="og:image" content="https://k2r2bai.com/images/docker/network/none-mode.png">
+<meta property="og:image" content="https://k2r2bai.com/images/docker/network/container-list.png">
+<meta property="og:image" content="https://k2r2bai.com/images/docker/network/container-mode.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.381Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="學習 Docker Network 之間的差別">
+<meta name="twitter:description" content="Docker 的網路是透過 Linux 的網路命名空間與虛擬網路裝置(Veth pair)實現而成。然而 Docker 的網路支援了不同類型功能，每一種都有其用意，本篇將針對以下幾項 Docker network mode 進行實作與介紹：  Bridge Mode (default) Host Mode None Mode Container Mode">
+<meta name="twitter:image" content="https://k2r2bai.com/images/docker/network/bridge-mode-host-interface.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-container/docker-network" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            學習 Docker Network 之間的差別
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2016/01/05/container/docker-network/">
+            <u><time datetime="2016-01-05T09:08:54.000Z" itemprop="datePublished">2016-01-05</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Container/">Container</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Container/">Container</a>, <a class="tag-link" href="/tags/Docker/">Docker</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>Docker 的網路是透過 Linux 的網路命名空間與虛擬網路裝置(Veth pair)實現而成。然而 Docker 的網路支援了不同類型功能，每一種都有其用意，本篇將針對以下幾項 Docker network mode 進行實作與介紹：</p>
+<ul>
+<li>Bridge Mode (default)</li>
+<li>Host Mode</li>
+<li>None Mode</li>
+<li>Container Mode</li>
+</ul>
+<a id="more"></a>
+
+<h2 id="Bridge-Mode"><a href="#Bridge-Mode" class="headerlink" title="Bridge Mode"></a>Bridge Mode</h2><p>Bridge Mode 是 Docker 預設使用的 network mode 。若你在已安裝 Docker 的環境中使用 <code>ifconfig</code> 指令，你可以看到有一個名為 docker0 的 network interface：</p>
+<p><img src="/images/docker/network/bridge-mode-host-interface.png" alt="bridge-mode-interface" title="bridge-mode-interface"></p>
+<p>此時，你可以在這個 Docker 環境中執行一個 docker container ：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ docker run -ti busybox sh</span><br></pre></td></tr></table></figure>
+
+<p>一樣使用 <code>ifconfig</code> 指令，你也會看到一個 eth0 network interface：</p>
+<p><img src="/images/docker/network/bridge-mode-container-interface.png" alt="bridge-mode-interface" title="bridge-mode-interface"></p>
+<p>這就是為什麼在 host 上可以直接使用 <code>ping</code> 指令與 container 進行通訊，因為 veth796c087 讓 docker0(172.17.0.1) 與 eth0(172.17.0.2) 位於同一個區網。</p>
+<p><img src="/images/docker/network/bridge-mode-bridge.png" alt="bridge-mode-bridge" title="bridge-mode-bridge"></p>
+<p>我們用一張簡單的圖來表示這三者的關係：</p>
+<p><img src="/images/docker/network/bridge-mode.png" alt="bridge-mode" title="bridge-mode"></p>
+<p>由上圖你可以發現，Container 1 可透過 eth0 經過 veth4fd8759 與 docker0 進行溝通，Container 2 也是如此，且 Container 1 與 Container 2 也可以進行溝通。</p>
+<h2 id="Host-Mode"><a href="#Host-Mode" class="headerlink" title="Host Mode"></a>Host Mode</h2><p>Host Mode 可以把他想像成建立一個與 Host 擁有同樣的 network interface 的 Container ，使用方式：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ docker run --net=host -ti busybox sh</span><br></pre></td></tr></table></figure>
+
+<h2 id="None-Mode"><a href="#None-Mode" class="headerlink" title="None Mode"></a>None Mode</h2><p>None Mode 是建置最簡潔的 Container ，也就是沒有任何 network interface 的 Container。使用方式是在建立 Container 的同時給與 <code>--net=none</code> 的參數：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ docker run --net=none -ti busybox sh</span><br></pre></td></tr></table></figure>
+
+<p>此時，你若使用 <code>ifconfig</code> 指令，會發現這個 Container 沒有任何 network interface。</p>
+<p><img src="/images/docker/network/none-mode.png" alt="none-mode" title="none-mode"></p>
+<h2 id="Container-Mode"><a href="#Container-Mode" class="headerlink" title="Container Mode"></a>Container Mode</h2><p>首先，我們要先啟動一個 Container，並且使用這個 Container 的 Container ID 建立另外一個 Container：</p>
+<p><img src="/images/docker/network/container-list.png" alt="container-list" title="container-list"></p>
+<p>建置第二個 Container 的方式，將第一個 Container ID 當參數進行建置：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker run -ti --net=container:d16d87a29be3 busybox sh</span><br></pre></td></tr></table></figure>
+
+<p>此時，你會發現兩個 Container 的 IP 都是 172.17.0.2 ，雖然他們是不同的 Container 但是被放置同一個 Namespace 內，三者的關係如下：</p>
+<p><img src="/images/docker/network/container-mode.png" alt="container-mode" title="none-mode"></p>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">學習 Docker Network 之間的差別</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2016-1-5 17:01</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2016/01/13/kubernetes/deploy/docker-singal/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    Hyperkube 建立單機 Kubernetes
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2016/01/03/devops/logging/elk/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">用 ELK 做監控系統</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2016/01/05/container/docker-network/" data-id="ck3ns7q55000vwmpfgcs14ftf" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2016/01/05/container/docker-network/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2016/01/05/container/docker-network/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Bridge-Mode"><span class="toc-number">1.</span> <span class="toc-text">Bridge Mode</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Host-Mode"><span class="toc-number">2.</span> <span class="toc-text">Host Mode</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#None-Mode"><span class="toc-number">3.</span> <span class="toc-text">None Mode</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Container-Mode"><span class="toc-number">4.</span> <span class="toc-text">Container Mode</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2016/01/05/container/docker-network/';
+        
+        this.page.identifier = 'container/docker-network';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

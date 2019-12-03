@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>以 Keystone 作為 Kubernetes 使用者認證 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="本文章將說明如何整合 Keystone 來提供給 Kubernetes 進行使用者認證。但由於 Keystone 整合 Kubernetes 認證在 1.10.x 版本已從原生移除(--experimental-keystone-url, --experimental-keystone-ca-file)，並轉而使用 cloud-provider-openstack 中的 Webhook 來達成，而">
+<meta name="keywords" content="Kubernetes,Keystone">
+<meta property="og:type" content="article">
+<meta property="og:title" content="以 Keystone 作為 Kubernetes 使用者認證">
+<meta property="og:url" content="https://k2r2bai.com/2018/05/30/kubernetes/keystone-auth/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="本文章將說明如何整合 Keystone 來提供給 Kubernetes 進行使用者認證。但由於 Keystone 整合 Kubernetes 認證在 1.10.x 版本已從原生移除(--experimental-keystone-url, --experimental-keystone-ca-file)，並轉而使用 cloud-provider-openstack 中的 Webhook 來達成，而">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.395Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="以 Keystone 作為 Kubernetes 使用者認證">
+<meta name="twitter:description" content="本文章將說明如何整合 Keystone 來提供給 Kubernetes 進行使用者認證。但由於 Keystone 整合 Kubernetes 認證在 1.10.x 版本已從原生移除(--experimental-keystone-url, --experimental-keystone-ca-file)，並轉而使用 cloud-provider-openstack 中的 Webhook 來達成，而">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-kubernetes/keystone-auth" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            以 Keystone 作為 Kubernetes 使用者認證
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2018/05/30/kubernetes/keystone-auth/">
+            <u><time datetime="2018-05-30T09:08:54.000Z" itemprop="datePublished">2018-05-30</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Keystone/">Keystone</a>, <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>本文章將說明如何整合 Keystone 來提供給 Kubernetes 進行使用者認證。但由於 Keystone 整合 Kubernetes 認證在 1.10.x 版本已從原生移除(<code>--experimental-keystone-url</code>, <code>--experimental-keystone-ca-file</code>)，並轉而使用 <a href="https://github.com/kubernetes/cloud-provider-openstack" target="_blank" rel="noopener">cloud-provider-openstack</a> 中的 Webhook 來達成，而篇將說明如何建置與設定以整合該 Webhook。</p>
+<a id="more"></a>
+
+<h2 id="節點資訊"><a href="#節點資訊" class="headerlink" title="節點資訊"></a>節點資訊</h2><p>本教學將以下列節點數與規格來進行部署 Kubernetes 叢集，作業系統以<code>Ubuntu 16.x</code>進行測試：</p>
+<table>
+<thead>
+<tr>
+<th>IP Address</th>
+<th>Hostname</th>
+<th>CPU</th>
+<th>Memory</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>172.22.132.20</td>
+<td>k8s</td>
+<td>4</td>
+<td>8G</td>
+</tr>
+<tr>
+<td>172.22.132.21</td>
+<td>keystone</td>
+<td>4</td>
+<td>8G</td>
+</tr>
+</tbody></table>
+<blockquote>
+<ul>
+<li><code>k8s</code>為 all-in-one Kubernetes 節點(就只是個執行 kubeadm init 的節點)。</li>
+<li><code>keystone</code>利用 DevStack 部署一台 all-in-one OpenStack。</li>
+</ul>
+</blockquote>
+<h2 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h2><p>開始安裝前需要確保以下條件已達成：</p>
+<ul>
+<li><p><code>k8s</code>節點以 kubeadm 部署成 Kubernetes v1.9+ all-in-one 環境。請參考 <a href="https://kairen.github.io/2016/09/29/kubernetes/deploy/kubeadm/" target="_blank" rel="noopener">用 kubeadm 部署 Kubernetes 叢集</a>。</p>
+</li>
+<li><p>在<code>k8s</code>節點安裝 openstack-client：</p>
+</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get update &amp;&amp; sudo  apt-get install -y python-pip</span><br><span class="line">$ <span class="built_in">export</span> LC_ALL=C; sudo pip install python-openstackclient</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>keystone</code>節點部署成 OpenStack all-in-one 環境。請參考 <a href="https://docs.openstack.org/devstack/latest/" target="_blank" rel="noopener">DevStack</a>。</li>
+</ul>
+<h2 id="Kubernetes-與-Keystone-整合"><a href="#Kubernetes-與-Keystone-整合" class="headerlink" title="Kubernetes 與 Keystone 整合"></a>Kubernetes 與 Keystone 整合</h2><p>本節將逐節說明如何設定以整合 Keystone。</p>
+<h3 id="建立-Keystone-User-與-Roles"><a href="#建立-Keystone-User-與-Roles" class="headerlink" title="建立 Keystone User 與 Roles"></a>建立 Keystone User 與 Roles</h3><p>當<code>keystone</code>節點的 OpenStack 部署完成後，進入到節點建立測試用 User 與 Roles：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo su - stack</span><br><span class="line">$ <span class="built_in">cd</span> devstack</span><br><span class="line">$ <span class="built_in">source</span> openrc admin admin</span><br><span class="line"></span><br><span class="line"><span class="comment"># 建立 Roles</span></span><br><span class="line">$ <span class="keyword">for</span> role <span class="keyword">in</span> <span class="string">"k8s-admin"</span> <span class="string">"k8s-viewer"</span> <span class="string">"k8s-editor"</span>; <span class="keyword">do</span></span><br><span class="line">    openstack role create <span class="variable">$role</span>;</span><br><span class="line">  <span class="keyword">done</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 建立 User</span></span><br><span class="line">$ openstack user create demo_editor --project demo --password secret</span><br><span class="line">$ openstack user create demo_admin --project demo --password secret</span><br><span class="line"></span><br><span class="line"><span class="comment"># 加入 User 至 Roles</span></span><br><span class="line">$ openstack role add --user demo --project demo k8s-viewer</span><br><span class="line">$ openstack role add --user demo_editor --project demo k8s-editor</span><br><span class="line">$ openstack role add --user demo_admin --project demo k8s-admin</span><br></pre></td></tr></table></figure>
+
+<h3 id="在-Kubernetes-安裝-Keystone-Webhook"><a href="#在-Kubernetes-安裝-Keystone-Webhook" class="headerlink" title="在 Kubernetes 安裝 Keystone Webhook"></a>在 Kubernetes 安裝 Keystone Webhook</h3><p>進入<code>k8s</code>節點，首先導入下載的檔案來源：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">export</span> URL=<span class="string">"https://kairen.github.io/files/openstack/keystone"</span></span><br></pre></td></tr></table></figure>
+
+<p>新增一些腳本，來提供導入不同使用者環境變數給 OpenStack Client 使用：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">export</span> KEYSTONE_HOST=<span class="string">"172.22.132.21"</span></span><br><span class="line">$ <span class="built_in">export</span> USER_PASSWORD=<span class="string">"secret"</span></span><br><span class="line">$ <span class="keyword">for</span> n <span class="keyword">in</span> <span class="string">"admin"</span> <span class="string">"demo"</span> <span class="string">"demoadmin"</span> <span class="string">"demoeditor"</span> <span class="string">"altdemo"</span>; <span class="keyword">do</span></span><br><span class="line">    wget <span class="variable">$&#123;URL&#125;</span>/openrc-<span class="variable">$&#123;n&#125;</span> -O ~/openrc-<span class="variable">$&#123;n&#125;</span></span><br><span class="line">    sed -i <span class="string">"s/KEYSTONE_HOST/<span class="variable">$&#123;KEYSTONE_HOST&#125;</span>/g"</span> ~/openrc-<span class="variable">$&#123;n&#125;</span></span><br><span class="line">    sed -i <span class="string">"s/USER_PASSWORD/<span class="variable">$&#123;USER_PASSWORD&#125;</span>/g"</span> ~/openrc-<span class="variable">$&#123;n&#125;</span></span><br><span class="line">  <span class="keyword">done</span></span><br></pre></td></tr></table></figure>
+
+<p>下載 Keystone Webhook Policy 檔案，然後執行指令修改內容：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo wget <span class="variable">$&#123;URL&#125;</span>/webhook-policy.json -O /etc/kubernetes/webhook-policy.json</span><br><span class="line">$ <span class="built_in">source</span> ~/openrc-demo</span><br><span class="line">$ PROJECT_ID=$(openstack project list | awk <span class="string">'/demo/ &#123;print$2&#125;'</span>)</span><br><span class="line">$ sudo sed -i <span class="string">"s/PROJECT_ID/<span class="variable">$&#123;PROJECT_ID&#125;</span>/g"</span> /etc/kubernetes/webhook-policy.json</span><br></pre></td></tr></table></figure>
+
+<p>然後下載與部署 Keystone Webhook YAML 檔：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ wget <span class="variable">$&#123;URL&#125;</span>/keystone-webhook-ds.conf -O keystone-webhook-ds.yml</span><br><span class="line">$ KEYSTONE_HOST=<span class="string">"172.22.132.21"</span></span><br><span class="line">$ sed -i <span class="string">"s/KEYSTONE_HOST/<span class="variable">$&#123;KEYSTONE_HOST&#125;</span>/g"</span> keystone-webhook-ds.yml</span><br><span class="line">$ kubectl create -f keystone-webhook-ds.yml</span><br><span class="line">configmap <span class="string">"keystone-webhook-kubeconfig"</span> created</span><br><span class="line">daemonset.apps <span class="string">"keystone-auth-webhook"</span> created</span><br></pre></td></tr></table></figure>
+
+<p>透過 kubectl 確認 Keystone Webhook 是否部署成功：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl -n kube-system get po -l component=k8s-keystone</span><br><span class="line">NAME                          READY     STATUS    RESTARTS   AGE</span><br><span class="line">keystone-auth-webhook-5qqwn   1/1       Running   0          1m</span><br></pre></td></tr></table></figure>
+
+<p>透過 cURL 確認是否能夠正確存取：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">source</span> ~/openrc-demo</span><br><span class="line">$ TOKEN=$(openstack token issue -f yaml -c id | awk <span class="string">'&#123;print $2&#125;'</span>)</span><br><span class="line">$ cat &lt;&lt; EOF | curl -kvs -XPOST -d @- https://localhost:8443/webhook | python -mjson.tool</span><br><span class="line">&#123;</span><br><span class="line">  <span class="string">"apiVersion"</span>: <span class="string">"authentication.k8s.io/v1beta1"</span>,</span><br><span class="line">  <span class="string">"kind"</span>: <span class="string">"TokenReview"</span>,</span><br><span class="line">  <span class="string">"metadata"</span>: &#123;</span><br><span class="line">    <span class="string">"creationTimestamp"</span>: null</span><br><span class="line">  &#125;,</span><br><span class="line">  <span class="string">"spec"</span>: &#123;</span><br><span class="line">    <span class="string">"token"</span>: <span class="string">"<span class="variable">$TOKEN</span>"</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line"><span class="comment"># output</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="string">"apiVersion"</span>: <span class="string">"authentication.k8s.io/v1beta1"</span>,</span><br><span class="line">    <span class="string">"kind"</span>: <span class="string">"TokenReview"</span>,</span><br><span class="line">    <span class="string">"metadata"</span>: &#123;</span><br><span class="line">        <span class="string">"creationTimestamp"</span>: null</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="string">"spec"</span>: &#123;</span><br><span class="line">        <span class="string">"token"</span>: <span class="string">"gAAAAABbFi1SacEPNstSuSuiBXiBG0Y_DikfbiR75j3P-CJ8CeaSKXa5kDQvun4LZUq8U6ehuW_RrQwi-N7j8t086uN6a4hLnPPGmvc6K_Iw0BZHZps7G1R5WniHZ8-WTUxtkMJROSz9eG7m33Bp18mvgx-P179QiwNYxLivf_rjnxePmvujNow"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="string">"status"</span>: &#123;</span><br><span class="line">        <span class="string">"authenticated"</span>: <span class="literal">true</span>,</span><br><span class="line">        <span class="string">"user"</span>: &#123;</span><br><span class="line">            <span class="string">"extra"</span>: &#123;</span><br><span class="line">                <span class="string">"alpha.kubernetes.io/identity/project/id"</span>: [</span><br><span class="line">                    <span class="string">"3ebcb1da142d427db04b8df43f6cb76a"</span></span><br><span class="line">                ],</span><br><span class="line">                <span class="string">"alpha.kubernetes.io/identity/project/name"</span>: [</span><br><span class="line">                    <span class="string">"demo"</span></span><br><span class="line">                ],</span><br><span class="line">                <span class="string">"alpha.kubernetes.io/identity/roles"</span>: [</span><br><span class="line">                    <span class="string">"k8s-viewer"</span>,</span><br><span class="line">                    <span class="string">"Member"</span>,</span><br><span class="line">                    <span class="string">"anotherrole"</span></span><br><span class="line">                ]</span><br><span class="line">            &#125;,</span><br><span class="line">            <span class="string">"groups"</span>: [</span><br><span class="line">                <span class="string">"3ebcb1da142d427db04b8df43f6cb76a"</span></span><br><span class="line">            ],</span><br><span class="line">            <span class="string">"uid"</span>: <span class="string">"19748c0131504b87a4117e49c67383c6"</span>,</span><br><span class="line">            <span class="string">"username"</span>: <span class="string">"demo"</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="設定-kube-apiserver-使用-Webhook"><a href="#設定-kube-apiserver-使用-Webhook" class="headerlink" title="設定 kube-apiserver 使用 Webhook"></a>設定 kube-apiserver 使用 Webhook</h3><p>進入<code>k8s</code>節點，然後修改<code>/etc/kubernetes/manifests/kube-apiserver.yaml</code>檔案，加入以下內容：</p>
+<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="string">...</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  containers:</span></span><br><span class="line"><span class="attr">  - command:</span></span><br><span class="line">    <span class="string">...</span></span><br><span class="line">    <span class="comment"># authorization-mode 加入 Webhook</span></span><br><span class="line"><span class="bullet">    -</span> <span class="bullet">--authorization-mode=Node,RBAC,Webhook</span></span><br><span class="line"><span class="bullet">    -</span> <span class="bullet">--runtime-config=authentication.k8s.io/v1beta1=true</span></span><br><span class="line"><span class="bullet">    -</span> <span class="bullet">--authentication-token-webhook-config-file=/srv/kubernetes/webhook-auth</span></span><br><span class="line"><span class="bullet">    -</span> <span class="bullet">--authorization-webhook-config-file=/srv/kubernetes/webhook-auth</span></span><br><span class="line"><span class="bullet">    -</span> <span class="bullet">--authentication-token-webhook-cache-ttl=5m</span></span><br><span class="line"><span class="attr">    volumeMounts:</span></span><br><span class="line">    <span class="string">...</span></span><br><span class="line"><span class="attr">    - mountPath:</span> <span class="string">/srv/kubernetes/webhook-auth</span></span><br><span class="line"><span class="attr">      name:</span> <span class="string">webhook-auth-file</span></span><br><span class="line"><span class="attr">      readOnly:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">  volumes:</span></span><br><span class="line">  <span class="string">...</span></span><br><span class="line"><span class="attr">  - hostPath:</span></span><br><span class="line"><span class="attr">      path:</span> <span class="string">/srv/kubernetes/webhook-auth</span></span><br><span class="line"><span class="attr">      type:</span> <span class="string">File</span></span><br><span class="line"><span class="attr">    name:</span> <span class="string">webhook-auth-file</span></span><br></pre></td></tr></table></figure>
+
+<p>完成後重新啟動 kubelet(或者等待 static pod 自己更新)：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo systemctl restart kubelet</span><br></pre></td></tr></table></figure>
+
+<h2 id="驗證部署結果"><a href="#驗證部署結果" class="headerlink" title="驗證部署結果"></a>驗證部署結果</h2><p>進入<code>k8s</code>節點，然後設定 kubectl context 並使用 openstack provider：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl config <span class="built_in">set</span>-credentials openstack --auth-provider=openstack</span><br><span class="line">$ kubectl config \</span><br><span class="line">    <span class="built_in">set</span>-context --cluster=kubernetes \</span><br><span class="line">    --user=openstack \</span><br><span class="line">    openstack@kubernetes \</span><br><span class="line">    --namespace=default</span><br><span class="line"></span><br><span class="line">$ kubectl config use-context openstack@kubernetes</span><br></pre></td></tr></table></figure>
+
+<p>測試 demo 使用者的存取權限是否有被限制：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">source</span> ~/openrc-demo</span><br><span class="line">$ kubectl get pods</span><br><span class="line">No resources found.</span><br><span class="line"></span><br><span class="line">$ cat &lt;&lt;EOF | kubectl create -f -</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: nginx-pod</span><br><span class="line">spec:</span><br><span class="line">  restartPolicy: Never</span><br><span class="line">  containers:</span><br><span class="line">  - image: nginx</span><br><span class="line">    name: nginx-app</span><br><span class="line">EOF</span><br><span class="line"><span class="comment"># output</span></span><br><span class="line">Error from server (Forbidden): error when creating <span class="string">"STDIN"</span>: pods is forbidden: User <span class="string">"demo"</span> cannot create pods <span class="keyword">in</span> the namespace <span class="string">"default"</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>由於 demo 只擁有 k8s-viewer role，因此只能進行 get, list 與 watch API。</p>
+</blockquote>
+<p>測試 demo_editor 使用者是否能夠建立 Pod：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">source</span> ~/openrc-demoeditor</span><br><span class="line">$ cat &lt;&lt;EOF | kubectl create -f -</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: nginx-pod</span><br><span class="line">spec:</span><br><span class="line">  restartPolicy: Never</span><br><span class="line">  containers:</span><br><span class="line">  - image: nginx</span><br><span class="line">    name: nginx-app</span><br><span class="line">EOF</span><br><span class="line"><span class="comment"># output</span></span><br><span class="line">pod <span class="string">"nginx-pod"</span> created</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊可以看到 demo_editor 因為擁有 k8s-editor role，因此能夠執行 create API。</p>
+</blockquote>
+<p>測試 alt_demo 是否被禁止存取任何 API：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">source</span> ~/openrc-altdemo</span><br><span class="line">$ kubectl get po</span><br><span class="line">Error from server (Forbidden): pods is forbidden: User <span class="string">"alt_demo"</span> cannot list pods <span class="keyword">in</span> the namespace <span class="string">"default"</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>由於 alt_demo 不具備任何 roles，因此無法存取任何 API。</p>
+</blockquote>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">以 Keystone 作為 Kubernetes 使用者認證</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2018-5-30 17:05</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2018/06/10/cncf/prometheus/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    Prometheus 介紹與基礎入門
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2018/04/21/kubernetes/aws-federation-v1/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">在 AWS 上建立跨地區的 Kubernetes Federation 叢集</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2018/05/30/kubernetes/keystone-auth/" data-id="ck3ns7q6q0055wmpfhq54qo86" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2018/05/30/kubernetes/keystone-auth/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2018/05/30/kubernetes/keystone-auth/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#節點資訊"><span class="toc-number">1.</span> <span class="toc-text">節點資訊</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#事前準備"><span class="toc-number">2.</span> <span class="toc-text">事前準備</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kubernetes-與-Keystone-整合"><span class="toc-number">3.</span> <span class="toc-text">Kubernetes 與 Keystone 整合</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#建立-Keystone-User-與-Roles"><span class="toc-number">3.1.</span> <span class="toc-text">建立 Keystone User 與 Roles</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#在-Kubernetes-安裝-Keystone-Webhook"><span class="toc-number">3.2.</span> <span class="toc-text">在 Kubernetes 安裝 Keystone Webhook</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#設定-kube-apiserver-使用-Webhook"><span class="toc-number">3.3.</span> <span class="toc-text">設定 kube-apiserver 使用 Webhook</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#驗證部署結果"><span class="toc-number">4.</span> <span class="toc-text">驗證部署結果</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2018/05/30/kubernetes/keystone-auth/';
+        
+        this.page.identifier = 'kubernetes/keystone-auth';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

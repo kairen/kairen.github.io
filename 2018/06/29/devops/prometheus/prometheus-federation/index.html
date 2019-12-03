@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>了解 Prometheus Federation 功能 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Prometheus 在效能上是能夠以單個 Server 支撐百萬個時間序列，當然根據不同規模的改變，Promethes 是能夠進行擴展的，這邊將介紹 Prometheus Federation 來達到此效果。 Prometheus Federation 允許一台 Prometheus Server 從另一台 Prometheus Server 刮取選定的時間序列資料。Federation 提供">
+<meta name="keywords" content="CNCF,Monitoring,Prometheus,DevOps">
+<meta property="og:type" content="article">
+<meta property="og:title" content="了解 Prometheus Federation 功能">
+<meta property="og:url" content="https://k2r2bai.com/2018/06/29/devops/prometheus/prometheus-federation/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Prometheus 在效能上是能夠以單個 Server 支撐百萬個時間序列，當然根據不同規模的改變，Promethes 是能夠進行擴展的，這邊將介紹 Prometheus Federation 來達到此效果。 Prometheus Federation 允許一台 Prometheus Server 從另一台 Prometheus Server 刮取選定的時間序列資料。Federation 提供">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://i.imgur.com/ism3t0M.png">
+<meta property="og:image" content="https://i.imgur.com/dOinJCq.png">
+<meta property="og:image" content="https://i.imgur.com/vqGFTXA.png">
+<meta property="og:image" content="https://i.imgur.com/RdwP0vl.png">
+<meta property="og:image" content="https://i.imgur.com/0NprMK4.png">
+<meta property="og:image" content="https://i.imgur.com/AgSahRP.png">
+<meta property="og:image" content="https://i.imgur.com/Tjpc4Fs.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.386Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="了解 Prometheus Federation 功能">
+<meta name="twitter:description" content="Prometheus 在效能上是能夠以單個 Server 支撐百萬個時間序列，當然根據不同規模的改變，Promethes 是能夠進行擴展的，這邊將介紹 Prometheus Federation 來達到此效果。 Prometheus Federation 允許一台 Prometheus Server 從另一台 Prometheus Server 刮取選定的時間序列資料。Federation 提供">
+<meta name="twitter:image" content="https://i.imgur.com/ism3t0M.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-devops/prometheus/prometheus-federation" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            了解 Prometheus Federation 功能
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2018/06/29/devops/prometheus/prometheus-federation/">
+            <u><time datetime="2018-06-29T04:23:01.000Z" itemprop="datePublished">2018-06-29</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/DevOps/">DevOps</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/CNCF/">CNCF</a>, <a class="tag-link" href="/tags/DevOps/">DevOps</a>, <a class="tag-link" href="/tags/Monitoring/">Monitoring</a>, <a class="tag-link" href="/tags/Prometheus/">Prometheus</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>Prometheus 在效能上是能夠以單個 Server 支撐百萬個時間序列，當然根據不同規模的改變，Promethes 是能夠進行擴展的，這邊將介紹 Prometheus Federation 來達到此效果。</p>
+<p>Prometheus Federation 允許一台 Prometheus Server 從另一台 Prometheus Server 刮取選定的時間序列資料。Federation 提供 Prometheus 擴展能力，這能夠讓 Prometheus 節點擴展至多個，並且能夠實現高可靠性(High Availability)與切片(Sharding)。對於 Prometheus 的 Federation 有不同的使用方式，一般分為<code>Cross-service federation</code>與<code>Hierarchical federation</code>。</p>
+<a id="more"></a>
+
+<h2 id="Cross-service-federation"><a href="#Cross-service-federation" class="headerlink" title="Cross-service federation"></a>Cross-service federation</h2><p>這種方式的 Federation 會將一個 Prometheus Server 設定成從另一個 Prometheus Server 中獲取選中的時間序列資料，使得這個 Prometheus 能夠對兩個資料來源進行查詢(Query)與警告(Alert)，比如說有一個 Prometheus A 收集了多個服務叢集排程器曝露的資訊使用資訊(CPU、Memory 等)，而另一個在叢集上的 Promethues B 則只收集應用程式指定的服務 Metrics，這時想讓 Prometheus B 收集 Prometheus A 的資源使用量的話，就可以利用 Federation 來取得。</p>
+<p>又或者假設想要監控 mysqld 與 node 的資訊，但是這兩個在不同叢集中，這時可以採用一個 Master Prometheus + 兩個 Sharding Prometheus，其中 Sharding Prometheus 一個收集 node_exporter 的 Metrics，另一個則收集 mysql_exporter，最後 Master Prometheus 透過 Federation 來匯總兩個 Sharding 的時間序列資料。</p>
+<p><img src="https://i.imgur.com/ism3t0M.png" alt></p>
+<h2 id="Hierarchical-federation"><a href="#Hierarchical-federation" class="headerlink" title="Hierarchical federation"></a>Hierarchical federation</h2><p>這種方式能夠讓 Prometheus 擴展到多個資料中心，或者多個節點數量，當建立一個 Federation 叢集時，其拓樸結構會類似一個樹狀結構，並且每一層級會有所對應的級別，比如說較高層級的 Prometheus Server 會從大量低層級的 Prometheus Server 中檢索或聚合時間序列資料。</p>
+<p><img src="https://i.imgur.com/dOinJCq.png" alt></p>
+<p>這種方式適合當單一的 Prometheus 收集 Metrics 的任務(Job)量過大而無法負荷時，可將任務的實例(Instance)進行水平擴展，讓任務的目標實例拆分到不同 Prometheus 中，再由當前資料中心的主 Prometheus 來收集聚合。</p>
+<h2 id="Federation-部署"><a href="#Federation-部署" class="headerlink" title="Federation 部署"></a>Federation 部署</h2><h3 id="節點資訊"><a href="#節點資訊" class="headerlink" title="節點資訊"></a>節點資訊</h3><p>測試環境將利用當一節點執行多個 Prometheus 來模擬，作業系統採用<code>Ubuntu 16.04 Server</code>，測試環境為實體機器：</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Role</th>
+<th>Port</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Prometheus-global</td>
+<td>Master</td>
+<td>9090</td>
+</tr>
+<tr>
+<td>Prometheus-node</td>
+<td>Collector</td>
+<td>9091</td>
+</tr>
+<tr>
+<td>Prometheus-docker</td>
+<td>Collector</td>
+<td>9092</td>
+</tr>
+</tbody></table>
+<h3 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h3><p>開始安裝前需要確保以下條件已達成：</p>
+<ul>
+<li>安裝與設定 Dockerd 提供 Metrics：</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl -fsSL <span class="string">"https://get.docker.com/"</span> | sh</span><br><span class="line"></span><br><span class="line"><span class="comment"># 編輯 /etc/docker/daemon.json 加入下面內容</span></span><br><span class="line">$ sudo vim /etc/docker/daemon.json</span><br><span class="line">&#123;</span><br><span class="line"> <span class="string">"metrics-addr"</span> : <span class="string">"127.0.0.1:9323"</span>,</span><br><span class="line"> <span class="string">"experimental"</span> : <span class="literal">true</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 完成後重新啟動</span></span><br><span class="line">$ sudo systemctl restart docker</span><br><span class="line">$ curl 127.0.0.1:9323/metrics</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>透過 Docker 部署 Node Exporter：</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker run -d \</span><br><span class="line">  --net=<span class="string">"host"</span> \</span><br><span class="line">  --pid=<span class="string">"host"</span> \</span><br><span class="line">  --name node-exporter \</span><br><span class="line">  quay.io/prometheus/node-exporter</span><br><span class="line"></span><br><span class="line">$ curl 127.0.0.1:9100/metrics</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>在模擬節點下載 Prometheus 伺服器執行檔：</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ wget https://github.com/prometheus/prometheus/releases/download/v2.3.0/prometheus-2.3.0.linux-amd64.tar.gz</span><br><span class="line">$ tar xvfz prometheus-*.tar.gz</span><br><span class="line">$ mv prometheus-2.3.0.linux-amd64 prometheus-2.3.0</span><br><span class="line">$ <span class="built_in">cd</span> prometheus-2.3.0</span><br></pre></td></tr></table></figure>
+
+<h3 id="部署-Prometheus-Federation"><a href="#部署-Prometheus-Federation" class="headerlink" title="部署 Prometheus Federation"></a>部署 Prometheus Federation</h3><p>首先新增三個設定檔案，分別給 Global、Docker 與 Node 使用。</p>
+<p>新增一個檔案<code>prometheus-docker.yml</code>，並加入以下內容:</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">global:</span></span><br><span class="line"><span class="attr">  scrape_interval:</span>     <span class="number">15</span><span class="string">s</span></span><br><span class="line"><span class="attr">  evaluation_interval:</span> <span class="number">15</span><span class="string">s</span></span><br><span class="line"><span class="attr">  external_labels:</span></span><br><span class="line"><span class="attr">      server:</span> <span class="string">'docker-monitor'</span></span><br><span class="line"><span class="attr">scrape_configs:</span></span><br><span class="line"><span class="attr">  - job_name:</span> <span class="string">'docker'</span></span><br><span class="line"><span class="attr">    scrape_interval:</span> <span class="number">5</span><span class="string">s</span></span><br><span class="line"><span class="attr">    static_configs:</span></span><br><span class="line"><span class="attr">      - targets:</span> <span class="string">['localhost:9323']</span></span><br></pre></td></tr></table></figure>
+
+<p>新增一個檔案<code>prometheus-node.yml</code>，並加入以下內容:</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">global:</span></span><br><span class="line"><span class="attr">  scrape_interval:</span>     <span class="number">15</span><span class="string">s</span></span><br><span class="line"><span class="attr">  evaluation_interval:</span> <span class="number">15</span><span class="string">s</span></span><br><span class="line"><span class="attr">  external_labels:</span></span><br><span class="line"><span class="attr">      server:</span> <span class="string">'node-monitor'</span></span><br><span class="line"><span class="attr">scrape_configs:</span></span><br><span class="line"><span class="attr">  - job_name:</span> <span class="string">'node'</span></span><br><span class="line"><span class="attr">    scrape_interval:</span> <span class="number">5</span><span class="string">s</span></span><br><span class="line"><span class="attr">    static_configs:</span></span><br><span class="line"><span class="attr">      - targets:</span> <span class="string">['localhost:9100']</span></span><br></pre></td></tr></table></figure>
+
+<p>新增一個檔案<code>prometheus-global.yml</code>，並加入以下內容:</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">global:</span></span><br><span class="line"><span class="attr">  scrape_interval:</span>     <span class="number">15</span><span class="string">s</span></span><br><span class="line"><span class="attr">  evaluation_interval:</span> <span class="number">15</span><span class="string">s</span></span><br><span class="line"><span class="attr">  external_labels:</span></span><br><span class="line"><span class="attr">      server:</span> <span class="string">'global-monitor'</span></span><br><span class="line"><span class="attr">scrape_configs:</span></span><br><span class="line"><span class="attr">  - job_name:</span> <span class="string">'federate'</span></span><br><span class="line"><span class="attr">    scrape_interval:</span> <span class="number">15</span><span class="string">s</span></span><br><span class="line"><span class="attr">    honor_labels:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">    metrics_path:</span> <span class="string">'/federate'</span></span><br><span class="line"><span class="attr">    params:</span></span><br><span class="line">      <span class="string">'match[]'</span><span class="string">:</span></span><br><span class="line"><span class="bullet">        -</span> <span class="string">'&#123;job=~"prometheus.*"&#125;'</span></span><br><span class="line"><span class="bullet">        -</span> <span class="string">'&#123;job="docker"&#125;'</span></span><br><span class="line"><span class="bullet">        -</span> <span class="string">'&#123;job="node"&#125;'</span></span><br><span class="line"><span class="attr">    static_configs:</span></span><br><span class="line"><span class="attr">      - targets:</span></span><br><span class="line"><span class="bullet">        -</span> <span class="string">'localhost:9091'</span></span><br><span class="line"><span class="bullet">        -</span> <span class="string">'localhost:9092'</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li>當設定 Federation 時，將透過 URL 中的 macth[] 參數指定需要獲取的時間序列資料，match[] 必須是一個向量選擇器資訊，如 up 或者 <code>{job=&quot;api-server&quot;}</code> 等。</li>
+<li>設定<code>honor_labels</code>是避免資料衝突。</li>
+</ul>
+</blockquote>
+<p>完成後，開啟三個 Terminal 來啟動 Prometheus Server：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 啟動收集 Docker metrics 的 Prometheus server</span></span><br><span class="line">$ ./prometheus --config.file=prometheus-docker.yml \</span><br><span class="line">     --storage.tsdb.path=./data-docker \</span><br><span class="line">	 --web.listen-address=<span class="string">"0.0.0.0:9092"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 啟動收集 Node metrics 的 Prometheus server</span></span><br><span class="line">$ ./prometheus --config.file=prometheus-node.yml \</span><br><span class="line">     --storage.tsdb.path=./data-node \</span><br><span class="line">	 --web.listen-address=<span class="string">"0.0.0.0:9091"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 啟動收集 Global 的 Prometheus server</span></span><br><span class="line">$ ./prometheus --config.file=prometheus-global.yml \</span><br><span class="line">     --storage.tsdb.path=./data-global \</span><br><span class="line">	 --web.listen-address=<span class="string">"0.0.0.0:9090"</span></span><br></pre></td></tr></table></figure>
+
+<p>正常啟動後分別透過瀏覽器觀察<code>:9090</code>、<code>:9091</code>與<code>:9092</code>會發現 Master 會擁有 Node 與 Docker 的 Metrics，而其他兩者只會有自己所屬 Metrics。</p>
+<blockquote>
+<p>注意，在 Alert 部分還是建議在各自 Sharding 的 Prometheus Server 處理，因為放到 Global 有可能會有接延遲。</p>
+</blockquote>
+<h3 id="部署-Grafana"><a href="#部署-Grafana" class="headerlink" title="部署 Grafana"></a>部署 Grafana</h3><p>在測試節點透過 Docker 部署 Grafana 來提供資料視覺化用：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker run \</span><br><span class="line">  -d \</span><br><span class="line">  -p 3000:3000 \</span><br><span class="line">  --name=grafana \</span><br><span class="line">  -e <span class="string">"GF_SECURITY_ADMIN_PASSWORD=secret"</span> \</span><br><span class="line">  grafana/grafana</span><br></pre></td></tr></table></figure>
+
+<p>完成後透過瀏覽器查看<code>:3000</code>，並設定 Grafana 將 Prometheus Global 資料做呈現，請至<code>Configuration</code>的<code>Data Sources</code>進行設定。</p>
+<p><img src="https://i.imgur.com/vqGFTXA.png" alt></p>
+<p>接著分別下載以下 Dashbaord JSON 檔案：</p>
+<ul>
+<li><a href="https://grafana.com/api/dashboards/1860/revisions/12/download" target="_blank" rel="noopener">Node Exporter Server Metrics</a></li>
+<li><a href="https://grafana.com/api/dashboards/1229/revisions/3/download" target="_blank" rel="noopener">Docker Metrics</a></li>
+</ul>
+<p>並在 Grafana 點選 Import 選擇上面兩個下載的 JSON 檔案。</p>
+<p><img src="https://i.imgur.com/RdwP0vl.png" alt></p>
+<p>Import 後選擇 Prometheus data source：</p>
+<p><img src="https://i.imgur.com/0NprMK4.png" alt></p>
+<p>確認沒問題後點選<code>Import</code>，這時候就可以在 Dashboard 看到視覺化的 Metrics 了。</p>
+<p><img src="https://i.imgur.com/AgSahRP.png" alt></p>
+<p>Docker Metrics 資訊：</p>
+<p><img src="https://i.imgur.com/Tjpc4Fs.png" alt></p>
+<p>更多的 Dashboard 可以至官方 <a href="https://grafana.com/dashboards" target="_blank" rel="noopener">Dashboards</a> 尋找。</p>
+<h2 id="Prometheus-Federation-不適用地方"><a href="#Prometheus-Federation-不適用地方" class="headerlink" title="Prometheus Federation 不適用地方"></a>Prometheus Federation 不適用地方</h2><p>經上述兩者說明，可以知道 Prometheus Federation 大多被用來從另一個 Prometheus 拉取受限或聚合的時間序列資料集，但是不只上述功能，該 Prometheus 本身還是要肩負警報(Alert)與圖形(Graph)資料查詢工作。而什麼狀況是 Prometheus Federation 不適用的？那就是使用在從另一個 Prometheus 拉取大量時間序列(甚至所有時間序列資料)，並且只從該 Prometheus 做警報(Alert)與圖形(Graph)處理。</p>
+<p>這邊列出三個原因：</p>
+<ul>
+<li><p><strong>效能(Performance)與縮放(Scaling)問題</strong>：Prometheus 的限制因素主要是一台機器所能處理的時間序列資料量，然而讓所有資料路由到一個 Global 的 Prometheus Server 將限制這台 Server 所能處理的監控。取而代之，若只拉取聚合的時間序列資料，只限於一個資料中心的 Prometheus 能夠處理，因此請允許新增資料中心來避免擴大 Global Prometheus。而 Federation 請求本身也能夠大量地服務於接收 Prometheus。</p>
+</li>
+<li><p><strong>可靠性(Reliability)</strong>：如果需要進行警報(Alert)的資料從一個 Prometheus 移動到另一個時，那麼這樣就會多出一個額外的故障點。當牽扯到諸如互聯網之類的廣域網路連接時，是特別危險的。在可能的情況下，應該盡量將警報(Alert)推送到 Federation 層級較深的 Prometheus上。</p>
+</li>
+<li><p><strong>正確性(Correctness)</strong>：由於工作原理關析，Federation 會在被刮取(scraped)後的某一段時間拉取資料，並且可能因 Race 問題而遺失一些資料。雖然這問題在 Global Promethesu 能夠被容忍，但是用於處理警報(Alert)與圖表查詢的資料中心 Prometheus 就可能造成問題。</p>
+</li>
+</ul>
+<h2 id="References"><a href="#References" class="headerlink" title="References"></a>References</h2><ul>
+<li><a href="http://ylzheng.com/2018/03/08/prometheus-fedreation/" target="_blank" rel="noopener">http://ylzheng.com/2018/03/08/prometheus-fedreation/</a></li>
+<li><a href="http://blog.51cto.com/lee90/2062252" target="_blank" rel="noopener">http://blog.51cto.com/lee90/2062252</a></li>
+<li><a href="https://banzaicloud.com/blog/prometheus-federation/" target="_blank" rel="noopener">https://banzaicloud.com/blog/prometheus-federation/</a></li>
+<li><a href="https://prometheus.io/docs/prometheus/latest/federation/" target="_blank" rel="noopener">https://prometheus.io/docs/prometheus/latest/federation/</a></li>
+<li><a href="https://www.robustperception.io/federation-what-is-it-good-for/" target="_blank" rel="noopener">https://www.robustperception.io/federation-what-is-it-good-for/</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">了解 Prometheus Federation 功能</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2018-6-29 12:06</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2018/07/01/devops/prometheus/prometheus-ha/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    Prometheus 高可靠實現方式
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2018/06/27/devops/prometheus/prometheus-storage/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">Prometheus 儲存系統解析</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2018/06/29/devops/prometheus/prometheus-federation/" data-id="ck3ns7qau00gawmpfpb54w5ir" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2018/06/29/devops/prometheus/prometheus-federation/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2018/06/29/devops/prometheus/prometheus-federation/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Cross-service-federation"><span class="toc-number">1.</span> <span class="toc-text">Cross-service federation</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Hierarchical-federation"><span class="toc-number">2.</span> <span class="toc-text">Hierarchical federation</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Federation-部署"><span class="toc-number">3.</span> <span class="toc-text">Federation 部署</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#節點資訊"><span class="toc-number">3.1.</span> <span class="toc-text">節點資訊</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#事前準備"><span class="toc-number">3.2.</span> <span class="toc-text">事前準備</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#部署-Prometheus-Federation"><span class="toc-number">3.3.</span> <span class="toc-text">部署 Prometheus Federation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#部署-Grafana"><span class="toc-number">3.4.</span> <span class="toc-text">部署 Grafana</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Prometheus-Federation-不適用地方"><span class="toc-number">4.</span> <span class="toc-text">Prometheus Federation 不適用地方</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#References"><span class="toc-number">5.</span> <span class="toc-text">References</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2018/06/29/devops/prometheus/prometheus-federation/';
+        
+        this.page.identifier = 'devops/prometheus/prometheus-federation';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

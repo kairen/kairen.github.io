@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>實現 Kubernetes Service/Ingress 同步設定 DNS 資源紀錄 Part1 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="前言前幾天都在分享關於叢集部署與升級事情，今天來聊聊在地端 Kubernetes 常見的需求功能吧。在生產環境中，我們會將網站或系統放到 Kubernetes 上執行與管理，再利用 Service 機制把服務暴露給外部存取使用，但 Service 在預設情況下僅能支援第四層網路協定(L4，TCP/UDP)功能，故無法設定完整網域名稱(Fully Qualified Domain Name，FQDN">
+<meta name="keywords" content="Kubernetes">
+<meta property="og:type" content="article">
+<meta property="og:title" content="實現 Kubernetes Service&#x2F;Ingress 同步設定 DNS 資源紀錄 Part1">
+<meta property="og:url" content="https://k2r2bai.com/2019/09/24/ironman2020/day09/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="前言前幾天都在分享關於叢集部署與升級事情，今天來聊聊在地端 Kubernetes 常見的需求功能吧。在生產環境中，我們會將網站或系統放到 Kubernetes 上執行與管理，再利用 Service 機制把服務暴露給外部存取使用，但 Service 在預設情況下僅能支援第四層網路協定(L4，TCP/UDP)功能，故無法設定完整網域名稱(Fully Qualified Domain Name，FQDN">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://i.imgur.com/rZ8PoFC.png">
+<meta property="og:image" content="https://i.imgur.com/aeW5PRF.png">
+<meta property="og:image" content="https://i.imgur.com/b4QPkr9.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.388Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="實現 Kubernetes Service&#x2F;Ingress 同步設定 DNS 資源紀錄 Part1">
+<meta name="twitter:description" content="前言前幾天都在分享關於叢集部署與升級事情，今天來聊聊在地端 Kubernetes 常見的需求功能吧。在生產環境中，我們會將網站或系統放到 Kubernetes 上執行與管理，再利用 Service 機制把服務暴露給外部存取使用，但 Service 在預設情況下僅能支援第四層網路協定(L4，TCP/UDP)功能，故無法設定完整網域名稱(Fully Qualified Domain Name，FQDN">
+<meta name="twitter:image" content="https://i.imgur.com/rZ8PoFC.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-ironman2020/day09" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            實現 Kubernetes Service/Ingress 同步設定 DNS 資源紀錄 Part1
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2019/09/24/ironman2020/day09/">
+            <u><time datetime="2019-09-23T16:00:00.000Z" itemprop="datePublished">2019-09-24</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前幾天都在分享關於叢集部署與升級事情，今天來聊聊在地端 Kubernetes 常見的需求功能吧。在生產環境中，我們會將網站或系統放到 Kubernetes 上執行與管理，再利用 Service 機制把服務暴露給外部存取使用，但 Service 在預設情況下僅能支援第四層網路協定(L4，TCP/UDP)功能，故無法設定完整網域名稱(Fully Qualified Domain Name，FQDN)來存取服務，這時大家肯定會想到 Kubernetes 的 Ingress 功能，因為 Ingress 能夠實現第七層網路協定(L7)功能，並以域名(Domain name)形式來對應到 Service 的 Pod 端點。</p>
+<p>但是地端環境不像公有雲有各種基礎建設服務(Infrastructure as a Service，IaaS)可以輕易使用與整合(比如:透過 Cloud Provider 讓 Service 整合負載平衡服務、利用 DNS 服務來對應到 Service 的負載平衡 IP 等等)，這時如果想要實現自動同步 Kubernetes Service/Ingress 資源，來設定 FQDN 的話，就會需要建立一套網域名稱系統(Domain Name System，DNS)，並實作同步 Kubernetes 物件設定 DNS 資源紀錄(DNS record)的控制器。慶幸的是，Kubernetes 社區已經有相關元件可以協助我們實踐這些機制，今天就將針對這部分來說明與實現。</p>
+<a id="more"></a>
+
+<h2 id="架構與元件介紹"><a href="#架構與元件介紹" class="headerlink" title="架構與元件介紹"></a>架構與元件介紹</h2><p>在開始實現前，我們先來簡單了解一下會使用到的元件，並說明將會運用在什麼方面。</p>
+<p><img src="https://i.imgur.com/rZ8PoFC.png" alt></p>
+<h3 id="CoreDNS"><a href="#CoreDNS" class="headerlink" title="CoreDNS"></a>CoreDNS</h3><p><a href="https://github.com/coredns/coredns" target="_blank" rel="noopener">CoreDNS</a> 是經過 CNCF 孵化畢業的開源 DNS 專案，該專案是基於 <a href="https://github.com/mholt/caddy" target="_blank" rel="noopener">Caddy</a> 的一部分開發而來，由於傳統的 DNS 無法很彈性地加入插件，因此非常不靈活，但 CoreDNS 實作了一套中介軟體(Middleware)介面，因此我們能夠很輕易實現插件來完成客制的功能(如 Log、Cache 等等)，也因為這關析，CoreDNS 能夠將資源紀錄儲存至 Redis、etcd 這種 Key/Value 儲存系統上。值得再提的是，CoreDNS 在 v1.11 版本正式取代 KubeDNS，我們能夠透過開始 Kubernetes plugin 來達到叢集服務發現功能。</p>
+<p>在實作中，我們將用來給 Kubernetes 同步設定 DNS 資源紀錄使用，並提供解析 Kubernetes Service/Ingress 的 DNS 資源紀錄。</p>
+<h3 id="etcd"><a href="#etcd" class="headerlink" title="etcd"></a>etcd</h3><p><a href="https://github.com/etcd-io/etcd" target="_blank" rel="noopener">etcd</a> 是一套分散式鍵值(Key/Value)儲存系統，類似 <a href="https://zookeeper.apache.org/" target="_blank" rel="noopener">ZooKeeper</a> 與 <a href="https://www.consul.io/" target="_blank" rel="noopener">Consul</a>，而 etcd 共識機制上採用 Raft 演算法來處理多節點共識問題，另外 etcd 支援了 REST API、JSON 格式與 SSL 等等功能。</p>
+<p>在這邊主要提供儲存 DNS 資源紀錄，主要作為 CoreDNS 與 ExternalDNS 溝通的中介。</p>
+<blockquote>
+<p>etcd 也被用於 Kubernetes 與 Cloud Foundry 專案中。</p>
+</blockquote>
+<h3 id="ExternalDNS"><a href="#ExternalDNS" class="headerlink" title="ExternalDNS"></a>ExternalDNS</h3><p><a href="https://github.com/kubernetes-incubator/external-dns" target="_blank" rel="noopener">ExternalDNS</a> 是 Kubernetes 社區的孵化專案，目的是協助同步 Kubernetes Service/Ingress 的資源，並將內容轉成 DNS 資源紀錄設定的 DNS 供應商與服務上。這邊將利用 ExternalDNS 定期同步 Kubernetes 資源來轉換成 DNS 資源紀錄，並將轉換的紀錄存儲到 etcd 上，接著利用 CoreDNS 的 etcd plugin 來完成資源紀錄查詢功能。</p>
+<blockquote>
+<p>ExternalDNS 除了支援 CoreDNS 以外，也可以設定各種 DNS 服務。</p>
+</blockquote>
+<h3 id="NGINX-Ingress-Controller"><a href="#NGINX-Ingress-Controller" class="headerlink" title="NGINX Ingress Controller"></a>NGINX Ingress Controller</h3><p><a href="https://github.com/kubernetes/ingress-nginx" target="_blank" rel="noopener">NGINX Ingress</a> 是以 NGINX 引擎為基礎開發的 Kubernetes 控制器與代理系統，主要讓 Kubernetes 能夠透過 L7 協定功能來提供外部存取容器。NGINX Ingress 會監聽 Kubernetes Ingress 資源，並依據內容產生 NGINX 設定，然後熱更新給 NGINX 使用，因此當存取 NGINX Ingress 時，就能依據設定檔的內容轉送給對應的 Kubernetes Service。</p>
+<p><img src="https://i.imgur.com/aeW5PRF.png" alt></p>
+<blockquote>
+<p>Ingress 控制器除了社區提供的專案外，也能夠使用 <a href="https://docs.traefik.io/user-guide/kubernetes/" target="_blank" rel="noopener">Traefik</a>、<a href="https://github.com/Kong/kubernetes-ingress-controller" target="_blank" rel="noopener">Kong</a>、<a href="https://github.com/haproxytech/kubernetes-ingress" target="_blank" rel="noopener">HAProxy</a> 等等。</p>
+</blockquote>
+<h2 id="執行流程"><a href="#執行流程" class="headerlink" title="執行流程"></a>執行流程</h2><p>本節說明架構上的運作流程。這邊會分成兩種方式實現，分別為 Service 與 Ingress。</p>
+<ul>
+<li><strong>Ingress</strong>: 當建立一個 Ingress 到叢集時，NGINX Ingress 會接收到 API 資源的事件更新，並在新增與更新事件中，取得 Ingress 資訊來設定 NGINX。而當 Ingress 資源順利完成功能後，ExternalDNS 會以輪詢方式取得所有 Namespace(或指定的)中的 Ingress 資源(Ingress 必須被分派 Host IP 才能進行)，並從 Ingress 資源的<code>spec.rules</code>取出 host 資訊，以產生 DNS 資源紀錄(如: A record)，接著將產生的紀錄透過 etcd 儲存，這樣當 CoreDNS 收到 FQDN 查詢請求時，就可以利用 etcd 作為 DNS 資源紀錄後端來來辨識導向。</li>
+<li><strong>Service</strong>: 當建立一個有<code>metadata.annotations.external-dns.alpha.kubernetes.io/hostname</code> 的 Service 時，ExternalDNS 會在輪詢期間取得該欄位的值來產生 DNS 資源紀錄，然後同樣利用 etcd 作為儲存，並在對 CoreDNS 發起 FQDN 查詢請求時，能夠到 etcd 查詢 DNS 資源紀錄以解析結果返回給客戶端。</li>
+</ul>
+<p><img src="https://i.imgur.com/b4QPkr9.png" alt></p>
+<p>如上圖所示，我們簡單拆解不同步驟來說明。</p>
+<ol>
+<li>建立一個有以下範例 Annotations 的 Service/Ingress。</li>
+</ol>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Service</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">nginx</span></span><br><span class="line"><span class="attr">  annotations:</span></span><br><span class="line">    <span class="string">external-dns.alpha.kubernetes.io/hostname:</span> <span class="string">nginx.k8s.local</span> <span class="comment"># 將被自動註冊的 domain name.</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  type:</span> <span class="string">NodePort</span></span><br><span class="line"><span class="attr">  selector:</span></span><br><span class="line"><span class="attr">    app:</span> <span class="string">nginx</span></span><br><span class="line"><span class="attr">  ports:</span></span><br><span class="line"><span class="attr">    - protocol:</span> <span class="string">TCP</span></span><br><span class="line"><span class="attr">      port:</span> <span class="number">80</span></span><br><span class="line"><span class="attr">      targetPort:</span> <span class="number">80</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">extensions/v1beta1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Ingress</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">nginx-ingress</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  rules:</span></span><br><span class="line"><span class="attr">  - host:</span> <span class="string">nginx.k8s.local</span> <span class="comment"># 將被自動註冊的 domain name.</span></span><br><span class="line"><span class="attr">    http:</span></span><br><span class="line"><span class="attr">      paths:</span></span><br><span class="line"><span class="attr">      - backend:</span></span><br><span class="line"><span class="attr">          serviceName:</span> <span class="string">nginx</span></span><br><span class="line"><span class="attr">          servicePort:</span> <span class="number">80</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li>當使用 Service 時，需要設定成 Load Balancer 或 NodePort。</li>
+<li>當使用 Ingress 時，不需要在 Service 塞入<code>external-dns.alpha.kubernetes.io/hostname</code>欄位，且不需要使用 NodePort 與 LoadBalancer。</li>
+</ul>
+</blockquote>
+<ol start="2">
+<li>ExternalDNS 透過輪詢取得 Service/Ingress 資源，取出將被用來產生 DNS 資源紀錄的資訊，接著在產生完成後，利用 etcd 進行儲存記錄。</li>
+<li>當客戶端存取 <code>nginx.k8s.local</code> 時，將對 CoreDNS 發起 FQDN 查詢請求，這時 CoreDNS 會到 etcd 查找 DNS 資源紀錄，以解析指定的 IP 回應給客戶端，</li>
+<li>這時客戶端會接受到解析結果，被正確地導向到解析的 IP 位址。</li>
+</ol>
+<blockquote>
+<p>若使用 Service 時，因為不是走 HTTP/HTTPS 協定，因此要輸入 TCP/UPD 的 Port。用 Ingress 則以域名存取即可，因為 NGINX Ingress 提供了一個 NGINX 代理後端，它會幫你轉發至 Kubernetes 內部 Service。</p>
+</blockquote>
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>今天說明如何在地端實現自動更新 Kubernetes Service/Ingress 到 DNS 中的架構與流程，過程中大家可以了解到 Kubernetes 社區利用 <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/" target="_blank" rel="noopener">Controller Pattern</a> 機制來擴展功能，以讓供應商整合自家功能與服物到 Kubernetes 中，像今天提到的 ExternalDNS 就是實現自動同步 DNS 資源紀錄到各種 DNS 服務的 Kubernetes 控制器。</p>
+<p>今天只是說明元件架構與流程，明天我們將實際的實現該功能。</p>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li><a href="https://github.com/kubernetes-incubator/external-dns/blob/master/docs/tutorials/cloudflare.md" target="_blank" rel="noopener">https://github.com/kubernetes-incubator/external-dns/blob/master/docs/tutorials/cloudflare.md</a></li>
+<li><a href="https://coredns.io/2018/11/27/cluster-dns-coredns-vs-kube-dns/" target="_blank" rel="noopener">https://coredns.io/2018/11/27/cluster-dns-coredns-vs-kube-dns/</a></li>
+<li><a href="https://zhengyinyong.com/coredns-basis.html" target="_blank" rel="noopener">https://zhengyinyong.com/coredns-basis.html</a></li>
+<li><a href="https://www.hwchiu.com/ingress-1.html" target="_blank" rel="noopener">https://www.hwchiu.com/ingress-1.html</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">實現 Kubernetes Service/Ingress 同步設定 DNS 資源紀錄 Part1</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2019-9-24 00:09</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2019/09/25/ironman2020/day10/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    實現 Kubernetes Service/Ingress 同步設定 DNS 資源紀錄 Part2
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2019/09/23/ironman2020/day08/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">分析 Kubeadm 叢集更新流程</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2019/09/24/ironman2020/day09/" data-id="ck3ns7q5x002zwmpf1haj1nhb" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2019/09/24/ironman2020/day09/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/09/24/ironman2020/day09/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#架構與元件介紹"><span class="toc-number">2.</span> <span class="toc-text">架構與元件介紹</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#CoreDNS"><span class="toc-number">2.1.</span> <span class="toc-text">CoreDNS</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#etcd"><span class="toc-number">2.2.</span> <span class="toc-text">etcd</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ExternalDNS"><span class="toc-number">2.3.</span> <span class="toc-text">ExternalDNS</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#NGINX-Ingress-Controller"><span class="toc-number">2.4.</span> <span class="toc-text">NGINX Ingress Controller</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#執行流程"><span class="toc-number">3.</span> <span class="toc-text">執行流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#結語"><span class="toc-number">4.</span> <span class="toc-text">結語</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Reference"><span class="toc-number">5.</span> <span class="toc-text">Reference</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2019/09/24/ironman2020/day09/';
+        
+        this.page.identifier = 'ironman2020/day09';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

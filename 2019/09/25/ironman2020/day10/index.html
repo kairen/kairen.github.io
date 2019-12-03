@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>實現 Kubernetes Service/Ingress 同步設定 DNS 資源紀錄 Part2 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="前言有時地端 Kubernetes 會需要提供給內部團隊使用，而團隊人員若希望以域名方式直接存取 Kubernetes 上的服務時，就必須建立一套機制。但這樣需求中，也增加了維運人員的負擔，因為若沒有自動化機制，就要在 Kubernetes Ingress/Service 變動時，手動處理 DNS 資源紀錄，以確保內部團隊能夠解析到位址。 基於此原因，今天延續在實現 Kubernetes Serv">
+<meta name="keywords" content="Kubernetes">
+<meta property="og:type" content="article">
+<meta property="og:title" content="實現 Kubernetes Service&#x2F;Ingress 同步設定 DNS 資源紀錄 Part2">
+<meta property="og:url" content="https://k2r2bai.com/2019/09/25/ironman2020/day10/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="前言有時地端 Kubernetes 會需要提供給內部團隊使用，而團隊人員若希望以域名方式直接存取 Kubernetes 上的服務時，就必須建立一套機制。但這樣需求中，也增加了維運人員的負擔，因為若沒有自動化機制，就要在 Kubernetes Ingress/Service 變動時，手動處理 DNS 資源紀錄，以確保內部團隊能夠解析到位址。 基於此原因，今天延續在實現 Kubernetes Serv">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://i.imgur.com/wThG3PC.png">
+<meta property="og:image" content="https://i.imgur.com/p6vkPPw.png">
+<meta property="og:image" content="https://i.imgur.com/Qc7pSK9.jpg">
+<meta property="og:image" content="https://i.imgur.com/rhSPAaz.jpg">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.388Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="實現 Kubernetes Service&#x2F;Ingress 同步設定 DNS 資源紀錄 Part2">
+<meta name="twitter:description" content="前言有時地端 Kubernetes 會需要提供給內部團隊使用，而團隊人員若希望以域名方式直接存取 Kubernetes 上的服務時，就必須建立一套機制。但這樣需求中，也增加了維運人員的負擔，因為若沒有自動化機制，就要在 Kubernetes Ingress/Service 變動時，手動處理 DNS 資源紀錄，以確保內部團隊能夠解析到位址。 基於此原因，今天延續在實現 Kubernetes Serv">
+<meta name="twitter:image" content="https://i.imgur.com/wThG3PC.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-ironman2020/day10" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            實現 Kubernetes Service/Ingress 同步設定 DNS 資源紀錄 Part2
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2019/09/25/ironman2020/day10/">
+            <u><time datetime="2019-09-24T16:00:00.000Z" itemprop="datePublished">2019-09-25</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>有時地端 Kubernetes 會需要提供給內部團隊使用，而團隊人員若希望以域名方式直接存取 Kubernetes 上的服務時，就必須建立一套機制。但這樣需求中，也增加了維運人員的負擔，因為若沒有自動化機制，就要在 Kubernetes Ingress/Service 變動時，手動處理 DNS 資源紀錄，以確保內部團隊能夠解析到位址。</p>
+<p>基於此原因，今天延續在<a href="https://k2r2bai.com/2019/09/24/ironman2020/day09/">實現 Kubernetes Service/Ingress 同步設定 DNS 資源紀錄 Part1</a>的文章提到的架構，實際將該架構部署到一座地端 Kubernetes 叢集上測試，並透過實作過程來了解其功能是如何運作的。</p>
+<a id="more"></a>
+
+<h2 id="環境建置"><a href="#環境建置" class="headerlink" title="環境建置"></a>環境建置</h2><p>本部分將說明如何建立昨天文章提到的架構。</p>
+<h3 id="節點資訊"><a href="#節點資訊" class="headerlink" title="節點資訊"></a>節點資訊</h3><p>部署沿用之前文章建置的 HA 環境進行測試，全部都採用裸機部署，作業系統為<code>Ubuntu 18.04+</code>:</p>
+<table>
+<thead>
+<tr>
+<th>IP Address</th>
+<th>Hostname</th>
+<th>CPU</th>
+<th>Memory</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>172.22.132.11</td>
+<td>k8s-m1</td>
+<td>4</td>
+<td>16G</td>
+<td>Master</td>
+</tr>
+<tr>
+<td>172.22.132.12</td>
+<td>k8s-m2</td>
+<td>4</td>
+<td>16G</td>
+<td>Master</td>
+</tr>
+<tr>
+<td>172.22.132.13</td>
+<td>k8s-m3</td>
+<td>4</td>
+<td>16G</td>
+<td>Master</td>
+</tr>
+<tr>
+<td>172.22.132.21</td>
+<td>k8s-n1</td>
+<td>4</td>
+<td>16G</td>
+<td>Node</td>
+</tr>
+<tr>
+<td>172.22.132.22</td>
+<td>k8s-n2</td>
+<td>4</td>
+<td>16G</td>
+<td>Node</td>
+</tr>
+<tr>
+<td>172.22.132.31</td>
+<td>k8s-g1</td>
+<td>4</td>
+<td>16G</td>
+<td>Node</td>
+</tr>
+<tr>
+<td>172.22.132.32</td>
+<td>k8s-g2</td>
+<td>4</td>
+<td>16G</td>
+<td>Node</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>另外所有 Master 節點將透過 Keepalived 提供一個 Virtual IP <code>172.22.132.10</code> 作為使用。</p>
+</blockquote>
+<h3 id="部署-DNS-系統"><a href="#部署-DNS-系統" class="headerlink" title="部署 DNS 系統"></a>部署 DNS 系統</h3><p>首先取得 Kubernetes 部署檔案的 Git 存放庫，並進入 addons 目錄:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://github.com/cloud-native-taiwan/kourse.git</span><br><span class="line">$ <span class="built_in">cd</span> kourse/addons</span><br></pre></td></tr></table></figure>
+
+<p>接著利用 sed(or perl) 工具修改等下要被部署的檔案(範例原本是 Workshop 使用，內容 IP 打死):</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">export</span> VIP=<span class="string">"172.22.132.10"</span></span><br><span class="line">$ <span class="built_in">export</span> DN=<span class="string">"k8s.kairen.tw"</span></span><br><span class="line">$ sed -i <span class="string">"s/192.16.35.12/<span class="variable">$&#123;VIP&#125;</span>/g"</span> ingress-controller/service.yml</span><br><span class="line">$ sed -i <span class="string">"s/192.16.35.12/<span class="variable">$&#123;VIP&#125;</span>/g"</span> dns/coredns/service-tcp.yml</span><br><span class="line">$ sed -i <span class="string">"s/192.16.35.12/<span class="variable">$&#123;VIP&#125;</span>/g"</span> dns/coredns/service-udp.yml</span><br><span class="line">$ sed -i <span class="string">"s/k8s.local/<span class="variable">$&#123;DN&#125;</span>/g"</span> dns/coredns/configmap.yml</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>VIP</code> 請依據自己環境部署為主。<code>DN</code>由於當初是寫死用於教學用，這邊可以自行修改。</p>
+</blockquote>
+<h4 id="NGINX-Ingress-Controller"><a href="#NGINX-Ingress-Controller" class="headerlink" title="NGINX Ingress Controller"></a>NGINX Ingress Controller</h4><p>當取得到檔案，且修改需要的內容後，就可以透過 kubectl 來部署元件到 Kubernetes 叢集中。首先由於測試會用到 Ingress，因此需要一個 Ingress Controller，可以透過以下指令進行:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl apply -f ingress-controller/</span><br><span class="line">namespace/ingress-nginx created</span><br><span class="line">configmap/nginx-configuration created</span><br><span class="line">configmap/tcp-services created</span><br><span class="line">configmap/udp-services created</span><br><span class="line">serviceaccount/nginx-ingress-serviceaccount created</span><br><span class="line">clusterrole.rbac.authorization.k8s.io/nginx-ingress-clusterrole created</span><br><span class="line">role.rbac.authorization.k8s.io/nginx-ingress-role created</span><br><span class="line">rolebinding.rbac.authorization.k8s.io/nginx-ingress-role-nisa-binding created</span><br><span class="line">clusterrolebinding.rbac.authorization.k8s.io/nginx-ingress-clusterrole-nisa-binding created</span><br><span class="line">deployment.apps/nginx-ingress-controller created</span><br><span class="line">service/ingress-nginx created</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若環境不同，請修改<code>addons/ingress-controller/</code>底下 YAML 檔案。</p>
+</blockquote>
+<p>完成後，查看 <code>ingress-nginx</code> Namespace 是否有正確啟動 Ingress controller:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl -n ingress-nginx get po,svc</span><br><span class="line">NAME                                            READY   STATUS    RESTARTS   AGE</span><br><span class="line">pod/nginx-ingress-controller-85b6f5f57d-cs4pw   1/1     Running   0          101s</span><br><span class="line"></span><br><span class="line">NAME                    TYPE           CLUSTER-IP      EXTERNAL-IP     PORT(S)                      AGE</span><br><span class="line">service/ingress-nginx   LoadBalancer   10.109.121.69   172.22.132.10   80:30297/TCP,443:32686/TCP   101s</span><br></pre></td></tr></table></figure>
+
+<p>沒問題後，利用 cURL 工具存取服務來驗證:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl 172.22.132.10</span><br><span class="line">&lt;html&gt;</span><br><span class="line">&lt;head&gt;&lt;title&gt;404 Not Found&lt;/title&gt;&lt;/head&gt;</span><br><span class="line">&lt;body&gt;</span><br><span class="line">&lt;center&gt;&lt;h1&gt;404 Not Found&lt;/h1&gt;&lt;/center&gt;</span><br><span class="line">&lt;hr&gt;&lt;center&gt;nginx/1.15.6&lt;/center&gt;</span><br><span class="line">&lt;/body&gt;</span><br><span class="line">&lt;/html&gt;</span><br></pre></td></tr></table></figure>
+
+<p>也可以以瀏覽器開啟<code>External-IP:80</code>頁面來查看。</p>
+<p><img src="https://i.imgur.com/wThG3PC.png" alt></p>
+<h3 id="CoreDNS-etcd"><a href="#CoreDNS-etcd" class="headerlink" title="CoreDNS + etcd"></a>CoreDNS + etcd</h3><p>接著要部署一套 DNS 來提供 FQDN 查詢使用。首先建立一個 Namespace 用來管理這些部署的元件，以確保不會跟 Kubernetes 叢集中的其他服務混肴:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl apply -f dns/</span><br><span class="line">namespace/ddns created</span><br></pre></td></tr></table></figure>
+
+<p>Namespace 建立後，即可部署 etcd 與 CoreDNS:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl apply -f dns/etcd/ -f dns/coredns/</span><br><span class="line">deployment.apps/coredns-etcd created</span><br><span class="line">service/coredns-etcd created</span><br><span class="line">configmap/coredns created</span><br><span class="line">deployment.apps/coredns created</span><br><span class="line">service/coredns-tcp created</span><br><span class="line">service/coredns-udp created</span><br><span class="line"></span><br><span class="line">$ kubectl -n ddns get po,svc</span><br><span class="line">NAME                               READY   STATUS    RESTARTS   AGE</span><br><span class="line">pod/coredns-7cc8dcc778-9xght       1/1     Running   0          2m47s</span><br><span class="line">pod/coredns-etcd-675b96b65-2kmdb   1/1     Running   0          2m47s</span><br><span class="line"></span><br><span class="line">NAME                   TYPE           CLUSTER-IP       EXTERNAL-IP     PORT(S)                       AGE</span><br><span class="line">service/coredns-etcd   ClusterIP      10.107.159.40    &lt;none&gt;          2379/TCP,2380/TCP             2m47s</span><br><span class="line">service/coredns-tcp    LoadBalancer   10.105.156.110   172.22.132.10   53:32627/TCP,9153:31482/TCP   2m46s</span><br><span class="line">service/coredns-udp    LoadBalancer   10.105.63.16     172.22.132.10   53:30388/UDP                  2m46s</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若環境不同，請修改<code>dns/coredns/</code>底下 YAML 檔案。</p>
+</blockquote>
+<p>完成後，利用 dig 工具來查看 DNS SOA(Start Of Authority) 是否正常:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ dig @172.22.132.10 SOA k8s.kairen.tw +noall +answer</span><br><span class="line"></span><br><span class="line">; &lt;&lt;&gt;&gt; DiG 9.10.6 &lt;&lt;&gt;&gt; @172.22.132.10 SOA k8s.kairen.tw +noall +answer</span><br><span class="line">; (1 server found)</span><br><span class="line">;; global options: +cmd</span><br><span class="line">k8s.kairen.tw.		30	IN	SOA	ns.dns.k8s.kairen.tw. hostmaster.k8s.kairen.tw. 1569412779 7200 1800 86400 30</span><br></pre></td></tr></table></figure>
+
+<p>確認沒問題後，即可在測試機器設定 DNS Nameserver，如下圖。</p>
+<p><img src="https://i.imgur.com/p6vkPPw.png" alt></p>
+<h3 id="ExternalDNS"><a href="#ExternalDNS" class="headerlink" title="ExternalDNS"></a>ExternalDNS</h3><p>當用於查詢的 CoreDNS 與儲存 DNS 資源紀錄的 etcd 完成後，即可部署 ExternalDNS 來提供同步 Kubernetes Ingress/Service 的 DNS 資源紀錄:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl apply -f dns/externaldns/</span><br><span class="line">deployment.apps/external-dns created</span><br><span class="line">clusterrole.rbac.authorization.k8s.io/external-dns created</span><br><span class="line">clusterrolebinding.rbac.authorization.k8s.io/external-dns-viewer created</span><br><span class="line">serviceaccount/external-dns created</span><br><span class="line"></span><br><span class="line">$ kubectl -n ddns get po -l k8s-app=external-dns</span><br><span class="line">NAME                           READY   STATUS    RESTARTS   AGE</span><br><span class="line">external-dns-d674c579f-r5xp6   1/1     Running   0          99s</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若環境不同，請修改<code>addons/dns/external-dns/</code>底下 YAML 檔案。</p>
+</blockquote>
+<p>完成後，檢查是否正確執行:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ kubectl -n ddns logs -f external-dns-d674c579f-r5xp6</span><br><span class="line">...</span><br><span class="line">time=<span class="string">"2019-09-25T12:05:57Z"</span> level=debug msg=<span class="string">"No endpoints could be generated from service ingress-nginx/ingress-nginx"</span></span><br><span class="line">time=<span class="string">"2019-09-25T12:05:57Z"</span> level=debug msg=<span class="string">"No endpoints could be generated from service ddns/coredns-etcd"</span></span><br><span class="line">time=<span class="string">"2019-09-25T12:05:57Z"</span> level=debug msg=<span class="string">"No endpoints could be generated from service ddns/coredns-tcp"</span></span><br></pre></td></tr></table></figure>
+
+<p>到這邊就完成所有元件部署了，接下來就能實際測試功能囉。</p>
+<h2 id="功能驗證"><a href="#功能驗證" class="headerlink" title="功能驗證"></a>功能驗證</h2><p>一但該系統在 Kubernetes 建立完成後，就能夠執行一些簡單範例進行驗證。這邊我們使用名為 cheese 的範例來驗證，這個範例會建立三個不同網頁，並利用 Ingress 來導向指定頁面:</p>
+<ul>
+<li><code>stilton.k8s.kairen.tw</code> 將導到<code>斯蒂爾頓</code>起司頁面。</li>
+<li><code>cheddar.k8s.kairen.tw</code> 將導到<code>切達</code>起司頁面。</li>
+<li><code>wensleydale.k8s.kairen.tw</code> 將導到<code>文斯勒德起司</code>起司頁面。</li>
+</ul>
+<p>在開始前，先用 dig 工具查看一下 A record 是否能夠解析到:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ dig @172.22.132.10 A stilton.k8s.kairen.tw +noall +answer</span><br><span class="line"></span><br><span class="line">; &lt;&lt;&gt;&gt; DiG 9.10.6 &lt;&lt;&gt;&gt; @172.22.132.10 A stilton.k8s.kairen.tw +noall +answer</span><br><span class="line">; (1 server found)</span><br><span class="line">;; global options: +cmd</span><br></pre></td></tr></table></figure>
+
+<p>若沒有的話，就可以執行以下指令來部署 cheese 範例:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">export</span> DN=<span class="string">"k8s.kairen.tw"</span></span><br><span class="line">$ <span class="built_in">cd</span> kourse/practical-k8s/practical-apps/</span><br><span class="line">$ sed -i <span class="string">"s/example.k8s.local/<span class="variable">$&#123;DN&#125;</span>/g"</span> lab6-cheese/cheese-ing.yml</span><br><span class="line">$ kubectl apply -f lab6-cheese/</span><br><span class="line">deployment.apps/stilton created</span><br><span class="line">deployment.apps/cheddar created</span><br><span class="line">deployment.apps/wensleydale created</span><br><span class="line">ingress.networking.k8s.io/cheese created</span><br><span class="line">service/stilton created</span><br><span class="line">service/cheddar created</span><br><span class="line">service/wensleydale created</span><br><span class="line"></span><br><span class="line">$ kubectl get po,svc,ing</span><br><span class="line">NAME                               READY   STATUS    RESTARTS   AGE</span><br><span class="line">pod/cheddar-59666cdbc4-mzlsl       1/1     Running   0          74s</span><br><span class="line">pod/stilton-d9485c498-g9xp4        1/1     Running   0          74s</span><br><span class="line">pod/wensleydale-79f5fc4c5d-pv9cg   1/1     Running   0          74s</span><br><span class="line"></span><br><span class="line">NAME                  TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE</span><br><span class="line">service/cheddar       ClusterIP   10.108.201.33    &lt;none&gt;        80/TCP    74s</span><br><span class="line">service/stilton       ClusterIP   10.105.135.218   &lt;none&gt;        80/TCP    74s</span><br><span class="line">service/wensleydale   ClusterIP   10.109.92.103    &lt;none&gt;        80/TCP    73s</span><br><span class="line"></span><br><span class="line">NAME                        HOSTS                                                                   ADDRESS         PORTS   AGE</span><br><span class="line">ingress.extensions/cheese   stilton.k8s.kairen.tw,cheddar.k8s.kairen.tw,wensleydale.k8s.kairen.tw   172.22.132.10   80      74s</span><br></pre></td></tr></table></figure>
+
+<p>建立完成後，當 ExternalDNS 輪詢時，就會將 Ingress/Service 產生成 DNS 資源紀錄，並儲存到 etcd 中。我們可以利用 kubectl logs 來查看:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl -n ddns logs -f external-dns-d674c579f-r5xp6</span><br><span class="line">...</span><br><span class="line">time=<span class="string">"2019-09-25T12:37:07Z"</span> level=debug msg=<span class="string">"Endpoints generated from ingress: default/cheese: [stilton.k8s.kairen.tw 0 IN A 172.22.132.10 [] cheddar.k8s.kairen.tw 0 IN A 172.22.132.10 [] wensleydale.k8s.kairen.tw 0 IN A 172.22.132.10 []]"</span></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>都沒問題後，透過 dig 工具解析看看 A record 是否正常:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ dig @172.22.132.10 A stilton.k8s.kairen.tw +noall +answer</span><br><span class="line"></span><br><span class="line">; &lt;&lt;&gt;&gt; DiG 9.10.6 &lt;&lt;&gt;&gt; @172.22.132.10 A stilton.k8s.kairen.tw +noall +answer</span><br><span class="line">; (1 server found)</span><br><span class="line">;; global options: +cmd</span><br><span class="line">stilton.k8s.kairen.tw.	300	IN	A	172.22.132.10</span><br></pre></td></tr></table></figure>
+
+<p>這時也能透過瀏覽器查看<code>stilton.k8s.kairen.tw</code>、<code>cheddar.k8s.kairen.tw</code>與<code>wensleydale.k8s.kairen.tw</code>頁面。如下圖所示</p>
+<p><img src="https://i.imgur.com/Qc7pSK9.jpg" alt></p>
+<p><img src="https://i.imgur.com/rhSPAaz.jpg" alt></p>
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>今天實作了自動化同步 Ingress/Service 的 DNS 資源紀錄的功能。實作中，涉及了 L7 網路協定功能(HTTP, HTTPS, DNS)在地端 Kubernetes 上的實現。我們可以發現 Kubernetes 社區的生態圈，在各種需求上，已經有很多完善的工具或元件可以使用，像是 ExternalDNS 就是很好例子，讓人可以不用手動設定 DNS 資源紀錄，自動從 Kubernetes Ingress/Service 產生。</p>
+<blockquote>
+<p>不過今天做法是地端(或內部)部署情境使用，若公司網域是由供應商(如 CloudFlare 或 AWS Route53)提供的話，就必須調整 <a href="https://github.com/kubernetes-incubator/external-dns#the-latest-release-v05" target="_blank" rel="noopener">ExternalDNS Providers</a> 來支援。</p>
+</blockquote>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li><a href="https://github.com/kubernetes-incubator/external-dns/blob/master/docs/tutorials/cloudflare.md" target="_blank" rel="noopener">https://github.com/kubernetes-incubator/external-dns/blob/master/docs/tutorials/cloudflare.md</a></li>
+<li><a href="https://coredns.io/2018/11/27/cluster-dns-coredns-vs-kube-dns/" target="_blank" rel="noopener">https://coredns.io/2018/11/27/cluster-dns-coredns-vs-kube-dns/</a></li>
+<li><a href="https://zhengyinyong.com/coredns-basis.html" target="_blank" rel="noopener">https://zhengyinyong.com/coredns-basis.html</a></li>
+<li><a href="https://www.hwchiu.com/ingress-1.html" target="_blank" rel="noopener">https://www.hwchiu.com/ingress-1.html</a></li>
+<li><a href="https://kubernetes.github.io/ingress-nginx/" target="_blank" rel="noopener">https://kubernetes.github.io/ingress-nginx/</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">實現 Kubernetes Service/Ingress 同步設定 DNS 資源紀錄 Part2</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2019-9-25 00:09</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2019/09/26/ironman2020/day11/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    實作 Kubernetes 裸機 Load Balancer Part1
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2019/09/24/ironman2020/day09/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">實現 Kubernetes Service/Ingress 同步設定 DNS 資源紀錄 Part1</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2019/09/25/ironman2020/day10/" data-id="ck3ns7q5z0034wmpf0n1yzxj8" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2019/09/25/ironman2020/day10/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/09/25/ironman2020/day10/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#環境建置"><span class="toc-number">2.</span> <span class="toc-text">環境建置</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#節點資訊"><span class="toc-number">2.1.</span> <span class="toc-text">節點資訊</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#部署-DNS-系統"><span class="toc-number">2.2.</span> <span class="toc-text">部署 DNS 系統</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CoreDNS-etcd"><span class="toc-number">2.3.</span> <span class="toc-text">CoreDNS + etcd</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ExternalDNS"><span class="toc-number">2.4.</span> <span class="toc-text">ExternalDNS</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#功能驗證"><span class="toc-number">3.</span> <span class="toc-text">功能驗證</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#結語"><span class="toc-number">4.</span> <span class="toc-text">結語</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Reference"><span class="toc-number">5.</span> <span class="toc-text">Reference</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2019/09/25/ironman2020/day10/';
+        
+        this.page.identifier = 'ironman2020/day10';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

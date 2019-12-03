@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>基本物件導向概念 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="物件導向程式設計（英語：Object-oriented programming，縮寫：OOP） 物件導向程式設計推廣了程式的靈活性和可維護性，在大型的專案被廣泛的應用。此外，支持者聲稱物件導向程式設計要比以往的做法更加便於學習，因為它能夠讓人們更簡單地設計並維護程式，使得程式更加便於分析、設計、理解。學習物件導向須了解幾點與幾個特性：  Object 是 Class 的 Instance。 Cla">
+<meta name="keywords" content="Programming,OOP">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基本物件導向概念">
+<meta property="og:url" content="https://k2r2bai.com/2014/06/03/msic/oop/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="物件導向程式設計（英語：Object-oriented programming，縮寫：OOP） 物件導向程式設計推廣了程式的靈活性和可維護性，在大型的專案被廣泛的應用。此外，支持者聲稱物件導向程式設計要比以往的做法更加便於學習，因為它能夠讓人們更簡單地設計並維護程式，使得程式更加便於分析、設計、理解。學習物件導向須了解幾點與幾個特性：  Object 是 Class 的 Instance。 Cla">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.399Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="基本物件導向概念">
+<meta name="twitter:description" content="物件導向程式設計（英語：Object-oriented programming，縮寫：OOP） 物件導向程式設計推廣了程式的靈活性和可維護性，在大型的專案被廣泛的應用。此外，支持者聲稱物件導向程式設計要比以往的做法更加便於學習，因為它能夠讓人們更簡單地設計並維護程式，使得程式更加便於分析、設計、理解。學習物件導向須了解幾點與幾個特性：  Object 是 Class 的 Instance。 Cla">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-msic/oop" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            基本物件導向概念
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2014/06/03/msic/oop/">
+            <u><time datetime="2014-06-03T04:23:01.000Z" itemprop="datePublished">2014-06-03</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Programming/">Programming</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/OOP/">OOP</a>, <a class="tag-link" href="/tags/Programming/">Programming</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p><strong>物件導向程式設計</strong>（英語：Object-oriented programming，縮寫：OOP）</p>
+<p>物件導向程式設計推廣了程式的<strong>靈活性</strong>和<strong>可維護性</strong>，在大型的專案被廣泛的應用。此外，支持者聲稱<strong>物件導向程式設計</strong>要比以往的做法更加便於學習，因為它能夠讓人們更簡單地設計並維護程式，使得程式更加便於分析、設計、理解。學習物件導向須了解幾點與幾個特性：</p>
+<ul>
+<li>Object 是 Class 的 Instance。</li>
+<li>Class 是 Object 的定義。描述 Object 的組成與功能。</li>
+<li>Object 使用前必須建立 Class 的 Object(Instance) (使用New)。</li>
+<li>真正被用來處理問題的是 Object，而 Class 決定了 Object 的行為。</li>
+</ul>
+<a id="more"></a>
+
+<h2 id="類別"><a href="#類別" class="headerlink" title="類別"></a>類別</h2><p>類別（Class）定義了一件事物的<strong>抽象</strong>特點。類別定義了事物的屬性與可做到的行為。Ex:「人」包含了一切的基本特徵與行為，頭髮、樣貌等等，類別可以為程式提供模版和結構。一個類別的方法和屬性被稱為「<strong>成員</strong>」。如以下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">類別 人 : &#123;</span><br><span class="line"> 公有成員：</span><br><span class="line">    走();</span><br><span class="line">    講話();</span><br><span class="line">    吃飯()</span><br><span class="line"> 私有成員：</span><br><span class="line">    頭髮顏色;</span><br><span class="line">    身體膚色;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>這邊解釋了一個人的類別，其中公有(public)與私有(private)會在<strong>封裝性</strong>提到。</p>
+<h2 id="物件"><a href="#物件" class="headerlink" title="物件"></a>物件</h2><p>物件 (Object)是類別的例項(instance)。Ex:「人」類別列舉出人的特點，這個類別定義了世界上所有的人。而<strong>台灣人</strong>這個物件則是一種具體的人種，他的屬性也是具體的。人有皮膚顏色，而台灣人的皮膚顏色是白-黃之間。因此，台灣人就是人這個類別的一個例項(或稱<strong>實例</strong>)。</p>
+<ul>
+<li>系統給物件分配記憶體空間，而不會給類別分配記憶體空間。這很好理解，類別是抽象的系統不可能給抽象的東西分配空間，而物件則是具體的。</li>
+<li>我們無法讓人這個類別去走動，但是我們可以讓物件「台灣人」去走動，正如人可以走動一樣，但沒有具體的人就無法動作。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">宣告或定義：台灣人是一種人</span><br><span class="line">台灣人.走();</span><br><span class="line">台灣人.身體顏色() = 白;</span><br></pre></td></tr></table></figure>
+
+<h2 id="訊息傳遞"><a href="#訊息傳遞" class="headerlink" title="訊息傳遞"></a>訊息傳遞</h2><p>物件通過<strong>接受訊息</strong>、<strong>處理訊息</strong>、<strong>傳出訊息</strong>或<strong>使用其他類別的方法來實作一定功能</strong>，就叫訊息傳遞機制(Message Passing)。</p>
+<p>如：台灣人可以通過”講話”與其他人的溝通，從而導致一系列的事發生。</p>
+<h2 id="繼承"><a href="#繼承" class="headerlink" title="繼承"></a>繼承</h2><p>繼承性(Inheritance)是指，在某種情況下，一個類別會有「子類別」。子類別會比原本的類別(稱為父類別)要更加具體化。Ex:人有分台灣人、日本人等。在這種情況柯p可能就是<strong>台灣人的例項</strong>，並包含柯p自己的特性與行為。繼承的好處在於可以將相同事情做一次歸類，便可讓子類別擁有該屬性與行為。如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">類別 台灣人:繼承於人 &#123;</span><br><span class="line">    公有成員：</span><br><span class="line">        早餐專吃牛排();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">定義阿文是台灣人</span><br><span class="line">阿文.講話();</span><br><span class="line">阿文.早餐專吃牛排();</span><br></pre></td></tr></table></figure>
+
+<p>當一個類別從多個父類別繼承時，我們稱之為「<strong>多重繼承</strong>」。好比混血兒從分別兩個人種繼承而來。但多重繼承有時矛盾，讓人無法理解，且有些程式也不支援。</p>
+<h2 id="封裝性"><a href="#封裝性" class="headerlink" title="封裝性"></a>封裝性</h2><p>具備封裝性（Encapsulation）的物件導向程式設計隱藏了某一方法的具體執行步驟，取而代之的是通過<strong>訊息傳遞機制</strong>傳送訊息給它。好比一個人”吃飯”，吃飯的這個人才知道具體吃下了什麼，而其他人並不知道，例如。</p>
+<p>一個程序導向如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">定義柯p</span><br><span class="line">柯p.拆除違建();</span><br><span class="line">柯p.講話()</span><br></pre></td></tr></table></figure>
+
+<p>一個物件導向如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">定義小文是人</span><br><span class="line">小文.吃飯()</span><br><span class="line">小文.吃飯()</span><br><span class="line">小文.吃飯()</span><br></pre></td></tr></table></figure>
+
+<p>封裝是通過限制只有特定類別的物件可以存取這一特定類別的成員，而它們通常利用介面實作訊息的傳入傳出。通常來說，成員會依它們的存取許可權被分為3種：<strong>公有成員</strong>、<strong>私有成員</strong>以及<strong>保護成員</strong></p>
+<ul>
+<li>公有成員(public)：任何例項成員都可以被其他人使用。</li>
+<li>私有成員(private)：只有類別本身可以使用。</li>
+<li>保護成員(protected)：只有繼承的子類別與類別本身可以使用。</li>
+</ul>
+<h2 id="多型"><a href="#多型" class="headerlink" title="多型"></a>多型</h2><p>多型（Polymorphism）是指由繼承而產生的相關的不同的類別，其物件對同一訊息會做出不同的響應。好比『台灣人』與『美國人』都有”講話”的行為，但實際卻用不同語言講話。如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">類別 台灣人 : &#123;</span><br><span class="line">    公有成員：</span><br><span class="line">        講話();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">類別 美國人 : &#123;</span><br><span class="line">    公有成員：</span><br><span class="line">        講話();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">定義 歐罵馬 是美國人</span><br><span class="line">定義 馬陰酒 是台灣人</span><br><span class="line">歐罵馬.講話(); // 講美語</span><br><span class="line">馬陰酒.講話(); // 講國語</span><br></pre></td></tr></table></figure>
+
+<p>多型性的概念也可以用在<strong>運算子過載(overload)</strong>上。<br>多型是建立在繼承的基礎之上的，沒有繼承，就不會有多型。繼承的目的有兩種：</p>
+<ul>
+<li>繼承程式碼：達到程式碼再用性（reuse）</li>
+<li>繼承介面（interface）。達到介面再用性（reuse），為多型預作準備</li>
+</ul>
+<h2 id="抽象性"><a href="#抽象性" class="headerlink" title="抽象性"></a>抽象性</h2><p>抽象(Abstraction)是<strong>簡化複雜</strong>的現實問題的途徑，它可以為具體問題找到最恰當的類別定義，並且可以在最恰當的繼承級別解釋問題。Ex:柯p在一般時候都被當作一個人，但是如果想要讓他做柯p做的事，你可以呼叫柯p的方法。如果台灣人類別還有人的父類別，那麼你完全可以視柯p為一個人。</p>
+<h2 id="參考"><a href="#參考" class="headerlink" title="參考"></a>參考</h2><ul>
+<li><a href="http://en.wikipedia.org/wiki/Object-oriented_programming" target="_blank" rel="noopener">Wiki OOP</a></li>
+<li><a href="http://www.oreilly.com.tw/column_sleepless.php?id=j022" target="_blank" rel="noopener">Oreilly</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">基本物件導向概念</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2014-6-3 12:06</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2015/09/18/data-engineer/spark-standalone/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    Spark Standalone 模擬分散式運算
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2013/11/03/msic/ios-code-style/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">NYTime Objective-C 程式規範</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2014/06/03/msic/oop/" data-id="ck3ns7q6t005hwmpfbwaptxpx" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2014/06/03/msic/oop/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2014/06/03/msic/oop/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#類別"><span class="toc-number">1.</span> <span class="toc-text">類別</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#物件"><span class="toc-number">2.</span> <span class="toc-text">物件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#訊息傳遞"><span class="toc-number">3.</span> <span class="toc-text">訊息傳遞</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#繼承"><span class="toc-number">4.</span> <span class="toc-text">繼承</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#封裝性"><span class="toc-number">5.</span> <span class="toc-text">封裝性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#多型"><span class="toc-number">6.</span> <span class="toc-text">多型</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#抽象性"><span class="toc-number">7.</span> <span class="toc-text">抽象性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#參考"><span class="toc-number">8.</span> <span class="toc-text">參考</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2014/06/03/msic/oop/';
+        
+        this.page.identifier = 'msic/oop';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

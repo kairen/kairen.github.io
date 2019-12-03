@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>多租戶 Kubernetes 部署方案 Stackube | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Stackube是一個 Kubernetes-centric 的 OpenStack 發行版本(架構如下圖所示)，該專案結合 Kubernetes 與 OpenStack 的技術來達到真正的 Kubernetes 租戶隔離，如租戶實例採用 Frakti 來進行隔離、網路採用 Neutron OVS 達到每個 Namespace 擁有獨立的網路資源等。本篇會簡單介紹如何用 DevStack 建立測試">
+<meta name="keywords" content="Kubernetes,Openstack">
+<meta property="og:type" content="article">
+<meta property="og:title" content="多租戶 Kubernetes 部署方案 Stackube">
+<meta property="og:url" content="https://k2r2bai.com/2017/12/20/openstack/stackube/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Stackube是一個 Kubernetes-centric 的 OpenStack 發行版本(架構如下圖所示)，該專案結合 Kubernetes 與 OpenStack 的技術來達到真正的 Kubernetes 租戶隔離，如租戶實例採用 Frakti 來進行隔離、網路採用 Neutron OVS 達到每個 Namespace 擁有獨立的網路資源等。本篇會簡單介紹如何用 DevStack 建立測試">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/openstack/stackube-arch.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.401Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="多租戶 Kubernetes 部署方案 Stackube">
+<meta name="twitter:description" content="Stackube是一個 Kubernetes-centric 的 OpenStack 發行版本(架構如下圖所示)，該專案結合 Kubernetes 與 OpenStack 的技術來達到真正的 Kubernetes 租戶隔離，如租戶實例採用 Frakti 來進行隔離、網路採用 Neutron OVS 達到每個 Namespace 擁有獨立的網路資源等。本篇會簡單介紹如何用 DevStack 建立測試">
+<meta name="twitter:image" content="https://k2r2bai.com/images/openstack/stackube-arch.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-openstack/stackube" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            多租戶 Kubernetes 部署方案 Stackube
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2017/12/20/openstack/stackube/">
+            <u><time datetime="2017-12-20T08:23:01.000Z" itemprop="datePublished">2017-12-20</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/OpenStack/">OpenStack</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>, <a class="tag-link" href="/tags/Openstack/">Openstack</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p><a href="https://github.com/openstack/stackube" target="_blank" rel="noopener">Stackube</a>是一個 Kubernetes-centric 的 OpenStack 發行版本(架構如下圖所示)，該專案結合 Kubernetes 與 OpenStack 的技術來達到真正的 Kubernetes 租戶隔離，如租戶實例採用 Frakti 來進行隔離、網路採用 Neutron OVS 達到每個 Namespace 擁有獨立的網路資源等。本篇會簡單介紹如何用 DevStack 建立測試用 Stackube。</p>
+<a id="more"></a>
+
+<p><img src="/images/openstack/stackube-arch.png" alt></p>
+<blockquote>
+<p>P.S. 目前 Stackube 已經不再維護，僅作為測試與研究程式碼使用。</p>
+</blockquote>
+<h2 id="節點資訊"><a href="#節點資訊" class="headerlink" title="節點資訊"></a>節點資訊</h2><p>本次安裝作業系統採用<code>Ubuntu 16.04 Server</code>，測試環境為實體機器：</p>
+<table>
+<thead>
+<tr>
+<th>IP Address</th>
+<th>Host</th>
+<th>vCPU</th>
+<th>RAM</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>172.22.132.42</td>
+<td>stackube1</td>
+<td>8</td>
+<td>32G</td>
+</tr>
+</tbody></table>
+<h2 id="部署-Stackube"><a href="#部署-Stackube" class="headerlink" title="部署 Stackube"></a>部署 Stackube</h2><p>首先新增 Devstack 使用的 User：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo useradd -s /bin/bash -d /opt/stack -m stack</span><br><span class="line">$ <span class="built_in">echo</span> <span class="string">"stack ALL=(ALL) NOPASSWD: ALL"</span> | sudo tee /etc/sudoers.d/stack</span><br><span class="line">$ sudo su - stack</span><br></pre></td></tr></table></figure>
+
+<p>透過 Git 取得 Ocata 版本的 Devstack：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://git.openstack.org/openstack-dev/devstack -b stable/ocata</span><br><span class="line">$ <span class="built_in">cd</span> devstack</span><br></pre></td></tr></table></figure>
+
+<p>取得單節範例設定檔：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl -sSL https://raw.githubusercontent.com/kairen/stackube/master/devstack/local.conf.sample -o local.conf</span><br></pre></td></tr></table></figure>
+
+<p>完成後即可進行安裝：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ./stack.sh</span><br></pre></td></tr></table></figure>
+
+<h2 id="測試基本功能"><a href="#測試基本功能" class="headerlink" title="測試基本功能"></a>測試基本功能</h2><p>完成後，就可以透過以下指令來引入 Kubernetes 與 OpenStack client 需要的環境變數：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">export</span> KUBECONFIG=/opt/stack/admin.conf</span><br><span class="line">$ <span class="built_in">source</span> /opt/stack/devstack/openrc admin admin</span><br></pre></td></tr></table></figure>
+
+<p>Stackube 透過 CRD 新增了一個新抽象物件 Tenant，可以直接透過 Kubernetes API 來建立一個租戶，並將該租戶與 Kubernettes namespace 做綁定：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cat &lt;&lt;EOF | kubectl create -f -</span><br><span class="line">apiVersion: <span class="string">"stackube.kubernetes.io/v1"</span></span><br><span class="line">kind: Tenant</span><br><span class="line">metadata:</span><br><span class="line">  name: <span class="built_in">test</span></span><br><span class="line">spec:</span><br><span class="line">  username: <span class="string">"test"</span></span><br><span class="line">  password: <span class="string">"password"</span></span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line">$ kubectl get namespace <span class="built_in">test</span></span><br><span class="line">NAME      STATUS    AGE</span><br><span class="line"><span class="built_in">test</span>      Active    2h</span><br><span class="line"></span><br><span class="line">$ kubectl -n <span class="built_in">test</span> get network <span class="built_in">test</span> -o yaml</span><br><span class="line">apiVersion: stackube.kubernetes.io/v1</span><br><span class="line">kind: Network</span><br><span class="line">metadata:</span><br><span class="line">  clusterName: <span class="string">""</span></span><br><span class="line">  creationTimestamp: 2017-12-20T06:03:33Z</span><br><span class="line">  generation: 0</span><br><span class="line">  name: <span class="built_in">test</span></span><br><span class="line">  namespace: <span class="built_in">test</span></span><br><span class="line">  resourceVersion: <span class="string">"4631"</span></span><br><span class="line">  selfLink: /apis/stackube.kubernetes.io/v1/namespaces/<span class="built_in">test</span>/networks/<span class="built_in">test</span></span><br><span class="line">  uid: e9aef6fa-3316-11e8-8b66-448a5bd481f0</span><br><span class="line">spec:</span><br><span class="line">  cidr: 10.244.0.0/16</span><br><span class="line">  gateway: 10.244.0.1</span><br><span class="line">  networkID: <span class="string">""</span></span><br><span class="line">status:</span><br><span class="line">  state: Active</span><br></pre></td></tr></table></figure>
+
+<p>檢查 Neutron 網路狀況：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ neutron net-list</span><br><span class="line">+--------------------------------------+----------------------+----------------------------------+----------------------------------------------------------+</span><br><span class="line">| id                                   | name                 | tenant_id                        | subnets                                                  |</span><br><span class="line">+--------------------------------------+----------------------+----------------------------------+----------------------------------------------------------+</span><br><span class="line">| 2a8e3b54-d76f-48a9-8380-7c2a5513b1fe | kube-test-test       | f2f25d24fd9a4616bff41b018e8725d2 | 625909a9-6abf-4661-b259-ffc625bdf681 10.244.0.0/16       |</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>P.S. 這邊個人只是研究 Stackube CNI，故不針對其於進行測試，可自行參考 <a href="https://stackube.readthedocs.io/en/latest/user_guide.html" target="_blank" rel="noopener">Stackube</a>。</p>
+</blockquote>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">多租戶 Kubernetes 部署方案 Stackube</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2017-12-20 16:12</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2018/01/08/kubernetes/rbac-sa-kubectl/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    利用 RBAC + SA 進行 Kubectl 權限控管
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2017/11/29/openstack/openstack-helm/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">Deploy OpenStack on Kubernetes using OpenStack-helm</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2017/12/20/openstack/stackube/" data-id="ck3ns7q750063wmpfaxkkipnf" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2017/12/20/openstack/stackube/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2017/12/20/openstack/stackube/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#節點資訊"><span class="toc-number">1.</span> <span class="toc-text">節點資訊</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#部署-Stackube"><span class="toc-number">2.</span> <span class="toc-text">部署 Stackube</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#測試基本功能"><span class="toc-number">3.</span> <span class="toc-text">測試基本功能</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2017/12/20/openstack/stackube/';
+        
+        this.page.identifier = 'openstack/stackube';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

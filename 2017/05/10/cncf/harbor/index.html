@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>Harbor: 開源 Container Registry | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Harbor 是基於 Docker Distribution 進行擴展的 Container Registry 專案，其針對一些企業常用的功能做了許多整合，例如: LDAP、容器映像檔安全掃描的 Clair、容器映像檔簽署的 Notary、儲存後端(S3、Cloud Storage 等)、映像檔副本機制。除此之外，Harbor 亦提供了進階的安全性功能，如使用者管理(User managment)">
+<meta name="keywords" content="CNCF,Container,Container Registry">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Harbor: 開源 Container Registry">
+<meta property="og:url" content="https://k2r2bai.com/2017/05/10/cncf/harbor/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Harbor 是基於 Docker Distribution 進行擴展的 Container Registry 專案，其針對一些企業常用的功能做了許多整合，例如: LDAP、容器映像檔安全掃描的 Clair、容器映像檔簽署的 Notary、儲存後端(S3、Cloud Storage 等)、映像檔副本機制。除此之外，Harbor 亦提供了進階的安全性功能，如使用者管理(User managment)">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/cncf/harbor-logo.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.379Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Harbor: 開源 Container Registry">
+<meta name="twitter:description" content="Harbor 是基於 Docker Distribution 進行擴展的 Container Registry 專案，其針對一些企業常用的功能做了許多整合，例如: LDAP、容器映像檔安全掃描的 Clair、容器映像檔簽署的 Notary、儲存後端(S3、Cloud Storage 等)、映像檔副本機制。除此之外，Harbor 亦提供了進階的安全性功能，如使用者管理(User managment)">
+<meta name="twitter:image" content="https://k2r2bai.com/images/cncf/harbor-logo.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-cncf/harbor" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+            
+	
+		<img src="/images/cncf/harbor-logo.png" class="article-banner" />
+	
+
+
+
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            Harbor: 開源 Container Registry
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2017/05/10/cncf/harbor/">
+            <u><time datetime="2017-05-10T09:08:54.000Z" itemprop="datePublished">2017-05-10</time></u>
+        </a>
+    </div>
+
+
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-check-o"></i>
+        Edited on
+        <a href="/2017/05/10/cncf/harbor/">
+             <u><time datetime="2019-04-02T12:18:54.000Z" itemprop="datePublished">2019-04-02</time></u>
+        </a>
+    </div>
+
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/CNCF/">CNCF</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/CNCF/">CNCF</a>, <a class="tag-link" href="/tags/Container/">Container</a>, <a class="tag-link" href="/tags/Container-Registry/">Container Registry</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p><a href="https://github.com/goharbor/harbor" target="_blank" rel="noopener">Harbor</a> 是基於 <a href="https://github.com/docker/distribution" target="_blank" rel="noopener">Docker Distribution</a> 進行擴展的 Container Registry 專案，其針對一些企業常用的功能做了許多整合，例如: LDAP、容器映像檔安全掃描的 <a href="https://github.com/coreos/clair" target="_blank" rel="noopener">Clair</a>、容器映像檔簽署的 <a href="https://github.com/theupdateframework/notary" target="_blank" rel="noopener">Notary</a>、儲存後端(S3、Cloud Storage 等)、映像檔副本機制。除此之外，Harbor 亦提供了進階的安全性功能，如使用者管理(User managment)，存取控制(Access control)和活動稽核(Activity auditing)。</p>
+<blockquote class="colorquote info"><p>Harbor 早期是 VMware 開源作為企業級私有 Container Registry 的專案，但在 2018 年時貢獻給 CNCF 作為 Sandbox 專案進行維護。</p>
+</blockquote>
+
+<a id="more"></a>
+
+<h2 id="功能特色"><a href="#功能特色" class="headerlink" title="功能特色"></a>功能特色</h2><ul>
+<li><p><strong>支援 RBAC(Role Based Access Control) 機制</strong>: 管理員可以定義 User、Project 與 Image 的權限。</p>
+<blockquote>
+<p>P.S. 這邊的 Project 是 Image 隔離域。Image 可以被存放到不同 Project，然後讓不同 User 存取。</p>
+</blockquote>
+</li>
+</ul>
+<ul>
+<li><strong>支援 LDAP/AD</strong>：可以整合 LDAP/AD 來管理使用者的認證與授權。</li>
+<li><strong>Web-based UI</strong>：使用者可以透過登入 Web-based UI 來管理 Image。</li>
+<li><strong>稽核管理</strong>：所有操作都被記錄。</li>
+<li><strong>RESTful API</strong>：提供 RESTful APIs 來讓其他系統進行整合。</li>
+<li><strong>漏洞掃描</strong>：整合 Clair 專案來進行 Image 的漏洞掃描。</li>
+<li><strong>映像檔簽署</strong>：整合 Notary 專案來確保 Image 是可信任的。</li>
+</ul>
+<blockquote class="colorquote info"><p>可以查看 <a href="https://github.com/goharbor/harbor#features" target="_blank" rel="noopener">Harbor Features</a> 來了解更多功能特色。</p>
+</blockquote>
+
+<h2 id="Harbor-簡單部署與使用"><a href="#Harbor-簡單部署與使用" class="headerlink" title="Harbor 簡單部署與使用"></a>Harbor 簡單部署與使用</h2><p>Harbor 提供兩種方法進行安裝：</p>
+<ol>
+<li>Online installer<br> 這種安裝方式會從 Docker hub 下載 Harbor 所需的映像檔，因此 installer 檔案較輕量。</li>
+<li>Offline installer<br> 當無任何網際網路連接的情況下使用此種安裝方式，預先將所需的映像檔打包，因此 installer 檔案較大。</li>
+</ol>
+<h3 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h3><p>Harbor 會部署數個 Docker container，所以部署的主機需要能支援 Docker 的 Linux distribution。而部署主機需要安裝以下套件：</p>
+<ul>
+<li>Python 版本<code>2.7+</code>。</li>
+<li>Docker Engine 版本 <code>1.10+</code>。Docker 安裝方式，請參考：<a href="https://docs.docker.com/engine/installation/" target="_blank" rel="noopener">Install Docker</a></li>
+<li>Docker Compose 版本 <code>1.6.0+</code>。Docker Compose 安裝方式，請參考：<a href="https://docs.docker.com/compose/install/" target="_blank" rel="noopener">Install Docker Compose</a></li>
+</ul>
+<blockquote>
+<p>官方安裝指南說明是 Linux 且要支援 Docker，但 Windows 支援 Docker 部署 Harbor 還需要驗證是否可行。</p>
+</blockquote>
+<p>安裝步驟大致可分為以下階段：</p>
+<ol>
+<li>下載 installer</li>
+<li>設定 Harbor</li>
+<li>執行安裝腳本</li>
+</ol>
+<h4 id="下載-installer"><a href="#下載-installer" class="headerlink" title="下載 installer"></a>下載 installer</h4><p>installer 的二進制檔案可以從 <a href="https://github.com/vmware/harbor/releases" target="_blank" rel="noopener">release page</a> 下載，選擇您需要 Online installer 或者 Offline installer，下載完成後，使用<code>tar</code>將 package 解壓縮：</p>
+<p>Online installer：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ tar xvf harbor-online-installer-&lt;version&gt;.tgz</span><br></pre></td></tr></table></figure>
+
+<p>Offline installer：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ tar xvf harbor-offline-installer-&lt;version&gt;.tgz</span><br></pre></td></tr></table></figure>
+
+<h4 id="設定-Harbor"><a href="#設定-Harbor" class="headerlink" title="設定 Harbor"></a>設定 Harbor</h4><p>Harbor 的設定與參數都在<code>harbor.cfg</code>中。</p>
+<p><code>harbor.cfg</code>中的參數分為<strong>required parameters</strong>與<strong>optional parameters</strong></p>
+<ul>
+<li><strong>required parameters</strong><br>  這類的參數是必須設定的，且會影響使用者更新<code>harbor.cfg</code>後，重新執行安裝腳本來重新安裝 Harbor。</li>
+<li><strong>optional parameters</strong><br>  這類的參數為使用者自行決定是否設定，且只會在第一次安裝時，這些參數的配置才會生效。而 Harbor 啟動後，可以透過 Web UI 進行修改。</li>
+</ul>
+<h5 id="Configuring-storage-backend-optional"><a href="#Configuring-storage-backend-optional" class="headerlink" title="Configuring storage backend (optional)"></a>Configuring storage backend (optional)</h5><p>預設的情況下，Harbor 會將 Docker image 儲存在本機的檔案系統上，在生產環境中，您可以考慮使用其他 storage backend 而不是本機的檔案系統，像是 S3, OpenStack Swift, Ceph 等。而僅需更改 <code>common/templates/registry/config.yml</code>。以下為一個接 OpenStack Swift 的範例：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">storage:</span><br><span class="line">  swift:</span><br><span class="line">    username: admin</span><br><span class="line">    password: ADMIN_PASS</span><br><span class="line">    authurl: http://keystone_addr:35357/v3/auth</span><br><span class="line">    tenant: admin</span><br><span class="line">    domain: default</span><br><span class="line">    region: regionOne</span><br><span class="line">    container: docker_images</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>更多 storage backend 的資訊，請參考：<a href="https://docs.docker.com/registry/configuration/" target="_blank" rel="noopener">Registry Configuration Reference</a>。
+另外官方提供的是改 <code>common/templates/registry/config.yml</code>，感覺寫錯，需再測試其正確性。</p>
+</blockquote>
+<h4 id="執行安裝腳本"><a href="#執行安裝腳本" class="headerlink" title="執行安裝腳本"></a>執行安裝腳本</h4><p>一旦<code>harbor.cfg</code>與 storage backend (optional) 設定完成後，可以透過<code>install.sh</code>腳本開始安裝 Harbor。從 Harbor 1.1.0 版本之後，已經整合<code>Notary</code>，但是預設的情況下安裝是不包含<code>Notary</code>支援：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo ./install.sh</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>Online installer 會從 Docker hub 下載 Harbor 所需的映像檔，因此會花較久的時間。</p>
+</blockquote>
+<p>如果安裝過程正常，您可以打開瀏覽器並輸入在<code>harbor.cfg</code>中設定的<code>hostname</code>，來存取 Harbor 的 Web UI。<br><img src="https://i.imgur.com/jBVsr49.png" alt="Harbor Web UI"></p>
+<blockquote>
+<p>預設的管理者帳號密碼為 <code>admin</code>/<code>Harbor12345</code>。</p>
+</blockquote>
+<h4 id="開始使用-Harbor"><a href="#開始使用-Harbor" class="headerlink" title="開始使用 Harbor"></a>開始使用 Harbor</h4><p>登入成功後，可以創建一個新的 Project，並使用 Docker command 進行登入，但在登入之前，需要對 Docker daemon 新增<code>--insecure-registry</code>參數。新增<code>--insecure-registry</code>參數至<code>/etc/default/docker</code>中：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">DOCKER_OPTS=<span class="string">"--insecure-registry &lt;your harbor.cfg hostname&gt;"</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>其他細節，請參考：<a href="https://docs.docker.com/registry/insecure/#deploying-a-plain-http-registry" target="_blank" rel="noopener">Test an insecure registry</a>。
+若在<code>Ubuntu 16.04</code>的作業系統版本，需要修改<code>/lib/systemd/system/docker.service</code>檔案，並加入一下內容。另外在 CentOS 7.x 版本則不需要加入<code>-H fd://</code>資訊：</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">EnvironmentFile=/etc/default/docker</span><br><span class="line">ExecStart=/usr/bin/dockerd -H fd:// <span class="variable">$DOCKER_OPTS</span></span><br></pre></td></tr></table></figure>
+
+<p>修改完成後，重新啟動服務：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo systemctl daemon-reload</span><br></pre></td></tr></table></figure>
+
+<p>服務重啟成功後，透過 Docker command 進行 login：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker login &lt;your harbor.cfg hostname&gt;</span><br></pre></td></tr></table></figure>
+
+<p>將映像檔上 tag 之後，上傳至 Harbor：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker tag ubuntu:&lt;your harbor.cfg hostname&gt;/&lt;your project&gt;/ubuntu:16.04</span><br><span class="line">$ docker push &lt;your harbor.cfg hostname&gt;/&lt;your project&gt;/ubunut:16.04</span><br></pre></td></tr></table></figure>
+
+<p>從 Harbor 抓取上傳的映像檔：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker pull &lt;your harbor.cfg hostname&gt;/&lt;your project&gt;/ubunut:16.04</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>更多使用者操作，請參考：<a href="https://github.com/vmware/harbor/blob/master/docs/user_guide.md" target="_blank" rel="noopener">Harbor User Guide</a>。</p>
+</blockquote>
+<h2 id="References"><a href="#References" class="headerlink" title="References"></a>References</h2>
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">Harbor: 開源 Container Registry</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2017-5-10 17:05</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2017/05/16/blockchain/hyperledger/quick-start/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    透過 Docker 體驗 Hyperledger
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2017/04/23/container/moby-linuxkit/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">品嚐 Moby LinuxKit 的 Linux 作業系統</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2017/05/10/cncf/harbor/" data-id="ck3ns7q4y000ewmpfy099syto" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2017/05/10/cncf/harbor/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2017/05/10/cncf/harbor/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#功能特色"><span class="toc-number">1.</span> <span class="toc-text">功能特色</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Harbor-簡單部署與使用"><span class="toc-number">2.</span> <span class="toc-text">Harbor 簡單部署與使用</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#事前準備"><span class="toc-number">2.1.</span> <span class="toc-text">事前準備</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#References"><span class="toc-number">3.</span> <span class="toc-text">References</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2017/05/10/cncf/harbor/';
+        
+        this.page.identifier = 'cncf/harbor';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

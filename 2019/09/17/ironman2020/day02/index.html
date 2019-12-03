@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>淺談 Kubernetes 的部署工具選擇 Part2 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="前言上一篇 淺談 Kubernetes 的部署工具選擇 Part1 提到選擇部署工具時，需要思考的幾件事情，並簡單提了一下目前 Kubernetes SIG cluster lifecycle 的發展。而今天我將依據不同環境與情境來說明自己怎麼選用 Kubernetes 部署工具。  原本這篇是要放在第一天一起講，但是發現一天超過 6000 字似乎有點壓力… 感覺三天後我就放推了，但因為是團隊報名">
+<meta name="keywords" content="Kubernetes">
+<meta property="og:type" content="article">
+<meta property="og:title" content="淺談 Kubernetes 的部署工具選擇 Part2">
+<meta property="og:url" content="https://k2r2bai.com/2019/09/17/ironman2020/day02/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="前言上一篇 淺談 Kubernetes 的部署工具選擇 Part1 提到選擇部署工具時，需要思考的幾件事情，並簡單提了一下目前 Kubernetes SIG cluster lifecycle 的發展。而今天我將依據不同環境與情境來說明自己怎麼選用 Kubernetes 部署工具。  原本這篇是要放在第一天一起講，但是發現一天超過 6000 字似乎有點壓力… 感覺三天後我就放推了，但因為是團隊報名">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.387Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="淺談 Kubernetes 的部署工具選擇 Part2">
+<meta name="twitter:description" content="前言上一篇 淺談 Kubernetes 的部署工具選擇 Part1 提到選擇部署工具時，需要思考的幾件事情，並簡單提了一下目前 Kubernetes SIG cluster lifecycle 的發展。而今天我將依據不同環境與情境來說明自己怎麼選用 Kubernetes 部署工具。  原本這篇是要放在第一天一起講，但是發現一天超過 6000 字似乎有點壓力… 感覺三天後我就放推了，但因為是團隊報名">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-ironman2020/day02" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            淺談 Kubernetes 的部署工具選擇 Part2
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2019/09/17/ironman2020/day02/">
+            <u><time datetime="2019-09-16T16:00:00.000Z" itemprop="datePublished">2019-09-17</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇 <a href="https://k2r2bai.com/2019/09/16/ironman2020/day01/">淺談 Kubernetes 的部署工具選擇 Part1</a> 提到選擇部署工具時，需要思考的幾件事情，並簡單提了一下目前 Kubernetes SIG cluster lifecycle 的發展。而今天我將依據不同環境與情境來說明自己怎麼選用 Kubernetes 部署工具。</p>
+<blockquote>
+<p>原本這篇是要放在第一天一起講，但是發現一天超過 6000 字似乎有點壓力… 感覺三天後我就放推了，但因為是團隊報名，所以不能放棄!!!只好拆成三篇來分享。</p>
+</blockquote>
+<a id="more"></a>
+
+<p>接下來的內容，我將分成以下幾個用途來分享自己想法與如何選擇:</p>
+<ol>
+<li>開發環境(Development)</li>
+<li>測試環境(Testing)</li>
+<li>預備環境(Staging)</li>
+<li>生產環境(Production)</li>
+</ol>
+<blockquote>
+<p>因為都只是自己想法，沒什麼參考價值，大家看看就好。</p>
+</blockquote>
+<h2 id="開發環境-Development"><a href="#開發環境-Development" class="headerlink" title="開發環境(Development)"></a>開發環境(Development)</h2><p>在公司時，我比較常負責開發各種 Kubernetes 相關整合元件(比如說 Controller/Operator、CNI/CSI/Device Plugin、Authentication webhook 等等)，以及提供客戶想要容器化的應用程式，並放到 Kubernetes 中。而其中開發 Kubernetes 整合元件部分又以 Controller 居多，因為客戶希望能夠透過 Kubernetes 機制來實現一些新功能或是管理硬體資源(如透過 Kubernetes resource 來管理防火牆設備等等)，或者希望能夠跟 Kubernetes 既有的 API resources 直接整合，如當建立 Service 時，自動設定對應防火牆的規則。而諸如此類的工作事情，往往需要一座實際的 Kubernetes 叢集來測試與驗證開發的功能，這時該怎麼選擇呢?在開始選擇前，我們先來看看被用於開發與測試的 Kubernetes 部署工具有哪些，下面簡單列幾個專案與方案:</p>
+<ul>
+<li><a href="https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/" target="_blank" rel="noopener">kubeadm</a></li>
+<li><a href="https://minikube.sigs.k8s.io" target="_blank" rel="noopener">minikube</a></li>
+<li><a href="https://github.com/kubernetes-sigs/kind" target="_blank" rel="noopener">kind</a></li>
+<li><a href="https://github.com/ubuntu/microk8s" target="_blank" rel="noopener">microk8s</a></li>
+<li><a href="https://blog.docker.com/2018/01/docker-mac-kubernetes/" target="_blank" rel="noopener">Kubernetes-powered Docker CE</a></li>
+<li><a href="https://github.com/kinvolk/kube-spawn" target="_blank" rel="noopener">kube-spawn</a></li>
+<li><a href="https://github.com/danderson/virtuakube" target="_blank" rel="noopener">virtuakube</a></li>
+<li><a href="https://github.com/valentin2105/Simplekube" target="_blank" rel="noopener">Simplekube</a></li>
+</ul>
+<blockquote>
+<p>除了這些，大家也可以看看 <a href="https://github.com/ramitsurana/awesome-kubernetes" target="_blank" rel="noopener">awesome-kubernetes</a> 中的列表來查看其他工具。</p>
+</blockquote>
+<p>大家會發現有這麼工具多可以使用，那是不是只要自己用的爽，或是反正團隊想用什麼就用什麼，這樣就好了?</p>
+<p>答案是『Yes』，但我還是會進一步去考慮一些條件，比如說:</p>
+<ol>
+<li><strong>由Kubernetes 社區或某公司維護</strong>: 選擇社區與公司維護的原因在於，往往一個專案若沒有組織維護時，可能會因為本身專案不夠大(或者自身工作太忙碌)，而願意投入的開發者相對少，甚至只有自己時，就會無法持續跟進與改進，這樣時間久了自然就不會在維護。而這點尤其選擇<code>Kubernetes 社區</code>維護為佳。</li>
+<li><strong>可客製化程度</strong>: 能夠客製化部署的叢集好處在於能夠對一些特別的功能進行驗證，因為 Kubernetes 有些功能在不同版本不是都預設開啟，而在這種情況下，若使用的工具本身難以調整時，就會帶來一些麻煩。另外不同 Kubernetes 版本的支援，是希望確保開發的程式，能夠在同一機器驗證不同版本的執行結果，以降低不必要的時間浪費。</li>
+<li><strong>是否支援多節點(Multi-node)環境</strong>: 雖然開發環境大多情況下用單節點 Kubernetes 就能夠完成，但如果遇到是開發 Custom Scheduler 或者特殊應用時，能夠模擬多節點的 Kubernetes 叢集就極為重要。</li>
+<li><strong>是否會污染開發機器的環境</strong>: 大多情況下，我不太喜歡因為開發某個程式，就安裝一堆東西來污染整個環境，因為有些工具會安裝過多相依元件，這時可能會造成開發環境的元件難以清理。老實說這是奇摩子問題。</li>
+<li><strong>是否跨平台或作業系統</strong>: 最主要是確保團隊成員不管是使用哪個平台(或作業系統)進行開發，都能夠用同一套工具來驗證開發的結果，以保證團隊驗證環境的一致性。</li>
+<li><strong>能 3 - 5 行搞定</strong>: 使用工具本來就是為了降低繁雜的部署過程，因此能夠用最少的指令來完成那對於開發人員是最好不過，因為開發人員理論上不應該太專注於 Kubernetes 部署本身，而是要開發的功能。</li>
+</ol>
+<p>考慮了這些條件後，我會快速地先過濾掉一些非社區或公司維護的工具，比如說上面列出來的 virtuakube、Simplekube 專案。相信大家點進去看過這些專案後，也會發現大多數個人維護的工具，都會在經過一段時間後，就慢慢沒有那麼頻繁維護，最後 EoL 並 Archived 整個程式碼專案。而當過濾掉這些後，就會進一步依據剩下條件來找出最佳的工具。</p>
+<p>比如說用於測試開發程式或上手 Kubernetes 時，個人就特別推薦 minikube，因為它以下幾個好處:</p>
+<ul>
+<li>Kubernetes 社區維護，目前核心人員積極在改進功能。</li>
+<li>能夠透過執行參數來改變 kube-apiserver、kube-controller-manager 與 kube-scheduler 等等元件的設定。</li>
+<li>支援不同的平台(需要自己編譯)與作業系統。</li>
+<li>提供不同 cluster bootstrapper。</li>
+</ul>
+<blockquote>
+<p>minikube 的 cluster bootstrapper 目前雖然只有 kubeadm，但是 Kubernetes 社區有在規劃 Free-VM(kind)的部署。</p>
+</blockquote>
+<ul>
+<li>支援不同虛擬機驅動(VM driver)。也支援 None VM 部署，但僅限於 Linux。</li>
+</ul>
+<p>但 minikube 最可惜之處，在於無法模擬多節點部署的 Kubernetes 叢集，因此沒辦法驗證一些開發的東西。</p>
+<blockquote>
+<p>事實上也不是不能，畢竟是開源專案，只要稍微改程式就可以了，大家可以參考 <a href="https://k2r2bai.com/2019/01/22/kubernetes/deploy/minikube-multi-node/">利用 Minikube 快速建立測試用多節點 Kubernetes 叢集</a> 這篇文章。另一方面 minikube 團隊也把多節點部署視為 2019 年希望支援的功能，也看到會議上有持續在討論這個內容，大家可以參考 <a href="https://github.com/kubernetes/minikube/issues/94" target="_blank" rel="noopener">Add multi-node support </a>。</p>
+</blockquote>
+<p>如果遇到多節點支援問題時，我就會選擇 kind 或 microk8s 作為替代方案，尤其是 kind 是由 Kubernetes 社區維護，其背後也是基於 kubeadm 的函式庫實現而成，因此能夠確保叢集是當前版本的最佳實踐。</p>
+<p>這時有人會問說，為啥不直接用 kubeadm?上面很多工具都是基於它開發而成的啊。事情是這樣的，kubeadm 並不像其他工具能幫你建立執行的虛擬環境(如 VM 或 Container)，因此執行 kubeadm 的環境依然需要自己處理，而這過程會增加開發人員不必要的時間浪費，並且對開發這件事失焦。</p>
+<blockquote>
+<p>當然喜歡用 <a href="https://www.vagrantup.com/" target="_blank" rel="noopener">Vagrant</a> 的人，也是可以自己寫個 Vagrantfile + Shell/BASH 腳本來部署。</p>
+</blockquote>
+<p>那 Docker 內建的 Kubernetes 呢?Docker 能夠簡單又快速地建立開發與測試用的 Kubernetes 環境，也是知名公司維護阿。確實上是如此沒錯，但我沒有特別推薦用於開發是因為 Kubernetes 是 Docker 工具附加的功能，所有版本跟設定幾乎都是綁死於特定的 Docker 版本，因此我們很難依據個人需求，去調整部署的 Kubernetes 叢集參數與版本。</p>
+<h2 id="測試環境-Testing"><a href="#測試環境-Testing" class="headerlink" title="測試環境(Testing)"></a>測試環境(Testing)</h2><p>而當開發完功能後，往往會再額外撰寫單元測試(Unit tests)、煙霧測試(Smoke tests)與 E2E 測試(或整合測試)的程式，並使用持續性整合(Continuous Integration)平台自動化地在程式碼推送至 Git 時，執行團隊要求的測試步驟。比如說當單元測試完成後，會檢查測試覆蓋率與錯誤率是否符合要求，若符合的話，則接著進行 E2E 測試(或整合測試)，這時也需要實際部署一座用於測試的 Kubernetes 叢集來驗證功能。那我會怎麼做呢?</p>
+<blockquote>
+<p>要不要把單元測試跟 E2E 測試(或整合測試)放一個階段執行要看團隊，後者往往需要部署一座 Kubernetes 叢集提供測試用，所以為了避免不必要的資源浪費，我比較偏向先跑完單元測試後，在判斷是否執行 E2E 測試(或整合測試)。</p>
+</blockquote>
+<p>這部分我會依據以下幾件事來選擇使用的部署工具:</p>
+<ol>
+<li><strong>確認使用的 CI 平台(工具)</strong>: 由於開發的專案放置在不同 Git 儲存庫時，我會依據情況使用不同的 CI 來執行測試，比如說 GitHub 上就會用 Travis CI 來完成，但 Travis CI 無法讓我們透過 minikube 以虛擬機方式，建立一座測試用 Kubernetes 叢集，且使用 None driver 也可能影響到 Travis CI 提供的環境。這時我就會選用 <code>kind</code> 這種 Free-VM，但又有隔離性的工具來完成。當然若是自建的 CI 就另當別論，像是我比較喜歡在專案塞個 Vagrantfile 來完成。</li>
+<li><strong>儘可能與開發環境使用的工具一致</strong>: 確保開發環境若有對 Kubernetes 叢集做什麼更動時，測試環境也能透過同樣指令與設定來建立相同叢集。</li>
+<li><strong>能夠保留/刪除舊叢集，以及快速建立新叢集</strong>: 有時候我會利用上一次測試過的環境來執行新的 Commit，當測試完成後再刪除，並建立新叢集進行第二次測試。這是因為預備環境(Staging)或生產環境(Production)通常不會頻繁更動 Kubernetes 叢集，尤其是生產環境。</li>
+<li><strong>通過 <a href="https://github.com/cncf/k8s-conformance" target="_blank" rel="noopener">CNCF Kubernetes Conformance</a></strong>: CNCF 的一致性測試會基於 <a href="https://github.com/heptio/sonobuoy" target="_blank" rel="noopener">Sonobuoy</a> 工具對 Kubernetes 叢集進行各種測試。若使用的 Kubernetes 部署工具通過測試的話，理論上能在被認證的其他方案與專案上轉移。</li>
+</ol>
+<blockquote>
+<p>當然這前提是不考慮太多<code>網路</code>與<code>儲存</code>狀況。</p>
+</blockquote>
+<p>事實上，在測試環境中，我使用的工具大多是 minikube、kind 與 kubeadm with vagrant。但測試功能需要一座小規模節點數的裸機叢集時，我就會透過結合 Ansible 這種工具來搭配 kubeadm。</p>
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>今天先分享自己在開發環境跟測試環境上的選擇，明天再進一步分享剩下的預備環境(Staging)與生產環境(Production)。老實說也沒有真的哪個方式是最好，只要能達成目標用什麼確實都可以。當然這是不考慮後續維護的前提下，若團隊長期會持續在 Kubernetes 上進行開發的話，我還是建議以 Kubernetes 社區維護的工具為主，至少能確保支援當前的 Kubernetes 的版本與最佳實踐。當然公司團隊有餘力的話，以 Kubernetes 社區的工具為基礎打造一套公司專用的 Kubernetes 部署工具也是不錯選擇。</p>
+<blockquote>
+<p>其實原本想要今天也把預備環境(Staging)與生產環境(Production)寫完，但是發現好像只利用晚上時間有點困難…</p>
+</blockquote>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li><a href="http://k2r2bai.com">http://k2r2bai.com</a></li>
+<li><a href="https://www.hwchiu.com/travisci-k8s.html" target="_blank" rel="noopener">https://www.hwchiu.com/travisci-k8s.html</a></li>
+<li><a href="https://github.com/ramitsurana/awesome-kubernetes#installers" target="_blank" rel="noopener">https://github.com/ramitsurana/awesome-kubernetes#installers</a></li>
+<li><a href="https://blog.docker.com/2018/01/docker-mac-kubernetes/" target="_blank" rel="noopener">https://blog.docker.com/2018/01/docker-mac-kubernetes/</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">淺談 Kubernetes 的部署工具選擇 Part2</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2019-9-17 00:09</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2019/09/18/ironman2020/day03/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    淺談 Kubernetes 的部署工具選擇 Part3
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2019/09/16/ironman2020/day01/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">淺談 Kubernetes 的部署工具選擇 Part1</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2019/09/17/ironman2020/day02/" data-id="ck3ns7q5q002gwmpfn0xk2798" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2019/09/17/ironman2020/day02/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/09/17/ironman2020/day02/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#開發環境-Development"><span class="toc-number">2.</span> <span class="toc-text">開發環境(Development)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#測試環境-Testing"><span class="toc-number">3.</span> <span class="toc-text">測試環境(Testing)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#結語"><span class="toc-number">4.</span> <span class="toc-text">結語</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Reference"><span class="toc-number">5.</span> <span class="toc-text">Reference</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2019/09/17/ironman2020/day02/';
+        
+        this.page.identifier = 'ironman2020/day02';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

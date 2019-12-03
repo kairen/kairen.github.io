@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>品嚐 Moby LinuxKit 的 Linux 作業系統 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="LinuxKit 是 DockerCon 2017 中推出的工具之一，其主要是以 Container 來建立最小、不可變的 Linux 作業系統映像檔框架，Docker 公司一直透過 LinuxKit 來建立相關產品，如 Docker for Mac 等。由於要最快的了解功能，因此這邊透過建立簡單的映像檔來學習。">
+<meta name="keywords" content="Container,Linux,Moby,Microkernel">
+<meta property="og:type" content="article">
+<meta property="og:title" content="品嚐 Moby LinuxKit 的 Linux 作業系統">
+<meta property="og:url" content="https://k2r2bai.com/2017/04/23/container/moby-linuxkit/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="LinuxKit 是 DockerCon 2017 中推出的工具之一，其主要是以 Container 來建立最小、不可變的 Linux 作業系統映像檔框架，Docker 公司一直透過 LinuxKit 來建立相關產品，如 Docker for Mac 等。由於要最快的了解功能，因此這邊透過建立簡單的映像檔來學習。">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/docker/linux-kit.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.382Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="品嚐 Moby LinuxKit 的 Linux 作業系統">
+<meta name="twitter:description" content="LinuxKit 是 DockerCon 2017 中推出的工具之一，其主要是以 Container 來建立最小、不可變的 Linux 作業系統映像檔框架，Docker 公司一直透過 LinuxKit 來建立相關產品，如 Docker for Mac 等。由於要最快的了解功能，因此這邊透過建立簡單的映像檔來學習。">
+<meta name="twitter:image" content="https://k2r2bai.com/images/docker/linux-kit.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-container/moby-linuxkit" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+            
+	
+		<img src="/images/docker/linux-kit.png" class="article-banner" />
+	
+
+
+
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            品嚐 Moby LinuxKit 的 Linux 作業系統
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2017/04/23/container/moby-linuxkit/">
+            <u><time datetime="2017-04-23T09:08:54.000Z" itemprop="datePublished">2017-04-23</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Container/">Container</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Container/">Container</a>, <a class="tag-link" href="/tags/Linux/">Linux</a>, <a class="tag-link" href="/tags/Microkernel/">Microkernel</a>, <a class="tag-link" href="/tags/Moby/">Moby</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p><a href="https://github.com/linuxkit/linuxkit" target="_blank" rel="noopener">LinuxKit</a> 是 <a href="http://www.nebulaworks.com/blog/2017/04/22/docker-captains-dockercon-2017-review/" target="_blank" rel="noopener">DockerCon 2017</a> 中推出的工具之一，其主要是以 Container 來建立最小、不可變的 Linux 作業系統映像檔框架，Docker 公司一直透過 LinuxKit 來建立相關產品，如 Docker for Mac 等。由於要最快的了解功能，因此這邊透過建立簡單的映像檔來學習。</p>
+<a id="more"></a>
+
+<p>在開始前需要準備完成一些事情：</p>
+<ul>
+<li>安裝 Git client。</li>
+<li>安裝 Docker engine，這邊建立使用 Docker-ce 17.04.0。</li>
+<li>安裝 GUN make 工具。</li>
+<li>安裝 GUN tar 工具。</li>
+</ul>
+<h2 id="建構-Moby-工具"><a href="#建構-Moby-工具" class="headerlink" title="建構 Moby 工具"></a>建構 Moby 工具</h2><p>首先我們要建構名為 Moby 的工具，這個工具主要提供指定的 YAML 檔來執行描述的建構流程與功能，並利用 Docker 來建構出 Linux 作業系統。在本教學中，最後我們會利用 <a href="https://github.com/mist64/xhyve" target="_blank" rel="noopener">xhyve</a> 這個 OS X 的虛擬化來提供執行系統實例，當然也可以透過官方的 <a href="https://github.com/moby/hyperkit" target="_blank" rel="noopener">HyperKit</a> 來進行。</p>
+<p>首先透過 Git 來抓取 LinuxKit repos，並進入建構 Moby：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://github.com/linuxkit/linuxkit.git</span><br><span class="line">$ <span class="built_in">cd</span> linuxkit</span><br><span class="line">$ make &amp;&amp; sudo make install</span><br><span class="line">$ moby version</span><br><span class="line">moby version 0.0</span><br><span class="line">commit: 34d508562d7821cb812dd7b9caf4d9fbcdbc9fef</span><br></pre></td></tr></table></figure>
+
+<h3 id="建立-Linux-映像檔"><a href="#建立-Linux-映像檔" class="headerlink" title="建立 Linux 映像檔"></a>建立 Linux 映像檔</h3><p>當完成建構 Moby 工具後，就可以透過撰寫 YAML 檔來描述 Linux 的建構功能與流程了，這邊建立一個 Docker + SSH 的 Linux 映像檔。首先建立檔名為<code>docker-sshd.yml</code>的檔案，然後加入以下內容：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">kernel:</span></span><br><span class="line"><span class="attr">  image:</span> <span class="string">"linuxkit/kernel:4.9.x"</span></span><br><span class="line"><span class="attr">  cmdline:</span> <span class="string">"console=ttyS0 console=tty0 page_poison=1"</span></span><br><span class="line"><span class="attr">init:</span></span><br><span class="line"><span class="bullet">  -</span> <span class="string">linuxkit/init:63eed9ca7a09d2ce4c0c5e7238ac005fa44f564b</span></span><br><span class="line"><span class="bullet">  -</span> <span class="string">linuxkit/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9</span></span><br><span class="line"><span class="bullet">  -</span> <span class="string">linuxkit/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b</span></span><br><span class="line"><span class="bullet">  -</span> <span class="string">linuxkit/ca-certificates:e091a05fbf7c5e16f18b23602febd45dd690ba2f</span></span><br><span class="line"><span class="attr">onboot:</span></span><br><span class="line"><span class="attr">  - name:</span> <span class="string">sysctl</span></span><br><span class="line"><span class="attr">    image:</span> <span class="string">"linuxkit/sysctl:1f5ec5d5e6f7a7a1b3d2ff9dd9e36fd6fb14756a"</span></span><br><span class="line"><span class="attr">    net:</span> <span class="string">host</span></span><br><span class="line"><span class="attr">    pid:</span> <span class="string">host</span></span><br><span class="line"><span class="attr">    ipc:</span> <span class="string">host</span></span><br><span class="line"><span class="attr">    capabilities:</span></span><br><span class="line"><span class="bullet">     -</span> <span class="string">CAP_SYS_ADMIN</span></span><br><span class="line"><span class="attr">    readonly:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">  - name:</span> <span class="string">sysfs</span></span><br><span class="line"><span class="attr">    image:</span> <span class="string">linuxkit/sysfs:6c1d06f28ddd9681799d3950cddf044b930b221c</span></span><br><span class="line"><span class="attr">  - name:</span> <span class="string">binfmt</span></span><br><span class="line"><span class="attr">    image:</span> <span class="string">"linuxkit/binfmt:c7e69ebd918a237dd086a5c58dd888df772746bd"</span></span><br><span class="line"><span class="attr">    binds:</span></span><br><span class="line"><span class="bullet">     -</span> <span class="string">/proc/sys/fs/binfmt_misc:/binfmt_misc</span></span><br><span class="line"><span class="attr">    readonly:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">  - name:</span> <span class="string">format</span></span><br><span class="line"><span class="attr">    image:</span> <span class="string">"linuxkit/format:53748000acf515549d398e6ae68545c26c0f3a2e"</span></span><br><span class="line"><span class="attr">    binds:</span></span><br><span class="line"><span class="bullet">     -</span> <span class="string">/dev:/dev</span></span><br><span class="line"><span class="attr">    capabilities:</span></span><br><span class="line"><span class="bullet">     -</span> <span class="string">CAP_SYS_ADMIN</span></span><br><span class="line"><span class="bullet">     -</span> <span class="string">CAP_MKNOD</span></span><br><span class="line"><span class="attr">  - name:</span> <span class="string">mount</span></span><br><span class="line"><span class="attr">    image:</span> <span class="string">"linuxkit/mount:d2669e7c8ddda99fa0618a414d44261eba6e299a"</span></span><br><span class="line"><span class="attr">    binds:</span></span><br><span class="line"><span class="bullet">     -</span> <span class="string">/dev:/dev</span></span><br><span class="line"><span class="bullet">     -</span> <span class="string">/var:/var:rshared,rbind</span></span><br><span class="line"><span class="attr">    capabilities:</span></span><br><span class="line"><span class="bullet">     -</span> <span class="string">CAP_SYS_ADMIN</span></span><br><span class="line"><span class="attr">    rootfsPropagation:</span> <span class="string">shared</span></span><br><span class="line"><span class="attr">    command:</span> <span class="string">["/mount.sh",</span> <span class="string">"/var/lib/docker"</span><span class="string">]</span></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line"><span class="attr">  - name:</span> <span class="string">rngd</span></span><br><span class="line"><span class="attr">    image:</span> <span class="string">"linuxkit/rngd:c42fd499690b2cb6e4e6cb99e41dfafca1cf5b14"</span></span><br><span class="line"><span class="attr">    capabilities:</span></span><br><span class="line"><span class="bullet">     -</span> <span class="string">CAP_SYS_ADMIN</span></span><br><span class="line"><span class="attr">    oomScoreAdj:</span> <span class="bullet">-800</span></span><br><span class="line"><span class="attr">    readonly:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">  - name:</span> <span class="string">dhcpcd</span></span><br><span class="line"><span class="attr">    image:</span> <span class="string">"linuxkit/dhcpcd:57a8ef29d3a910645b2b24c124f9ce9ef53ce703"</span></span><br><span class="line"><span class="attr">    binds:</span></span><br><span class="line"><span class="bullet">     -</span> <span class="string">/var:/var</span></span><br><span class="line"><span class="bullet">     -</span> <span class="string">/tmp/etc:/etc</span></span><br><span class="line"><span class="attr">    capabilities:</span></span><br><span class="line"><span class="bullet">     -</span> <span class="string">CAP_NET_ADMIN</span></span><br><span class="line"><span class="bullet">     -</span> <span class="string">CAP_NET_BIND_SERVICE</span></span><br><span class="line"><span class="bullet">     -</span> <span class="string">CAP_NET_RAW</span></span><br><span class="line"><span class="attr">    net:</span> <span class="string">host</span></span><br><span class="line"><span class="attr">    oomScoreAdj:</span> <span class="bullet">-800</span></span><br><span class="line"><span class="attr">  - name:</span> <span class="string">ntpd</span></span><br><span class="line"><span class="attr">    image:</span> <span class="string">"linuxkit/openntpd:a570316d7fc49ca1daa29bd945499f4963d227af"</span></span><br><span class="line"><span class="attr">    capabilities:</span></span><br><span class="line"><span class="bullet">      -</span> <span class="string">CAP_SYS_TIME</span></span><br><span class="line"><span class="bullet">      -</span> <span class="string">CAP_SYS_NICE</span></span><br><span class="line"><span class="bullet">      -</span> <span class="string">CAP_SYS_CHROOT</span></span><br><span class="line"><span class="bullet">      -</span> <span class="string">CAP_SETUID</span></span><br><span class="line"><span class="bullet">      -</span> <span class="string">CAP_SETGID</span></span><br><span class="line"><span class="attr">    net:</span> <span class="string">host</span></span><br><span class="line"><span class="attr">  - name:</span> <span class="string">docker</span></span><br><span class="line"><span class="attr">    image:</span> <span class="string">"linuxkit/docker-ce:741bf21513328f674e0cdcaa55492b0b75974e08"</span></span><br><span class="line"><span class="attr">    capabilities:</span></span><br><span class="line"><span class="bullet">     -</span> <span class="string">all</span></span><br><span class="line"><span class="attr">    net:</span> <span class="string">host</span></span><br><span class="line"><span class="attr">    mounts:</span></span><br><span class="line"><span class="attr">     - type:</span> <span class="string">cgroup</span></span><br><span class="line"><span class="attr">       options:</span> <span class="string">["rw","nosuid","noexec","nodev","relatime"]</span></span><br><span class="line"><span class="attr">    binds:</span></span><br><span class="line"><span class="bullet">     -</span> <span class="string">/var/lib/docker:/var/lib/docker</span></span><br><span class="line"><span class="bullet">     -</span> <span class="string">/lib/modules:/lib/modules</span></span><br><span class="line"><span class="attr">  - name:</span> <span class="string">sshd</span></span><br><span class="line"><span class="attr">    image:</span> <span class="string">"linuxkit/sshd:e108d208adf692c8a0954f602743e0eec445364e"</span></span><br><span class="line"><span class="attr">    capabilities:</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">all</span></span><br><span class="line"><span class="attr">    net:</span> <span class="string">host</span></span><br><span class="line"><span class="attr">    pid:</span> <span class="string">host</span></span><br><span class="line"><span class="attr">    binds:</span></span><br><span class="line"><span class="bullet">      -</span> <span class="string">/root/.ssh:/root/.ssh</span></span><br><span class="line"><span class="bullet">      -</span> <span class="string">/etc/resolv.conf:/etc/resolv.conf</span></span><br><span class="line"><span class="attr">  - name:</span> <span class="string">test-docker-bench</span></span><br><span class="line"><span class="attr">    image:</span> <span class="string">"linuxkit/test-docker-bench:2f941429d874c5dcf05e38005affb4f10192e1a8"</span></span><br><span class="line"><span class="attr">    ipc:</span> <span class="string">host</span></span><br><span class="line"><span class="attr">    pid:</span> <span class="string">host</span></span><br><span class="line"><span class="attr">    net:</span> <span class="string">host</span></span><br><span class="line"><span class="attr">    binds:</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">/run:/var/run</span></span><br><span class="line"><span class="attr">    capabilities:</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">all</span></span><br><span class="line"><span class="attr">files:</span></span><br><span class="line"><span class="attr">  - path:</span> <span class="string">etc/docker/daemon.json</span></span><br><span class="line"><span class="attr">    contents:</span> <span class="string">'&#123;"debug": true&#125;'</span></span><br><span class="line"><span class="attr">  - path:</span> <span class="string">root/.ssh/authorized_keys</span></span><br><span class="line"><span class="attr">    contents:</span> <span class="string">'SSH_KEY'</span></span><br><span class="line"><span class="attr">trust:</span></span><br><span class="line"><span class="attr">  image:</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">linuxkit/kernel</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">linuxkit/binfmt</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">linuxkit/rngd</span></span><br><span class="line"><span class="attr">outputs:</span></span><br><span class="line"><span class="attr">  - format:</span> <span class="string">kernel+initrd</span></span><br><span class="line"><span class="attr">  - format:</span> <span class="string">iso-bios</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>P.S.</code>請修改<code>SSH_KEY</code>內容為你的系統 ssh public key。</p>
+</blockquote>
+<p>這邊說明幾個 YAML 格式意義：</p>
+<ul>
+<li><strong>kernel</strong>: 指定 Docker 映像檔的核心版本，會包含一個 Linux 核心與檔案系統的 tar 檔，會將核心建構在<code>/kernel</code>目錄中。</li>
+<li><strong>init</strong>: 是一個 Docker Container 的 init 行程基礎，裡面包含<code>init</code>、<code>containerd</code>、<code>runC</code>與其他等工具。</li>
+<li><strong>onboot</strong>: 指定要建構的系統層級工具，會依據定義順序來執行，該類型如: dhcpd 與 ntpd 等。</li>
+<li><strong>services</strong>: 指定要建構服務，通常會是系統開啟後執行，如 ngnix、apache2。</li>
+<li><strong>files</strong>:要複製到該 Linux 系統映像檔中的檔案。</li>
+<li><strong>outputs</strong>:輸出的映像檔格式。</li>
+</ul>
+<blockquote>
+<p>更多 YAML 格式說明可以參考官方 <a href="https://github.com/linuxkit/linuxkit/blob/master/docs/yaml.md" target="_blank" rel="noopener">LinuxKit YAML</a>。目前 LinuxKit 的映像檔來源可以參考 <a href="https://hub.docker.com/u/linuxkit/" target="_blank" rel="noopener">Docker Hub</a></p>
+</blockquote>
+<p>撰寫完後，就可以透過 Moby 工具進行建構 Linux 映像檔了：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ moby build docker-sshd.yml</span><br><span class="line">Extract kernel image: linuxkit/kernel:4.9.x</span><br><span class="line">Pull image: linuxkit/kernel:4.9.x</span><br><span class="line">...</span><br><span class="line">Create outputs:</span><br><span class="line">  docker-sshd-kernel docker-sshd-initrd.img docker-sshd-cmdline</span><br><span class="line">  docker-sshd.iso</span><br></pre></td></tr></table></figure>
+
+<p>完成後會看到以下幾個檔案：</p>
+<ul>
+<li>docker-sshd-kernel: 為 RAW Kernel 映像檔.</li>
+<li>docker-sshd-initrd.img: 為初始化 RAW Disk 檔案.</li>
+<li>docker-sshd-cmdline: Command line options 檔案.</li>
+<li>docker-sshd.iso: Docker SSHD ISO 格式映像檔.</li>
+</ul>
+<h3 id="測試映像檔"><a href="#測試映像檔" class="headerlink" title="測試映像檔"></a>測試映像檔</h3><p>當完成建構映像檔後，就可以透過一些工具來進行測試，這邊採用 <a href="https://github.com/mist64/xhyve" target="_blank" rel="noopener">xhyve</a> 來執行實例，首先透過 Git 取得 xhyve repos，並建構與安裝：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://github.com/mist64/xhyve</span><br><span class="line">$ <span class="built_in">cd</span> xhyve</span><br><span class="line">$ make &amp;&amp; cp build/xhyve /usr/<span class="built_in">local</span>/bin/</span><br><span class="line">$ xhyve</span><br><span class="line">Usage: xhyve [-behuwxMACHPWY] [-c vcpus] [-g &lt;gdb port&gt;] [-l &lt;lpc&gt;]</span><br><span class="line">             [-m mem] [-p vcpu:hostcpu] [-s &lt;pci&gt;] [-U uuid] -f &lt;fw&gt;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>xhyve 是 FreeBSD 虛擬化技術 bhyve 的 OS X 版本，是以  <a href="https://developer.apple.com/library/mac/documentation/DriversKernelHardware/Reference/Hypervisor/index.html" target="_blank" rel="noopener">Hypervisor.framework</a> 為基底的上層工具，這是除了 VirtualBox 與 VMwar 的另外選擇，並且該工具非常的輕巧，只有幾 KB 的容量。</p>
+</blockquote>
+<p>接著撰寫 xhyve 腳本來啟動映像檔：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/sh</span></span><br><span class="line"></span><br><span class="line">KERNEL=<span class="string">"docker-sshd-kernel"</span></span><br><span class="line">INITRD=<span class="string">"docker-sshd-initrd.img"</span></span><br><span class="line">CMDLINE=<span class="string">"console=ttyS0 console=tty0 page_poison=1"</span></span><br><span class="line"></span><br><span class="line">MEM=<span class="string">"-m 1G"</span></span><br><span class="line">PCI_DEV=<span class="string">"-s 0:0,hostbridge -s 31,lpc"</span></span><br><span class="line">LPC_DEV=<span class="string">"-l com1,stdio"</span></span><br><span class="line">ACPI=<span class="string">"-A"</span></span><br><span class="line"><span class="comment">#SMP="-c 2"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># sudo if you want networking enabled</span></span><br><span class="line">NET=<span class="string">"-s 2:0,virtio-net"</span></span><br><span class="line"></span><br><span class="line">xhyve <span class="variable">$ACPI</span> <span class="variable">$MEM</span> <span class="variable">$SMP</span> <span class="variable">$PCI_DEV</span> <span class="variable">$LPC_DEV</span> <span class="variable">$NET</span> -f kexec,<span class="variable">$KERNEL</span>,<span class="variable">$INITRD</span>,<span class="string">"<span class="variable">$CMDLINE</span>"</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>修改<code>KERNEL</code>與<code>INITRD</code>為 docker-sshd 的映像檔。</p>
+</blockquote>
+<p>完成後就可以進行啟動測試：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ chmod u+x run.sh</span><br><span class="line">$ sudo ./run.sh</span><br><span class="line">Welcome to LinuxKit</span><br><span class="line"></span><br><span class="line">                        ##         .</span><br><span class="line">                  ## ## ##        ==</span><br><span class="line">               ## ## ## ## ##    ===</span><br><span class="line">           /&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;\___/ ===</span><br><span class="line">      ~~~ &#123;~~ ~~~~ ~~~ ~~~~ ~~~ ~ /  ===- ~~~</span><br><span class="line">           \______ o           __/</span><br><span class="line">             \    \         __/</span><br><span class="line">              \____\_______/</span><br><span class="line">...</span><br><span class="line">/ # ls</span><br><span class="line">bin         etc         lib         root        srv         usr</span><br><span class="line">containers  home        media       run         sys         var</span><br><span class="line">dev         init        proc        sbin        tmp</span><br><span class="line">/ # ip</span><br><span class="line">...</span><br><span class="line">4: eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc pfifo_fast state UP qlen 1000</span><br><span class="line">    inet 192.168.64.4/24 brd 192.168.64.255 scope global eth0</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">14: docker0: &lt;NO-CARRIER,BROADCAST,MULTICAST,UP&gt; mtu 1500 qdisc noqueue state DOWN</span><br><span class="line">    inet 172.17.0.1/16 scope global docker0</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br></pre></td></tr></table></figure>
+
+<h3 id="驗證映像檔服務"><a href="#驗證映像檔服務" class="headerlink" title="驗證映像檔服務"></a>驗證映像檔服務</h3><p>當看到上述結果後，表示作業系統開啟無誤，這時候我們要測試系統服務是否正常，首先透過 SSH 來進行測試，在剛剛新增的 ssh public key 主機上執行以下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ ssh root@192.168.64.4</span><br><span class="line">moby-aa16c789d03b:~# uname -r</span><br><span class="line">4.9.25-linuxkit</span><br><span class="line"></span><br><span class="line">moby-aa16c789d03b:~# exit</span><br></pre></td></tr></table></figure>
+
+<p>查看 Docker 是否啟動：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">moby-aa16c789d03b:~# netstat -xp</span><br><span class="line">Active UNIX domain sockets (w/o servers)</span><br><span class="line">Proto RefCnt Flags       Type       State         I-Node PID/Program name    Path</span><br><span class="line">unix  2      [ ]         DGRAM                     33822 606/dhcpcd</span><br><span class="line">unix  3      [ ]         STREAM     CONNECTED      33965 748/ntpd: dns engin</span><br><span class="line">unix  3      [ ]         STREAM     CONNECTED      33960 747/ntpd: ntp engin</span><br><span class="line">unix  3      [ ]         STREAM     CONNECTED      33964 747/ntpd: ntp engin</span><br><span class="line">unix  3      [ ]         STREAM     CONNECTED      33959 642/ntpd</span><br><span class="line">unix  3      [ ]         STREAM     CONNECTED      34141 739/dockerd</span><br><span class="line">unix  3      [ ]         STREAM     CONNECTED      34142 751/docker-containe /var/run/docker/libcontainerd/docker-containerd.sock</span><br></pre></td></tr></table></figure>
+
+<p>最後關閉虛擬機可以透過以下指令完成：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">moby-aa16c789d03b:~# halt</span><br><span class="line">Terminated</span><br></pre></td></tr></table></figure>
+
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">品嚐 Moby LinuxKit 的 Linux 作業系統</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2017-4-23 17:04</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2017/05/10/cncf/harbor/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    Harbor: 開源 Container Registry
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2017/04/10/tensorflow/introduction/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">TensorFlow 基本使用與分散式概念</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2017/04/23/container/moby-linuxkit/" data-id="ck3ns7q580014wmpffyq6htp1" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2017/04/23/container/moby-linuxkit/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2017/04/23/container/moby-linuxkit/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#建構-Moby-工具"><span class="toc-number">1.</span> <span class="toc-text">建構 Moby 工具</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#建立-Linux-映像檔"><span class="toc-number">1.1.</span> <span class="toc-text">建立 Linux 映像檔</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#測試映像檔"><span class="toc-number">1.2.</span> <span class="toc-text">測試映像檔</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#驗證映像檔服務"><span class="toc-number">1.3.</span> <span class="toc-text">驗證映像檔服務</span></a></li></ol></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2017/04/23/container/moby-linuxkit/';
+        
+        this.page.identifier = 'container/moby-linuxkit';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

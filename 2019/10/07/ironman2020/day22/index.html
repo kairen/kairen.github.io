@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>開發自定義控制器前，需要先了解的東西 Part3 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="前言前面文章中，了解到 Kubernetes 的架構一直以擴展性與靈活性為主，從 Extension Points 可以看到上至 API 層，下至基礎建設層都有各種擴展的介面、標準與 API，其中 API 的擴展，我們在介紹自定義資源(Custom Resource)時，有提及能透過CustomResourceDefinition(CRD)與API Aggregation來達成，一方面在開發自定義">
+<meta name="keywords" content="Kubernetes">
+<meta property="og:type" content="article">
+<meta property="og:title" content="開發自定義控制器前，需要先了解的東西 Part3">
+<meta property="og:url" content="https://k2r2bai.com/2019/10/07/ironman2020/day22/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="前言前面文章中，了解到 Kubernetes 的架構一直以擴展性與靈活性為主，從 Extension Points 可以看到上至 API 層，下至基礎建設層都有各種擴展的介面、標準與 API，其中 API 的擴展，我們在介紹自定義資源(Custom Resource)時，有提及能透過CustomResourceDefinition(CRD)與API Aggregation來達成，一方面在開發自定義">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://i.imgur.com/gRkisOJ.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.390Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="開發自定義控制器前，需要先了解的東西 Part3">
+<meta name="twitter:description" content="前言前面文章中，了解到 Kubernetes 的架構一直以擴展性與靈活性為主，從 Extension Points 可以看到上至 API 層，下至基礎建設層都有各種擴展的介面、標準與 API，其中 API 的擴展，我們在介紹自定義資源(Custom Resource)時，有提及能透過CustomResourceDefinition(CRD)與API Aggregation來達成，一方面在開發自定義">
+<meta name="twitter:image" content="https://i.imgur.com/gRkisOJ.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-ironman2020/day22" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            開發自定義控制器前，需要先了解的東西 Part3
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2019/10/07/ironman2020/day22/">
+            <u><time datetime="2019-10-06T16:00:00.000Z" itemprop="datePublished">2019-10-07</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前面文章中，了解到 Kubernetes 的架構一直以擴展性與靈活性為主，從 <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/extend-cluster/#extension-points" target="_blank" rel="noopener">Extension Points</a> 可以看到上至 API 層，下至基礎建設層都有各種擴展的介面、標準與 API，其中 API 的擴展，我們在介紹自定義資源(Custom Resource)時，有提及能透過<code>CustomResourceDefinition(CRD)</code>與<code>API Aggregation</code>來達成，一方面在開發自定義控制器時，很多情況下，會透過增加新的 API 資源來讓控制器實現功能，因此我們必須先瞭解這兩者擴展 API 的作法與選擇。</p>
+<a id="more"></a>
+
+<p>在 Kubernetes API 擴展中，不管是使用 CRD 或 API Aggregation，旨都是希望在不修改 Kubernetes 核心程式碼的情況下，讓新的 API 能夠被註冊或新增到 Kubernetes 叢集中。但兩者在用意上有一點小差異:</p>
+<ul>
+<li><strong>API Aggregation</strong>: 用於將第三方服務資源註冊到 Kubernetes API 中，以統一透過 Kubernetes API 來存取外部服務。</li>
+<li><strong>CRD</strong>: 在當前叢集中新增 API 資源，並沿用 Kubernetes 原有的 API(如 Pod) 操作方式來管理這些新 API 資源。</li>
+</ul>
+<p>從描述中，可以看到差別在於『把既有註冊』跟『直接增加新的』。而這兩者又是如何運作呢?</p>
+<h3 id="CRD-CustomResourceDefinitions"><a href="#CRD-CustomResourceDefinitions" class="headerlink" title="CRD(CustomResourceDefinitions)"></a>CRD(CustomResourceDefinitions)</h3><p>CRD 是 Kubernetes 在 v1.7 版本新增的 API 資源，被用於新增自定義 API 資源上，一但 CRD 物件建立時，Kubernetes API Server 就會幫你處理自定義資源的 API 請求、狀態儲存等。而這過程中，完全不需要撰寫任何程式碼。</p>
+<blockquote>
+<p>事實上，在 CRD 之前還有個 ThirdPartyResources(TPR) 被用於擴展 API，但因為一些限制關析，TPR 被 CRD 取代了，並在 v1.8 就被棄用。</p>
+</blockquote>
+<ul>
+<li>不用撰寫任何程式碼，就能輕易擴展新 API。</li>
+<li>能夠沿用熟悉的 Kubernetes UX 工具來管理。如 kubectl。</li>
+<li>支援 SubResources、Multiple versions、Defaulting、Additional Properties 與 Validation 等等功能。</li>
+<li>擴展 API 方式簡單，但相對靈活性差。</li>
+</ul>
+<p>那要如何新增呢?在跑一個範例前，先來看一下 CRD 是如何定義 API URL。假設想實現在 Kubernetes 上管理 KVM 虛擬機時，我們需要先定義一個用於管理虛擬機的 API 類型 - VM，並且這個 API 是 kairen (或公司與組織)開發，這時 CRD 會透過資源類型名稱+域名來定義，如:域名為<code>kairen.io</code>，那麼 CRD 名稱就會是<code>vms.kairen.io</code>，而完整 API 資源路徑則是<code>/apis/kairen.io/&lt;version&gt;/namespaces/&lt;namespace&gt;/vms/..</code>。</p>
+<p><img src="https://i.imgur.com/gRkisOJ.png" alt></p>
+<p>基於上述，我們會這樣定義 CRD 內容。當這個範例被建立時，Kubernetes API 伺服器會增加新的 API 資源端點<code>/apis/kairen.io/v1alpha1/namespaces/&lt;namespace&gt;/vms/..</code>提供給客戶端存取。而當我們新增一個 VM 實例時，Kubernetes API 伺服器就會幫你管理整個 VMs API 的資源狀態儲存。</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">apiextensions.k8s.io/v1beta1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">CustomResourceDefinition</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">vms.kairen.io</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  group:</span> <span class="string">kairen.io</span></span><br><span class="line"><span class="attr">  version:</span> <span class="string">v1alpha1</span></span><br><span class="line"><span class="attr">  names:</span></span><br><span class="line"><span class="attr">    kind:</span> <span class="string">VM</span></span><br><span class="line"><span class="attr">    plural:</span> <span class="string">vms</span> </span><br><span class="line"><span class="attr">  scope:</span> <span class="string">Namespaced</span> </span><br><span class="line"><span class="attr">  additionalPrinterColumns:</span></span><br><span class="line"><span class="attr">  - name:</span> <span class="string">Status</span></span><br><span class="line"><span class="attr">    type:</span> <span class="string">string</span></span><br><span class="line"><span class="attr">    description:</span> <span class="string">The</span> <span class="string">VM</span> <span class="string">Phase</span></span><br><span class="line"><span class="attr">    JSONPath:</span> <span class="string">.status.phase</span></span><br><span class="line"><span class="attr">  - name:</span> <span class="string">CPU</span></span><br><span class="line"><span class="attr">    type:</span> <span class="string">integer</span></span><br><span class="line"><span class="attr">    description:</span> <span class="string">CPU</span> <span class="string">Usage</span></span><br><span class="line"><span class="attr">    JSONPath:</span> <span class="string">.status.cpuUtilization</span></span><br><span class="line"><span class="attr">  - name:</span> <span class="string">MEMORY</span></span><br><span class="line"><span class="attr">    type:</span> <span class="string">integer</span></span><br><span class="line"><span class="attr">    description:</span> <span class="string">Memory</span> <span class="string">Usage</span></span><br><span class="line"><span class="attr">    JSONPath:</span> <span class="string">.status.memoryUtilization</span></span><br><span class="line"><span class="attr">  - name:</span> <span class="string">Age</span></span><br><span class="line"><span class="attr">    type:</span> <span class="string">date</span></span><br><span class="line"><span class="attr">    JSONPath:</span> <span class="string">.metadata.creationTimestamp</span></span><br><span class="line"><span class="attr">  validation:</span></span><br><span class="line"><span class="attr">    openAPIV3Schema:</span></span><br><span class="line"><span class="attr">      properties:</span></span><br><span class="line"><span class="attr">        spec:</span></span><br><span class="line"><span class="attr">          properties:</span></span><br><span class="line"><span class="attr">            vmName:</span></span><br><span class="line"><span class="attr">              type:</span> <span class="string">string</span></span><br><span class="line"><span class="attr">              pattern:</span> <span class="string">'^[-_a-zA-Z0-9]+$'</span></span><br><span class="line"><span class="attr">            cpu:</span></span><br><span class="line"><span class="attr">              type:</span> <span class="string">integer</span></span><br><span class="line"><span class="attr">              minimum:</span> <span class="number">1</span></span><br><span class="line"><span class="attr">            memory:</span></span><br><span class="line"><span class="attr">              type:</span> <span class="string">integer</span></span><br><span class="line"><span class="attr">              minimum:</span> <span class="number">128</span></span><br><span class="line"><span class="attr">            diskSize:</span></span><br><span class="line"><span class="attr">              type:</span> <span class="string">integer</span></span><br><span class="line"><span class="attr">              minimum:</span> <span class="number">1</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li><strong>scope</strong>: 分為 Cluster 與 Namespaced。前者為叢集面資源(如 PV)，這種 API 通常只有管理員才能操作。</li>
+<li><em>additionalPrinterColumns*</em>: 在 kubectl get 時，額外顯示的資訊。能夠以 Json Path 來取得 API 資源內容。</li>
+<li><em>validation*</em>: 在呼叫 API 時，能基於 <a href="https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md#schemaObject" target="_blank" rel="noopener">OpenAPI v3 schema</a> 來驗證 VM 這個物件內容是否符合要求。</li>
+</ul>
+</blockquote>
+<p>當我們利用這個範例在 Kubernetes 建立時，會如下所示:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl get crd</span><br><span class="line">NAME            CREATED AT</span><br><span class="line">vms.kairen.io   2019-10-03T12:30:55Z</span><br><span class="line"></span><br><span class="line">$ cat &lt;&lt;EOF | kubectl apply -f -</span><br><span class="line">apiVersion: kairen.io/v1alpha1</span><br><span class="line">kind: VM</span><br><span class="line">metadata:</span><br><span class="line">  name: <span class="built_in">test</span>-1</span><br><span class="line">spec:</span><br><span class="line">  cpu: 1</span><br><span class="line">  memory: 2048 <span class="comment"># MB</span></span><br><span class="line">  diskSize: 10 <span class="comment"># GiB</span></span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line">$ kubectl get vms</span><br><span class="line">NAME     STATUS   CPU   MEMORY   AGE</span><br><span class="line"><span class="built_in">test</span>-1                           2m31s</span><br></pre></td></tr></table></figure>
+
+<p>這邊會看到 Status 跟 CPU/Memory 使用率都沒更新，因為 CRD 只幫你管理與儲存 API 狀態，若背後沒有一個機制去處理這個 API 時，就不會有實際作用。當然要模擬也是可以，利用 kubectl edit 嘗試修改<code>.status</code>內容即可。</p>
+<h3 id="API-Aggregation"><a href="#API-Aggregation" class="headerlink" title="API Aggregation"></a>API Aggregation</h3><p>在 Kubernetes 架構下，每個資源都是由 API 伺服器處理 REST 操作請求，然後管理每個資源物件的狀態儲存。但有些情況下，擴展 API 的開發者，希望自行實現處理 REST API 的所有請求時，就無法透過 CRD 機制來達成。在這種需求下，就要用 API Aggregation 來解決，因為 API Aggregation 能利用一些機制，讓 Kubernetes API 伺服器知道如何委託自定義 API 的請求給第三方 API 伺服器處理。</p>
+<p>雖然這種方式能處理更多 API 相關的事情，但相對的程式開發要求較高。那怎麼開發呢?我們能會利用 <a href="https://github.com/kubernetes/apiserver" target="_blank" rel="noopener">k8s.io/apiserver</a> 函式庫來實現。</p>
+<ul>
+<li>需要程式開發能力，通常建構在 k8s.io/apiserver 函式庫之上。</li>
+<li>客製化程度非常高。如新增 HTTP verb、實現 Hooks。</li>
+<li>能完成 CRD 所有能做到的事情。</li>
+<li>支援 protobuf 與 OpenAPI schema 等等。</li>
+</ul>
+<blockquote>
+<p>TODO: 補充更多細節</p>
+</blockquote>
+<h3 id="CRD-vs-API-Aggregation"><a href="#CRD-vs-API-Aggregation" class="headerlink" title="CRD vs API Aggregation"></a>CRD vs API Aggregation</h3><table>
+<thead>
+<tr>
+<th>CRD</th>
+<th>API Aggregation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>不用寫程式</td>
+<td>要用 Go 語言來開發 API 伺服器</td>
+</tr>
+<tr>
+<td>不需要額外服務處理 API 請求與儲存，但還是需要一個控制器來實現資源功能邏輯</td>
+<td>需要獨立的第三方服務處理 API 各種事情</td>
+</tr>
+<tr>
+<td>任何問題都是由 Kubernetes 社區處理與修復</td>
+<td>需要同步 Kubernetes 社區問題修復方法，並重新建構 API 伺服器</td>
+</tr>
+<tr>
+<td>無需額外處理 API 多版本機制</td>
+<td>需要自行處理 API 多版本機制</td>
+</tr>
+</tbody></table>
+<blockquote>
+<ul>
+<li>詳細英文描述，可以參考 <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#comparing-ease-of-use" target="_blank" rel="noopener">Comparing ease of use</a>。</li>
+<li>更多詳細的功能支援比較，可以參考 <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#advanced-features-and-flexibility" target="_blank" rel="noopener">Advanced features and flexibility</a>。</li>
+</ul>
+</blockquote>
+<p>看完這邊大家會發現 CRD 能達到的功能，API Aggregation 也都能達到。但 CRD 上手簡單又快速，API Aggregation 相對要處理事情更多。因此後續開發我會以 CRD 為主。</p>
+<blockquote>
+<p>TODO: 補充更多比較</p>
+</blockquote>
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>Kubernetes 提供了非常彈性的方式來擴展 API 功能，開發者能夠依據需求自行選擇擴展方式。也因為這些機制的完善，漸漸地越來越多在 Kubernetes 上新增自定義資源，並開發自家的控制器來管理這些資源，以實現各種在 Kubernetes 的新功能。</p>
+<p>到這邊大致上了解一些開發自定義控制器前相關的知識，明天將說明一個 Kubernetes 自定義控制器是如何運作。</p>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li><a href="https://hackmd.io/@onyiny-ang/HyxVWsS6z?type=view" target="_blank" rel="noopener">https://hackmd.io/@onyiny-ang/HyxVWsS6z?type=view</a></li>
+<li><a href="https://programming-kubernetes.info/" target="_blank" rel="noopener">https://programming-kubernetes.info/</a></li>
+<li><a href="https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/" target="_blank" rel="noopener">https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">開發自定義控制器前，需要先了解的東西 Part3</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2019-10-7 00:10</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2019/10/08/ironman2020/day23/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    探討 Kubernetes 自定義控制器是如何運作 Part1
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2019/10/06/ironman2020/day21/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">開發自定義控制器前，需要先了解的東西 Part2</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2019/10/07/ironman2020/day22/" data-id="ck3ns7q6b0042wmpf7szn952e" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2019/10/07/ironman2020/day22/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/10/07/ironman2020/day22/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#CRD-CustomResourceDefinitions"><span class="toc-number">1.1.</span> <span class="toc-text">CRD(CustomResourceDefinitions)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#API-Aggregation"><span class="toc-number">1.2.</span> <span class="toc-text">API Aggregation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CRD-vs-API-Aggregation"><span class="toc-number">1.3.</span> <span class="toc-text">CRD vs API Aggregation</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#結語"><span class="toc-number">2.</span> <span class="toc-text">結語</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Reference"><span class="toc-number">3.</span> <span class="toc-text">Reference</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2019/10/07/ironman2020/day22/';
+        
+        this.page.identifier = 'ironman2020/day22';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

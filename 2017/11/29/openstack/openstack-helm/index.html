@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>Deploy OpenStack on Kubernetes using OpenStack-helm | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="OpenStack Helm 是一個提供部署建置的專案，其目的是為了推動 OpenStack 生產環境的解決方案，而這種部署方式採用容器化方式，並執行於 Kubernetes 系統上來提供 OpenStack 服務的管理與排程等使用。">
+<meta name="keywords" content="Kubernetes,Openstack,Helm">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Deploy OpenStack on Kubernetes using OpenStack-helm">
+<meta property="og:url" content="https://k2r2bai.com/2017/11/29/openstack/openstack-helm/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="OpenStack Helm 是一個提供部署建置的專案，其目的是為了推動 OpenStack 生產環境的解決方案，而這種部署方式採用容器化方式，並執行於 Kubernetes 系統上來提供 OpenStack 服務的管理與排程等使用。">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://i.imgur.com/8sMjowM.png">
+<meta property="og:image" content="https://i.imgur.com/8yunUPy.png">
+<meta property="og:image" content="https://i.imgur.com/lqMrgqs.png">
+<meta property="og:image" content="https://i.imgur.com/4aNnF3O.png">
+<meta property="og:image" content="https://i.imgur.com/fCYkxSC.png">
+<meta property="og:image" content="https://i.imgur.com/Ijylo9X.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.401Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Deploy OpenStack on Kubernetes using OpenStack-helm">
+<meta name="twitter:description" content="OpenStack Helm 是一個提供部署建置的專案，其目的是為了推動 OpenStack 生產環境的解決方案，而這種部署方式採用容器化方式，並執行於 Kubernetes 系統上來提供 OpenStack 服務的管理與排程等使用。">
+<meta name="twitter:image" content="https://i.imgur.com/8sMjowM.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-openstack/openstack-helm" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            Deploy OpenStack on Kubernetes using OpenStack-helm
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2017/11/29/openstack/openstack-helm/">
+            <u><time datetime="2017-11-29T08:23:01.000Z" itemprop="datePublished">2017-11-29</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/OpenStack/">OpenStack</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Helm/">Helm</a>, <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>, <a class="tag-link" href="/tags/Openstack/">Openstack</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p><a href="https://github.com/openstack/openstack-helm" target="_blank" rel="noopener">OpenStack Helm</a> 是一個提供部署建置的專案，其目的是為了推動 OpenStack 生產環境的解決方案，而這種部署方式採用容器化方式，並執行於 Kubernetes 系統上來提供 OpenStack 服務的管理與排程等使用。</p>
+<p><img src="https://i.imgur.com/8sMjowM.png" alt></p>
+<a id="more"></a>
+
+<p>而本篇文章將說明如何建置多節點的 OpenStack Helm 環境來進行功能驗證。</p>
+<h2 id="節點與安裝版本"><a href="#節點與安裝版本" class="headerlink" title="節點與安裝版本"></a>節點與安裝版本</h2><p>以下為各節點的硬體資訊。</p>
+<table>
+<thead>
+<tr>
+<th>IP Address</th>
+<th>Role</th>
+<th>CPU</th>
+<th>Memory</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>172.22.132.10</td>
+<td>vip</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>172.22.132.101</td>
+<td>master1</td>
+<td>4</td>
+<td>16G</td>
+</tr>
+<tr>
+<td>172.22.132.22</td>
+<td>node1</td>
+<td>4</td>
+<td>16G</td>
+</tr>
+<tr>
+<td>172.22.132.24</td>
+<td>node2</td>
+<td>4</td>
+<td>16G</td>
+</tr>
+<tr>
+<td>172.22.132.28</td>
+<td>node3</td>
+<td>4</td>
+<td>16G</td>
+</tr>
+</tbody></table>
+<p>使用 Kernel、作業系統與軟體版本：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>資訊描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>作業系統版本</td>
+<td>16.04.3 LTS (Xenial Xerus)</td>
+</tr>
+<tr>
+<td>Kernel 版本</td>
+<td>4.4.0-101-generic</td>
+</tr>
+<tr>
+<td>Kubernetes</td>
+<td>v1.8.4</td>
+</tr>
+<tr>
+<td>Docker</td>
+<td>Docker 17.09.0-ce</td>
+</tr>
+<tr>
+<td>Calico</td>
+<td>v2.6.2</td>
+</tr>
+<tr>
+<td>Etcd</td>
+<td>v3.2.9</td>
+</tr>
+<tr>
+<td>Ceph</td>
+<td>v10.2.10</td>
+</tr>
+<tr>
+<td>Helm</td>
+<td>v2.7.0</td>
+</tr>
+</tbody></table>
+<h2 id="Kubernetes-叢集"><a href="#Kubernetes-叢集" class="headerlink" title="Kubernetes 叢集"></a>Kubernetes 叢集</h2><p>本節說明如何建立 Kubernetes Cluster，這邊採用 <a href="https://github.com/kairen/kube-ansible" target="_blank" rel="noopener">kube-ansible</a> 工具來建立。</p>
+<h3 id="初始化與設定基本需求"><a href="#初始化與設定基本需求" class="headerlink" title="初始化與設定基本需求"></a>初始化與設定基本需求</h3><p>安裝前需要確認以下幾個項目：</p>
+<ul>
+<li>所有節點的網路之間可以互相溝通。</li>
+<li><code>部署節點</code>對其他節點不需要 SSH 密碼即可登入。</li>
+<li>所有節點都擁有 Sudoer 權限，並且不需要輸入密碼。</li>
+<li>所有節點需要安裝<code>Python</code>。</li>
+<li>所有節點需要設定<code>/etc/host</code>解析到所有主機。</li>
+<li><code>部署節點</code>需要安裝 <strong>Ansible &gt;= 2.4.0</strong>。</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> Ubuntu install</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo apt-get install -y software-properties-common</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo apt-add-repository -y ppa:ansible/ansible</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo apt-get update &amp;&amp; sudo apt-get install -y ansible git make</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> CentOS install</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo yum install -y epel-release</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo yum -y install ansible cowsay</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="安裝與設定-Kube-ansible"><a href="#安裝與設定-Kube-ansible" class="headerlink" title="安裝與設定 Kube-ansible"></a>安裝與設定 Kube-ansible</h3><p>首先取得最新穩定版本的 Kubernetes Ansible:</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git <span class="built_in">clone</span> https://github.com/kairen/kube-ansible.git</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">cd</span> kube-ansible</span></span><br></pre></td></tr></table></figure>
+
+<p>然後新增<code>inventory</code>檔案來描述要部屬的主機角色:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[etcds]</span><br><span class="line">172.22.132.101 ansible_user=ubuntu</span><br><span class="line"></span><br><span class="line">[masters]</span><br><span class="line">172.22.132.101 ansible_user=ubuntu</span><br><span class="line"></span><br><span class="line">[nodes]</span><br><span class="line">172.22.132.22 ansible_user=ubuntu</span><br><span class="line">172.22.132.24 ansible_user=ubuntu</span><br><span class="line">172.22.132.28 ansible_user=ubuntu</span><br><span class="line"></span><br><span class="line">[kube-cluster:children]</span><br><span class="line">masters</span><br><span class="line">nodes</span><br><span class="line"></span><br><span class="line">[kube-addon:children]</span><br><span class="line">masters</span><br></pre></td></tr></table></figure>
+
+<p>接著編輯<code>group_vars/all.yml</code>檔案來添加與修改以下內容：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Kubenrtes version, only support 1.8.0+.</span></span><br><span class="line"><span class="attr">kube_version:</span> <span class="number">1.8</span><span class="number">.4</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># CNI plugin</span></span><br><span class="line"><span class="comment"># Support: flannel, calico, canal, weave or router.</span></span><br><span class="line"><span class="attr">network:</span> <span class="string">calico</span></span><br><span class="line"><span class="attr">pod_network_cidr:</span> <span class="number">10.244</span><span class="number">.0</span><span class="number">.0</span><span class="string">/16</span></span><br><span class="line"><span class="comment"># CNI opts: flannel(--iface=enp0s8), calico(interface=enp0s8), canal(enp0s8).</span></span><br><span class="line"><span class="attr">cni_iface:</span> <span class="string">""</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Kubernetes cluster network.</span></span><br><span class="line"><span class="attr">cluster_subnet:</span> <span class="number">10.96</span><span class="number">.0</span></span><br><span class="line"><span class="attr">kubernetes_service_ip:</span> <span class="string">"<span class="template-variable">&#123;&#123; cluster_subnet &#125;&#125;</span>.1"</span></span><br><span class="line"><span class="attr">service_ip_range:</span> <span class="string">"<span class="template-variable">&#123;&#123; cluster_subnet &#125;&#125;</span>.0/12"</span></span><br><span class="line"><span class="attr">service_node_port_range:</span> <span class="number">30000</span><span class="bullet">-32767</span></span><br><span class="line"><span class="attr">api_secure_port:</span> <span class="number">5443</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Highly Available configuration.</span></span><br><span class="line"><span class="attr">haproxy:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">keepalived:</span> <span class="literal">true</span> <span class="comment"># set `lb_vip_address` as keepalived vip, if this enable.</span></span><br><span class="line"><span class="attr">keepalived_vip_interface:</span> <span class="string">"<span class="template-variable">&#123;&#123; ansible_default_ipv4.interface &#125;&#125;</span>"</span></span><br><span class="line"></span><br><span class="line"><span class="attr">lb_vip_address:</span> <span class="number">172.22</span><span class="number">.132</span><span class="number">.10</span></span><br><span class="line"><span class="attr">lb_secure_port:</span> <span class="number">6443</span></span><br><span class="line"><span class="attr">lb_api_url:</span> <span class="string">"https://<span class="template-variable">&#123;&#123; lb_vip_address &#125;&#125;</span>:<span class="template-variable">&#123;&#123; lb_secure_port &#125;&#125;</span>"</span></span><br><span class="line"></span><br><span class="line"><span class="attr">etcd_iface:</span> <span class="string">""</span></span><br><span class="line"></span><br><span class="line"><span class="attr">insecure_registrys:</span></span><br><span class="line"><span class="bullet">-</span> <span class="string">"172.22.132.253:5000"</span> <span class="comment"># 有需要的話</span></span><br><span class="line"></span><br><span class="line"><span class="attr">ceph_cluster:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li>這邊<code>insecure_registrys</code>為 deploy 節點的 Docker registry ip 與 port。</li>
+<li>Extra addons 部分針對需求開啟，預設不會開啟。</li>
+<li>若想把 Etcd, VIP 與 Network plugin 綁定在指定網路的話，請修改<code>etcd_iface</code>, <code>keepalived_vip_interface</code> 與 <code>cni_iface</code>。其中<code>cni_iface</code>需要針對不同 Plugin 來改變。</li>
+<li>若想要修改部署版本的 Packages 的話，請編輯<code>roles/commons/packages/defaults/main.yml</code>來修改版本。</li>
+</ul>
+</blockquote>
+<p>接著由於 OpenStack-helm 使用的 Kubernetes Controller Manager 不同，因此要修改<code>roles/commons/container-images/defaults/main.yml</code>的 Image 來源如下：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="string">...</span></span><br><span class="line"><span class="attr">  manager:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">kube-controller-manager</span></span><br><span class="line"><span class="attr">  repos:</span> <span class="string">kairen/</span></span><br><span class="line"><span class="attr">  tag:</span> <span class="string">"v<span class="template-variable">&#123;&#123; kube_version &#125;&#125;</span>"</span></span><br><span class="line"><span class="string">...</span></span><br></pre></td></tr></table></figure>
+
+<p>完後成修改 storage roles 設定版本並進行安裝。</p>
+<p>首先編輯<code>roles/storage/ceph/defaults/main.yml</code>修改版本為以下：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">ceph_version:</span> <span class="string">jewel</span></span><br></pre></td></tr></table></figure>
+
+<p>接著編輯<code>roles/storage/ceph/tasks/main.yml</code>修改成以下內容：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="meta">---</span></span><br><span class="line"></span><br><span class="line"><span class="attr">- name:</span> <span class="string">Install</span> <span class="string">Ceph</span> <span class="string">dependency</span> <span class="string">packages</span></span><br><span class="line"><span class="attr">  include_tasks:</span> <span class="string">install-ceph.yml</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># - name: Create and copy generator config file</span></span><br><span class="line"><span class="comment">#   include_tasks: gen-config.yml</span></span><br><span class="line"><span class="comment">#   delegate_to: "&#123;&#123; groups['masters'][0] &#125;&#125;"</span></span><br><span class="line"><span class="comment">#   run_once: true</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># - name: Deploy Ceph components on Kubernetes</span></span><br><span class="line"><span class="comment">#   include_tasks: ceph-on-k8s.yml</span></span><br><span class="line"><span class="comment">#   delegate_to: "&#123;&#123; groups['masters'][0] &#125;&#125;"</span></span><br><span class="line"><span class="comment">#   run_once: true</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># - name: Label all storage nodes</span></span><br><span class="line"><span class="comment">#   shell: "kubectl label nodes node-type=storage"</span></span><br><span class="line"><span class="comment">#   delegate_to: "&#123;&#123; groups['masters'][0] &#125;&#125;"</span></span><br><span class="line"><span class="comment">#   run_once: true</span></span><br><span class="line"><span class="comment">#   ignore_errors: true</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="部屬-Kubernetes-叢集"><a href="#部屬-Kubernetes-叢集" class="headerlink" title="部屬 Kubernetes 叢集"></a>部屬 Kubernetes 叢集</h3><p>確認<code>group_vars/all.yml</code>與其他設定都完成後，就透過 ansible ping 來檢查叢集狀態：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ansible -i inventory all -m ping</span></span><br><span class="line">...</span><br><span class="line">172.22.132.101 | SUCCESS =&gt; &#123;</span><br><span class="line">    "changed": false,</span><br><span class="line">    "failed": false,</span><br><span class="line">    "ping": "pong"</span><br><span class="line">&#125;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>接著就可以透過以下指令進行部署叢集：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ansible-playbook cluster.yml</span></span><br><span class="line">...</span><br><span class="line">TASK [cni : Apply calico network daemonset] *********************************************************************************************************************************</span><br><span class="line">changed: [172.22.132.101 -&gt; 172.22.132.101]</span><br><span class="line"></span><br><span class="line">PLAY RECAP ******************************************************************************************************************************************************************</span><br><span class="line">172.22.132.101             : ok=155  changed=58   unreachable=0    failed=0</span><br><span class="line">172.22.132.22              : ok=117  changed=28   unreachable=0    failed=0</span><br><span class="line">172.22.132.24              : ok=50   changed=18   unreachable=0    failed=0</span><br><span class="line">172.22.132.28              : ok=51   changed=19   unreachable=0    failed=0</span><br></pre></td></tr></table></figure>
+
+<p>完成後，進入<code>master</code>節點執行以下指令確認叢集：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> kubectl get node</span></span><br><span class="line">NAME           STATUS    ROLES     AGE       VERSION</span><br><span class="line">kube-master1   Ready     master    1h        v1.8.4</span><br><span class="line">kube-node1     Ready     &lt;none&gt;    1h        v1.8.4</span><br><span class="line">kube-node2     Ready     &lt;none&gt;    1h        v1.8.4</span><br><span class="line">kube-node3     Ready     &lt;none&gt;    1h        v1.8.4</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> kubectl -n kube-system get po</span></span><br><span class="line">NAME                                       READY     STATUS    RESTARTS   AGE</span><br><span class="line">calico-node-js6qp                          2/2       Running   2          1h</span><br><span class="line">calico-node-kx9xn                          2/2       Running   2          1h</span><br><span class="line">calico-node-lxrjl                          2/2       Running   2          1h</span><br><span class="line">calico-node-vwn5f                          2/2       Running   2          1h</span><br><span class="line">calico-policy-controller-d549764f6-9kn9l   1/1       Running   1          1h</span><br><span class="line">haproxy-kube-master1                       1/1       Running   1          1h</span><br><span class="line">keepalived-kube-master1                    1/1       Running   1          1h</span><br><span class="line">kube-apiserver-kube-master1                1/1       Running   1          1h</span><br><span class="line">kube-controller-manager-kube-master1       1/1       Running   1          1h</span><br><span class="line">kube-dns-7bd4879dc9-kxmx6                  3/3       Running   3          1h</span><br><span class="line">kube-proxy-7tqkm                           1/1       Running   1          1h</span><br><span class="line">kube-proxy-glzmm                           1/1       Running   1          1h</span><br><span class="line">kube-proxy-krqxs                           1/1       Running   1          1h</span><br><span class="line">kube-proxy-x9zdb                           1/1       Running   1          1h</span><br><span class="line">kube-scheduler-kube-master1                1/1       Running   1          1h</span><br></pre></td></tr></table></figure>
+
+<p>檢查 kube-dns 是否連 host 都能夠解析:</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> nslookup kubernetes</span></span><br><span class="line">Server:		10.96.0.10</span><br><span class="line">Address:	10.96.0.10#53</span><br><span class="line"></span><br><span class="line">Non-authoritative answer:</span><br><span class="line">Name:	kubernetes.default.svc.cluster.local</span><br><span class="line">Address: 10.96.0.1</span><br></pre></td></tr></table></figure>
+
+<p>接著安裝 Ceph 套件：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible-playbook storage.yml</span><br></pre></td></tr></table></figure>
+
+<h2 id="OpenStack-helm-叢集"><a href="#OpenStack-helm-叢集" class="headerlink" title="OpenStack-helm 叢集"></a>OpenStack-helm 叢集</h2><p>本節說明如何建立 OpenStack on Kubernetes 使用 Helm，部署是使用 <a href="https://github.com/openstack/openstack-helm" target="_blank" rel="noopener">openstack-helm</a>。過程將透過 OpenStack-helm 來在 Kubernetes 建置 OpenStack 叢集。以下所有操作都在<code>kube-master1</code>上進行。</p>
+<h3 id="Helm-init"><a href="#Helm-init" class="headerlink" title="Helm init"></a>Helm init</h3><p>在開始前需要先將 Helm 進行初始化，以提供後續使用，然而這邊由於使用到 RBAC 的關係，因此需建立一個 Service account 來提供給 Helm 使用：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> kubectl -n kube-system create sa tiller</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> helm init --service-account tiller</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>由於 <code>kube-ansible</code> 本身包含 Helm 工具, 因此不需要自己安裝，只需要依據上面指令進行 init 即可。</p>
+</blockquote>
+<p>新增一個檔案<code>openrc</code>來提供環境變數：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">export HELM_HOST=$(kubectl describe svc/tiller-deploy -n kube-system | awk '/Endpoints/&#123;print $2&#125;')</span><br><span class="line">export OSD_CLUSTER_NETWORK=172.22.132.0/24</span><br><span class="line">export OSD_PUBLIC_NETWORK=172.22.132.0/24</span><br><span class="line">export WORK_DIR=local</span><br><span class="line">export CEPH_RGW_KEYSTONE_ENABLED=true</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li><code>OSD_CLUSTER_NETWORK</code>與<code>OSD_PUBLIC_NETWORK</code>都是使用實體機器網路，這邊 daemonset 會使用 hostNetwork。</li>
+<li><code>CEPH_RGW_KEYSTONE_ENABLED</code> 在 Kubernetes 版本有點不穩，可依需求關閉。</li>
+</ul>
+</blockquote>
+<p>完成後，透過 source 指令引入:</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">source</span> openrc</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> helm version</span></span><br><span class="line">Client: &amp;version.Version&#123;SemVer:"v2.7.0", GitCommit:"08c1144f5eb3e3b636d9775617287cc26e53dba4", GitTreeState:"clean"&#125;</span><br><span class="line">Server: &amp;version.Version&#123;SemVer:"v2.7.0", GitCommit:"08c1144f5eb3e3b636d9775617287cc26e53dba4", GitTreeState:"clean"&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h3><p>首先透過 Kubernetes label 來標示每個節點的角色：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">kubectl label nodes openstack-control-plane=enabled --all</span><br><span class="line">kubectl label nodes ceph-mon=enabled --all</span><br><span class="line">kubectl label nodes ceph-osd=enabled --all</span><br><span class="line">kubectl label nodes ceph-mds=enabled --all</span><br><span class="line">kubectl label nodes ceph-rgw=enabled --all</span><br><span class="line">kubectl label nodes ceph-mgr=enabled --all</span><br><span class="line">kubectl label nodes openvswitch=enabled --all</span><br><span class="line">kubectl label nodes openstack-compute-node=enabled --all</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊為了避免過度的節點污染，因此不讓 masters 充當任何角色：</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">kubectl label nodes kube-master1 openstack-control-plane-</span><br><span class="line">kubectl label nodes kube-master1 ceph-mon-</span><br><span class="line">kubectl label nodes kube-master1 ceph-osd-</span><br><span class="line">kubectl label nodes kube-master1 ceph-mds-</span><br><span class="line">kubectl label nodes kube-master1 ceph-rgw-</span><br><span class="line">kubectl label nodes kube-master1 ceph-mgr-</span><br><span class="line">kubectl label nodes kube-master1 openvswitch-</span><br><span class="line">kubectl label nodes kube-master1 openstack-compute-node-</span><br></pre></td></tr></table></figure>
+
+<p>由於使用 Kubernetes RBAC，而目前 openstack-helm 有 bug，不會正確建立 Service account 的 ClusterRoleBindings，因此要手動建立(這邊偷懶一下直接使用 Admin roles)：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> cat &lt;&lt;EOF | kubectl create -f -</span></span><br><span class="line">apiVersion: rbac.authorization.k8s.io/v1beta1</span><br><span class="line">kind: ClusterRoleBinding</span><br><span class="line">metadata:</span><br><span class="line">  name: ceph-sa-admin</span><br><span class="line">roleRef:</span><br><span class="line">  apiGroup: rbac.authorization.k8s.io</span><br><span class="line">  kind: ClusterRole</span><br><span class="line">  name: cluster-admin</span><br><span class="line">subjects:</span><br><span class="line">  - apiGroup: rbac.authorization.k8s.io</span><br><span class="line">    kind: User</span><br><span class="line">    name: system:serviceaccount:ceph:default</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> cat &lt;&lt;EOF | kubectl create -f -</span></span><br><span class="line">apiVersion: rbac.authorization.k8s.io/v1beta1</span><br><span class="line">kind: ClusterRoleBinding</span><br><span class="line">metadata:</span><br><span class="line">  name: openstack-sa-admin</span><br><span class="line">roleRef:</span><br><span class="line">  apiGroup: rbac.authorization.k8s.io</span><br><span class="line">  kind: ClusterRole</span><br><span class="line">  name: cluster-admin</span><br><span class="line">subjects:</span><br><span class="line">  - apiGroup: rbac.authorization.k8s.io</span><br><span class="line">    kind: User</span><br><span class="line">    name: system:serviceaccount:openstack:default</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若沒有建立的話，會有類似以下的錯誤資訊：</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Error from server (Forbidden): error when creating &quot;STDIN&quot;: secrets is forbidden: User &quot;system:serviceaccount:ceph:default&quot; cannot create secrets in the namespace &quot;ceph&quot;</span><br></pre></td></tr></table></figure>
+
+<p>下載最新版本 openstack-helm 專案：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git <span class="built_in">clone</span> https://github.com/openstack/openstack-helm.git</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">cd</span> openstack-helm</span></span><br></pre></td></tr></table></figure>
+
+<p>現在須建立 openstack-helm chart 來提供部署使用：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> helm serve &amp;</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> helm repo add <span class="built_in">local</span> http://localhost:8879/charts</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> make</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> output</span></span><br><span class="line">...</span><br><span class="line">1 chart(s) linted, no failures</span><br><span class="line">if [ -d congress ]; then helm package congress; fi</span><br><span class="line">Successfully packaged chart and saved it to: /root/openstack-helm/congress-0.1.0.tgz</span><br><span class="line">make[1]: Leaving directory '/root/openstack-helm'</span><br></pre></td></tr></table></figure>
+
+<h3 id="Ceph-Chart"><a href="#Ceph-Chart" class="headerlink" title="Ceph Chart"></a>Ceph Chart</h3><p>在部署 OpenStack 前，需要先部署 Ceph 叢集，這邊透過以下指令建置：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> helm install --namespace=ceph <span class="variable">$&#123;WORK_DIR&#125;</span>/ceph --name=ceph \</span></span><br><span class="line">  --set endpoints.identity.namespace=openstack \</span><br><span class="line">  --set endpoints.object_store.namespace=ceph \</span><br><span class="line">  --set endpoints.ceph_mon.namespace=ceph \</span><br><span class="line">  --set ceph.rgw_keystone_auth=$&#123;CEPH_RGW_KEYSTONE_ENABLED&#125; \</span><br><span class="line">  --set network.public=$&#123;OSD_PUBLIC_NETWORK&#125; \</span><br><span class="line">  --set network.cluster=$&#123;OSD_CLUSTER_NETWORK&#125; \</span><br><span class="line">  --set deployment.storage_secrets=true \</span><br><span class="line">  --set deployment.ceph=true \</span><br><span class="line">  --set deployment.rbd_provisioner=true \</span><br><span class="line">  --set deployment.client_secrets=false \</span><br><span class="line">  --set deployment.rgw_keystone_user_and_endpoints=false \</span><br><span class="line">  --set bootstrap.enabled=true</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li><code>CEPH_RGW_KEYSTONE_ENABLED</code>是否啟動 Ceph RGW Keystone。</li>
+<li><code>OSD_PUBLIC_NETWORK</code>與<code>OSD_PUBLIC_NETWORK</code>為 Ceph 叢集網路。</li>
+</ul>
+</blockquote>
+<p>成功安裝 Ceph chart 後，就可以透過 kubectl 來查看結果：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> kubectl -n ceph get po</span></span><br><span class="line">NAME                                   READY     STATUS    RESTARTS   AGE</span><br><span class="line">ceph-mds-57798cc8f6-r898r              1/1       Running   2          10min</span><br><span class="line">ceph-mon-96p9r                         1/1       Running   0          10min</span><br><span class="line">ceph-mon-check-bd8875f87-whvhd         1/1       Running   0          10min</span><br><span class="line">ceph-mon-qkj95                         1/1       Running   0          10min</span><br><span class="line">ceph-mon-zx7tw                         1/1       Running   0          10min</span><br><span class="line">ceph-osd-5fvfl                         1/1       Running   0          10min</span><br><span class="line">ceph-osd-kvw9b                         1/1       Running   0          10min</span><br><span class="line">ceph-osd-wcf5j                         1/1       Running   0          10min</span><br><span class="line">ceph-rbd-provisioner-599ff9575-mdqnf   1/1       Running   0          10min</span><br><span class="line">ceph-rbd-provisioner-599ff9575-vpcr6   1/1       Running   0          10min</span><br><span class="line">ceph-rgw-7c8c5d4f6f-8fq9c              1/1       Running   3          10min</span><br></pre></td></tr></table></figure>
+
+<p>確認 Ceph 叢集建立正確：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> MON_POD=$(kubectl get pods \</span></span><br><span class="line">  --namespace=ceph \</span><br><span class="line">  --selector="application=ceph" \</span><br><span class="line">  --selector="component=mon" \</span><br><span class="line">  --no-headers | awk '&#123; print $1; exit &#125;')</span><br><span class="line"><span class="meta">$</span><span class="bash"> kubectl <span class="built_in">exec</span> -n ceph <span class="variable">$&#123;MON_POD&#125;</span> -- ceph -s</span></span><br><span class="line"></span><br><span class="line">    cluster 02ad8724-dee0-4f55-829f-3cc24e2c7571</span><br><span class="line">     health HEALTH_WARN</span><br><span class="line">            too many PGs per OSD (856 &gt; max 300)</span><br><span class="line">     monmap e2: 3 mons at &#123;kube-node1=172.22.132.22:6789/0,kube-node2=172.22.132.24:6789/0,kube-node3=172.22.132.28:6789/0&#125;</span><br><span class="line">            election epoch 8, quorum 0,1,2 kube-node1,kube-node2,kube-node3</span><br><span class="line">      fsmap e5: 1/1/1 up &#123;0=mds-ceph-mds-57798cc8f6-r898r=up:active&#125;</span><br><span class="line">     osdmap e21: 3 osds: 3 up, 3 in</span><br><span class="line">            flags sortbitwise,require_jewel_osds</span><br><span class="line">      pgmap v6053: 856 pgs, 10 pools, 3656 bytes data, 191 objects</span><br><span class="line">            43091 MB used, 2133 GB / 2291 GB avail</span><br><span class="line">                 856 active+clean</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>Warn 這邊忽略，OSD 機器太少….。</p>
+</blockquote>
+<p>接著為了讓 Ceph 可以在其他 Kubernetes namespace 中存取 PVC，這邊要產生 client secret key 於 openstack namespace 中來提供給 OpenStack 元件使用，這邊執行以下 Chart 來產生：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> helm install --namespace=openstack <span class="variable">$&#123;WORK_DIR&#125;</span>/ceph --name=ceph-openstack-config \</span></span><br><span class="line">  --set endpoints.identity.namespace=openstack \</span><br><span class="line">  --set endpoints.object_store.namespace=ceph \</span><br><span class="line">  --set endpoints.ceph_mon.namespace=ceph \</span><br><span class="line">  --set ceph.rgw_keystone_auth=$&#123;CEPH_RGW_KEYSTONE_ENABLED&#125; \</span><br><span class="line">  --set network.public=$&#123;OSD_PUBLIC_NETWORK&#125; \</span><br><span class="line">  --set network.cluster=$&#123;OSD_CLUSTER_NETWORK&#125; \</span><br><span class="line">  --set deployment.storage_secrets=false \</span><br><span class="line">  --set deployment.ceph=false \</span><br><span class="line">  --set deployment.rbd_provisioner=false \</span><br><span class="line">  --set deployment.client_secrets=true \</span><br><span class="line">  --set deployment.rgw_keystone_user_and_endpoints=false</span><br></pre></td></tr></table></figure>
+
+<p>檢查 pod 與 secret 是否建立成功：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> kubectl -n openstack get secret,po -a</span></span><br><span class="line">NAME                          TYPE                                  DATA      AGE</span><br><span class="line">secrets/default-token-q2r87   kubernetes.io/service-account-token   3         2m</span><br><span class="line">secrets/pvc-ceph-client-key   kubernetes.io/rbd                     1         2m</span><br><span class="line"></span><br><span class="line">NAME                                           READY     STATUS      RESTARTS   AGE</span><br><span class="line">po/ceph-namespace-client-key-generator-w84n4   0/1       Completed   0          2m</span><br></pre></td></tr></table></figure>
+
+<h3 id="OpenStack-Chart"><a href="#OpenStack-Chart" class="headerlink" title="OpenStack Chart"></a>OpenStack Chart</h3><p>確認沒問題後，就可以開始部署 OpenStack chart 了。首先先安裝 Mariadb cluster:</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> helm install --name=mariadb ./mariadb --namespace=openstack</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊跑超久…34mins…，原因可能是 Storage 效能問題。</p>
+</blockquote>
+<p>這邊正確執行後，會依序依據 StatefulSet 建立起 Pod 組成 Cluster：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> kubectl -n openstack get po</span></span><br><span class="line">NAME        READY     STATUS    RESTARTS   AGE</span><br><span class="line">mariadb-0   1/1       Running   0          37m</span><br><span class="line">mariadb-1   1/1       Running   0          4m</span><br><span class="line">mariadb-2   1/1       Running   0          2m</span><br></pre></td></tr></table></figure>
+
+<p>當 Mariadb cluster 完成後，就可以部署一些需要的服務，如 RabbitMQ, OVS 等：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">helm install --name=memcached ./memcached --namespace=openstack</span><br><span class="line">helm install --name=etcd-rabbitmq ./etcd --namespace=openstack</span><br><span class="line">helm install --name=rabbitmq ./rabbitmq --namespace=openstack</span><br><span class="line">helm install --name=ingress ./ingress --namespace=openstack</span><br><span class="line">helm install --name=libvirt ./libvirt --namespace=openstack</span><br><span class="line">helm install --name=openvswitch ./openvswitch --namespace=openstack</span><br></pre></td></tr></table></figure>
+
+<p>上述指令若正確執行的話，會分別建立起以下服務：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> kubectl -n openstack get po</span></span><br><span class="line">NAME                                   READY     STATUS    RESTARTS   AGE</span><br><span class="line">etcd-5c9bc8c97f-jpm2k                  1/1       Running   0          4m</span><br><span class="line">ingress-api-jhjjv                      1/1       Running   0          4m</span><br><span class="line">ingress-api-nx5qm                      1/1       Running   0          4m</span><br><span class="line">ingress-api-vr8xf                      1/1       Running   0          4m</span><br><span class="line">ingress-error-pages-86b9db69cc-mmq4p   1/1       Running   0          4m</span><br><span class="line">libvirt-94xq5                          1/1       Running   0          4m</span><br><span class="line">libvirt-lzfzs                          1/1       Running   0          4m</span><br><span class="line">libvirt-vswxb                          1/1       Running   0          4m</span><br><span class="line">mariadb-0                              1/1       Running   0          42m</span><br><span class="line">mariadb-1                              1/1       Running   0          9m</span><br><span class="line">mariadb-2                              1/1       Running   0          7m</span><br><span class="line">memcached-746fcc894-cwhpr              1/1       Running   0          4m</span><br><span class="line">openvswitch-db-7fjr2                   1/1       Running   0          4m</span><br><span class="line">openvswitch-db-gtmcr                   1/1       Running   0          4m</span><br><span class="line">openvswitch-db-hqmbt                   1/1       Running   0          4m</span><br><span class="line">openvswitch-vswitchd-gptp9             1/1       Running   0          4m</span><br><span class="line">openvswitch-vswitchd-s4cwd             1/1       Running   0          4m</span><br><span class="line">openvswitch-vswitchd-tvxlg             1/1       Running   0          4m</span><br><span class="line">rabbitmq-6fdb8879df-6vmz8              1/1       Running   0          4m</span><br><span class="line">rabbitmq-6fdb8879df-875zz              1/1       Running   0          4m</span><br><span class="line">rabbitmq-6fdb8879df-h5wj6              1/1       Running   0          4m</span><br></pre></td></tr></table></figure>
+
+<p>一旦所有基礎服務與元件都建立完成後，就可以開始部署 OpenStack 的專案 Chart，首先建立 Keystone 來提供身份認證服務：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> helm install --namespace=openstack --name=keystone ./keystone \</span></span><br><span class="line">  --set pod.replicas.api=1</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> kubectl -n openstack get po -l application=keystone</span></span><br><span class="line">NAME                            READY     STATUS     RESTARTS   AGE</span><br><span class="line">keystone-api-74c774d448-dkqmj   0/1       Init:0/1   0          4m</span><br><span class="line">keystone-bootstrap-xpdtl        0/1       Init:0/1   0          4m</span><br><span class="line">keystone-db-sync-2bxtp          1/1       Running    0          4m        0          29s</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊由於叢集規模問題，副本數都為一份。</p>
+</blockquote>
+<p>這時候會先建立 Keystone database tables，完成後將啟動 API pod，如以下結果：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> kubectl -n openstack get po -l application=keystone</span></span><br><span class="line">NAME                            READY     STATUS    RESTARTS   AGE</span><br><span class="line">keystone-api-74c774d448-dkqmj   1/1       Running   0          11m</span><br></pre></td></tr></table></figure>
+
+<p>如果安裝支援 RGW 的 Keystone endpoint 的話，可以使用以下方式建立：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> helm install --namespace=openstack <span class="variable">$&#123;WORK_DIR&#125;</span>/ceph --name=radosgw-openstack \</span></span><br><span class="line">  --set endpoints.identity.namespace=openstack \</span><br><span class="line">  --set endpoints.object_store.namespace=ceph \</span><br><span class="line">  --set endpoints.ceph_mon.namespace=ceph \</span><br><span class="line">  --set ceph.rgw_keystone_auth=$&#123;CEPH_RGW_KEYSTONE_ENABLED&#125; \</span><br><span class="line">  --set network.public=$&#123;OSD_PUBLIC_NETWORK&#125; \</span><br><span class="line">  --set network.cluster=$&#123;OSD_CLUSTER_NETWORK&#125; \</span><br><span class="line">  --set deployment.storage_secrets=false \</span><br><span class="line">  --set deployment.ceph=false \</span><br><span class="line">  --set deployment.rbd_provisioner=false \</span><br><span class="line">  --set deployment.client_secrets=false \</span><br><span class="line">  --set deployment.rgw_keystone_user_and_endpoints=true</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> kubectl -n openstack get po -a -l application=ceph</span></span><br><span class="line">NAME                                        READY     STATUS      RESTARTS   AGE</span><br><span class="line">ceph-ks-endpoints-vfg4l                     0/3       Completed   0          1m</span><br><span class="line">ceph-ks-service-tr9xt                       0/1       Completed   0          1m</span><br><span class="line">ceph-ks-user-z5tlt                          0/1       Completed   0          1m</span><br></pre></td></tr></table></figure>
+
+<p>完成後，安裝 Horizon chart 來提供 OpenStack dashbaord：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> helm install --namespace=openstack --name=horizon ./horizon \</span></span><br><span class="line">  --set network.enable_node_port=true \</span><br><span class="line">  --set network.node_port=31000</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> kubectl -n openstack get po -l application=horizon</span></span><br><span class="line">NAME                       READY     STATUS    RESTARTS   AGE</span><br><span class="line">horizon-7c54878549-45668   1/1       Running   0          3m</span><br></pre></td></tr></table></figure>
+
+<p>接著安裝 Glance chart 來提供 OpenStack image service。目前 Glance 支援幾個 backend storage:</p>
+<ul>
+<li><strong>pvc</strong>: 一個簡單的 Kubernetes PVCs 檔案後端。</li>
+<li><strong>rbd</strong>: 使用 Ceph RBD 來儲存 images。</li>
+<li><strong>radosgw</strong>: 使用 Ceph RGW 來儲存 images。</li>
+<li><strong>swift</strong>: 另用 OpenStack switf 所提供的物件儲存服務來儲存 images.</li>
+</ul>
+<p>這邊可以利用以下方式來部署不同的儲存後端：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">export</span> GLANCE_BACKEND=radosgw</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> helm install --namespace=openstack --name=glance ./glance \</span></span><br><span class="line">  --set pod.replicas.api=1 \</span><br><span class="line">  --set pod.replicas.registry=1 \</span><br><span class="line">  --set storage=$&#123;GLANCE_BACKEND&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> kubectl -n openstack get po -l application=glance</span></span><br><span class="line">NAME                               READY     STATUS    RESTARTS   AGE</span><br><span class="line">glance-api-6cd8b856d6-lhzfs        1/1       Running   0          14m</span><br><span class="line">glance-registry-599f8b857b-gt4c6   1/1       Running   0          14m</span><br></pre></td></tr></table></figure>
+
+<p>接著安裝 Neutron chart 來提供 OpenStack 虛擬化網路服務：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> helm install --namespace=openstack --name=neutron ./neutron \</span></span><br><span class="line">  --set pod.replicas.server=1</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> kubectl -n openstack get po -l application=neutron</span></span><br><span class="line">NAME                              READY     STATUS    RESTARTS   AGE</span><br><span class="line">neutron-dhcp-agent-2z49d          1/1       Running   0          9h</span><br><span class="line">neutron-dhcp-agent-d2kn8          1/1       Running   0          9h</span><br><span class="line">neutron-dhcp-agent-mrstl          1/1       Running   0          9h</span><br><span class="line">neutron-l3-agent-9f9mw            1/1       Running   0          9h</span><br><span class="line">neutron-l3-agent-cshzw            1/1       Running   0          9h</span><br><span class="line">neutron-l3-agent-j5vb9            1/1       Running   0          9h</span><br><span class="line">neutron-metadata-agent-6bfb2      1/1       Running   0          9h</span><br><span class="line">neutron-metadata-agent-kxk9c      1/1       Running   0          9h</span><br><span class="line">neutron-metadata-agent-w8cnl      1/1       Running   0          9h</span><br><span class="line">neutron-ovs-agent-j2549           1/1       Running   0          9h</span><br><span class="line">neutron-ovs-agent-plj9t           1/1       Running   0          9h</span><br><span class="line">neutron-ovs-agent-xlx7z           1/1       Running   0          9h</span><br><span class="line">neutron-server-6f45d74b87-6wmck   1/1       Running   0          9h</span><br></pre></td></tr></table></figure>
+
+<p>接著安裝 Nova chart 來提供 OpenStack 虛擬機運算服務:</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> helm install --namespace=openstack --name=nova ./nova \</span></span><br><span class="line">  --set pod.replicas.api_metadata=1 \</span><br><span class="line">  --set pod.replicas.osapi=1 \</span><br><span class="line">  --set pod.replicas.conductor=1 \</span><br><span class="line">  --set pod.replicas.consoleauth=1 \</span><br><span class="line">  --set pod.replicas.scheduler=1 \</span><br><span class="line">  --set pod.replicas.novncproxy=1</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> kubectl -n openstack get po -l application=nova</span></span><br><span class="line">NAME                                 READY     STATUS    RESTARTS   AGE</span><br><span class="line">nova-api-metadata-84fdc84fd7-ldzrh   1/1       Running   1          9h</span><br><span class="line">nova-api-osapi-57f599c6d6-pqrjv      1/1       Running   0          9h</span><br><span class="line">nova-compute-8rvm9                   2/2       Running   0          9h</span><br><span class="line">nova-compute-cbk7h                   2/2       Running   0          9h</span><br><span class="line">nova-compute-tf2jb                   2/2       Running   0          9h</span><br><span class="line">nova-conductor-7f5bc76d79-bxwnb      1/1       Running   0          9h</span><br><span class="line">nova-consoleauth-6946b5884f-nss6n    1/1       Running   0          9h</span><br><span class="line">nova-novncproxy-d789dccff-7ft9q      1/1       Running   0          9h</span><br><span class="line">nova-placement-api-f7c79578f-hj2g9   1/1       Running   0          9h</span><br><span class="line">nova-scheduler-778866f555-mmksg      1/1       Running   0          9h</span><br></pre></td></tr></table></figure>
+
+<p>接著安裝 Cinfer chart 來提供 OpenStack 區塊儲存服務:</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> helm install --namespace=openstack --name=cinder ./cinder \</span></span><br><span class="line">  --set pod.replicas.api=1</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> kubectl -n openstack get po -l application=cinder</span></span><br><span class="line">NAME                                READY     STATUS    RESTARTS   AGE</span><br><span class="line">cinder-api-5cc89f5467-ssm8k         1/1       Running   0          32m</span><br><span class="line">cinder-backup-67c4d8dfdb-zfsq4      1/1       Running   0          32m</span><br><span class="line">cinder-scheduler-65f9dd49bf-6htwg   1/1       Running   0          32m</span><br><span class="line">cinder-volume-69bfb67b4-bmst2       1/1       Running   0          32m</span><br></pre></td></tr></table></figure>
+
+<p>(option)都完成後，將 Horizon 服務透過 NodePort 方式曝露出來(如果上面 Horizon chart 沒反應的話)，執行以下指令編輯：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> kubectl -n openstack edit svc horizon-int</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 修改 <span class="built_in">type</span>:</span></span><br><span class="line">  type: NodePort</span><br></pre></td></tr></table></figure>
+
+<p>最後連接 <a href="http://172.22.132.10:31000" target="_blank" rel="noopener">Horizon Dashboard</a>，預設使用者為<code>admin/password</code>。</p>
+<p><img src="https://i.imgur.com/8yunUPy.png" alt></p>
+<p>其他 Chart 可以利用以下方式來安裝，如 Heat chart：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> helm install --namespace=openstack --name=heat ./heat</span></span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> kubectl -n openstack get po -l application=heat</span></span><br><span class="line">NAME                              READY     STATUS    RESTARTS   AGE</span><br><span class="line">heat-api-5cf45d9d44-qrt69         1/1       Running   0          13m</span><br><span class="line">heat-cfn-79dbf55789-bq4wh         1/1       Running   0          13m</span><br><span class="line">heat-cloudwatch-bcc4647f4-4c4ln   1/1       Running   0          13m</span><br><span class="line">heat-engine-55cfcc86f8-cct4m      1/1       Running   0          13m</span><br></pre></td></tr></table></figure>
+
+<h2 id="測試-OpenStack-功能"><a href="#測試-OpenStack-功能" class="headerlink" title="測試 OpenStack 功能"></a>測試 OpenStack 功能</h2><p>在<code>kube-master1</code>安裝 openstack client:</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> sudo pip install python-openstackclient</span></span><br></pre></td></tr></table></figure>
+
+<p>建立<code>adminrc</code>來提供 client 環境變數：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">export OS_PROJECT_DOMAIN_NAME=default</span><br><span class="line">export OS_USER_DOMAIN_NAME=default</span><br><span class="line">export OS_PROJECT_NAME=admin</span><br><span class="line">export OS_USERNAME=admin</span><br><span class="line">export OS_PASSWORD=password</span><br><span class="line">export OS_AUTH_URL=http://keystone.openstack.svc.cluster.local:80/v3</span><br><span class="line">export OS_IDENTITY_API_VERSION=3</span><br><span class="line">export OS_IMAGE_API_VERSION=2</span><br></pre></td></tr></table></figure>
+
+<p>引入環境變數，並透過 openstack client 測試：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">source</span> adminrc</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> openstack user list</span></span><br><span class="line">+----------------------------------+-----------+</span><br><span class="line">| ID                               | Name      |</span><br><span class="line">+----------------------------------+-----------+</span><br><span class="line">| 42f0d2e7823e413cb469f9cce731398a | glance    |</span><br><span class="line">| 556a2744811f450098f64b37d34192d4 | nova      |</span><br><span class="line">| a97ec73724aa4445b2d575be54f23240 | cinder    |</span><br><span class="line">| b28a5dcfd18948419e14acba7ecf6f63 | swift     |</span><br><span class="line">| d1f312b6bb7c460eb7d8d78c8bf350fc | admin     |</span><br><span class="line">| dc326aace22c4314a0100865fe4f57c2 | neutron   |</span><br><span class="line">| ec5d6d3c529847b29a1c9187599c8a6b | placement |</span><br><span class="line">+----------------------------------+-----------+</span><br></pre></td></tr></table></figure>
+
+<p>接著需要設定對外網路來提供給 VM 存取，在有<code>neutron-l3-agent</code>節點上，新增一個腳本<code>setup-gateway.sh</code>：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">!/bin/bash</span></span><br><span class="line">set -x</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Assign IP address to br-ex</span></span><br><span class="line">OSH_BR_EX_ADDR="172.24.4.1/24"</span><br><span class="line">OSH_EXT_SUBNET="172.24.4.0/24"</span><br><span class="line">sudo ip addr add $&#123;OSH_BR_EX_ADDR&#125; dev br-ex</span><br><span class="line">sudo ip link set br-ex up</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Setup masquerading on default route dev to public subnet</span></span><br><span class="line">DEFAULT_ROUTE_DEV="enp3s0"</span><br><span class="line">sudo iptables -t nat -A POSTROUTING -o $&#123;DEFAULT_ROUTE_DEV&#125; -s $&#123;OSH_EXT_SUBNET&#125; -j MASQUERADE</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li>網卡記得修改<code>DEFAULT_ROUTE_DEV</code>。</li>
+<li>這邊因為沒有額外提供其他張網卡，所以先用 bridge 處理。</li>
+</ul>
+</blockquote>
+<p>然後透過執行該腳本建立一個 bridge 網路：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> chmod u+x setup-gateway.sh</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ./setup-gateway.sh</span></span><br></pre></td></tr></table></figure>
+
+<p>確認完成後，接著建立 Neutron ext net，透過以下指令進行建立：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> openstack network create \</span></span><br><span class="line">   --share --external \</span><br><span class="line">   --provider-physical-network external \</span><br><span class="line">   --provider-network-type flat ext-net</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> openstack subnet create --network ext-net \</span></span><br><span class="line">    --allocation-pool start=172.24.4.10,end=172.24.4.100 \</span><br><span class="line">    --dns-nameserver 8.8.8.8 --gateway 172.24.4.1 \</span><br><span class="line">    --subnet-range 172.24.4.0/24 \</span><br><span class="line">    --no-dhcp ext-subnet</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> openstack router create router1</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> neutron router-gateway-set router1 ext-net</span></span><br></pre></td></tr></table></figure>
+
+<p>直接進入 Dashboard 新增 Self-service Network:<br><img src="https://i.imgur.com/lqMrgqs.png" alt></p>
+<p>加入到 router1:<br><img src="https://i.imgur.com/4aNnF3O.png" alt></p>
+<p>完成後，就可以建立 instance，這邊都透過 Dashboard 來操作：<br><img src="https://i.imgur.com/fCYkxSC.png" alt></p>
+<p>透過 SSH 進入 instance：<br><img src="https://i.imgur.com/Ijylo9X.png" alt></p>
+<h2 id="Refers"><a href="#Refers" class="headerlink" title="Refers"></a>Refers</h2><ul>
+<li><a href="https://github.com/portdirect/sydney-workshop" target="_blank" rel="noopener">sydney-workshop</a></li>
+<li><a href="https://docs.openstack.org/openstack-helm/latest/install/multinode.html" target="_blank" rel="noopener">Multi Node</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">Deploy OpenStack on Kubernetes using OpenStack-helm</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2017-11-29 16:11</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2017/12/20/openstack/stackube/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    多租戶 Kubernetes 部署方案 Stackube
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2017/08/29/openstack/kuryr-kubernetes/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">利用 Kuryr 整合 OpenStack 與 Kubernetes 網路</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2017/11/29/openstack/openstack-helm/" data-id="ck3ns7q740061wmpfxng2xaeh" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2017/11/29/openstack/openstack-helm/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2017/11/29/openstack/openstack-helm/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#節點與安裝版本"><span class="toc-number">1.</span> <span class="toc-text">節點與安裝版本</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kubernetes-叢集"><span class="toc-number">2.</span> <span class="toc-text">Kubernetes 叢集</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#初始化與設定基本需求"><span class="toc-number">2.1.</span> <span class="toc-text">初始化與設定基本需求</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#安裝與設定-Kube-ansible"><span class="toc-number">2.2.</span> <span class="toc-text">安裝與設定 Kube-ansible</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#部屬-Kubernetes-叢集"><span class="toc-number">2.3.</span> <span class="toc-text">部屬 Kubernetes 叢集</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#OpenStack-helm-叢集"><span class="toc-number">3.</span> <span class="toc-text">OpenStack-helm 叢集</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Helm-init"><span class="toc-number">3.1.</span> <span class="toc-text">Helm init</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#事前準備"><span class="toc-number">3.2.</span> <span class="toc-text">事前準備</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Ceph-Chart"><span class="toc-number">3.3.</span> <span class="toc-text">Ceph Chart</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#OpenStack-Chart"><span class="toc-number">3.4.</span> <span class="toc-text">OpenStack Chart</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#測試-OpenStack-功能"><span class="toc-number">4.</span> <span class="toc-text">測試 OpenStack 功能</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Refers"><span class="toc-number">5.</span> <span class="toc-text">Refers</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2017/11/29/openstack/openstack-helm/';
+        
+        this.page.identifier = 'openstack/openstack-helm';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>Prometheus 介紹與基礎入門 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Prometheus 是一套開放式原始碼的系統監控警報框架與TSDB(Time Series Database)，該專案是由 SoundCloud 的工程師(前 Google 工程師)建立，Prometheus 啟發於 Google 的 Borgmon 監控系統。目前 Prometheus 已貢獻到 CNCF 成為孵化專案(2016-)，其受歡迎程度僅次於 Kubernetes。">
+<meta name="keywords" content="CNCF,Monitoring,Prometheus">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Prometheus 介紹與基礎入門">
+<meta property="og:url" content="https://k2r2bai.com/2018/06/10/cncf/prometheus/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Prometheus 是一套開放式原始碼的系統監控警報框架與TSDB(Time Series Database)，該專案是由 SoundCloud 的工程師(前 Google 工程師)建立，Prometheus 啟發於 Google 的 Borgmon 監控系統。目前 Prometheus 已貢獻到 CNCF 成為孵化專案(2016-)，其受歡迎程度僅次於 Kubernetes。">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://i.imgur.com/iJKoxdD.png">
+<meta property="og:image" content="https://i.imgur.com/QkwEVge.png">
+<meta property="og:image" content="https://i.imgur.com/6V3RJOh.png">
+<meta property="og:image" content="https://i.imgur.com/mB789G2.png">
+<meta property="og:image" content="https://i.imgur.com/qgi39CC.png">
+<meta property="og:image" content="https://i.imgur.com/Rv6XW6f.png">
+<meta property="og:image" content="https://i.imgur.com/Bo7YGo5.png">
+<meta property="og:image" content="https://i.imgur.com/LhKcGVK.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.380Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Prometheus 介紹與基礎入門">
+<meta name="twitter:description" content="Prometheus 是一套開放式原始碼的系統監控警報框架與TSDB(Time Series Database)，該專案是由 SoundCloud 的工程師(前 Google 工程師)建立，Prometheus 啟發於 Google 的 Borgmon 監控系統。目前 Prometheus 已貢獻到 CNCF 成為孵化專案(2016-)，其受歡迎程度僅次於 Kubernetes。">
+<meta name="twitter:image" content="https://i.imgur.com/iJKoxdD.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-cncf/prometheus" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            Prometheus 介紹與基礎入門
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2018/06/10/cncf/prometheus/">
+            <u><time datetime="2018-06-10T04:23:01.000Z" itemprop="datePublished">2018-06-10</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/CNCF/">CNCF</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/CNCF/">CNCF</a>, <a class="tag-link" href="/tags/Monitoring/">Monitoring</a>, <a class="tag-link" href="/tags/Prometheus/">Prometheus</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>Prometheus 是一套開放式原始碼的<code>系統監控警報框架</code>與<code>TSDB(Time Series Database)</code>，該專案是由 SoundCloud 的工程師(前 Google 工程師)建立，Prometheus 啟發於 Google 的 Borgmon 監控系統。目前 Prometheus 已貢獻到 CNCF 成為孵化專案(2016-)，其受歡迎程度僅次於 Kubernetes。</p>
+<a id="more"></a>
+
+<p>Prometheus 具備了以下特性：</p>
+<ul>
+<li>多維度資料模型<ul>
+<li>時間序列資料透過 Metric 名稱與鍵值(Key-value)來區分。</li>
+<li>所有 Metrics 可以設定任意的多維標籤。</li>
+<li>資料模型彈性度高，不需要刻意設定為以特定符號(ex: ,)分割。</li>
+<li>可對資料模型進行聚合、切割與切片操作。</li>
+<li>支援雙精度浮點數類型，標籤可以設定成 Unicode。</li>
+</ul>
+</li>
+<li>靈活的查詢語言(PromQL)，如可進行加減乘除等。</li>
+<li>不依賴分散式儲存，因為 Prometheus Server 是一個二進制檔，可在單個服務節點自主運行。</li>
+<li>基於 HTTP 的 Pull 方式收集時序資料。</li>
+<li>可以透過 Push Gateway 進行資料推送。</li>
+<li>支援多種視覺化儀表板呈現，如 Grafana。</li>
+<li>能透過服務發現(Service discovery)或靜態組態去獲取監控的 Targets。</li>
+</ul>
+<h2 id="Prometheus-架構"><a href="#Prometheus-架構" class="headerlink" title="Prometheus 架構"></a>Prometheus 架構</h2><p><img src="https://i.imgur.com/iJKoxdD.png" alt></p>
+<p>Prometheus 生態圈中是由多個元件組成，其中有些是選擇性的元件：</p>
+<ul>
+<li><strong>Prometheus Server</strong>：收集與儲存時間序列資料，並提供 PromQL 查詢語言支援。</li>
+<li><strong>Client Library</strong>：客戶端函式庫，提供語言開發來開發產生 Metrics 並曝露 Prometheus Server。當 Prometheus Server 來 Pull 時，直接返回即時狀態的 Metrics。</li>
+<li><strong>Pushgateway</strong>：主要用於臨時性 Job 推送。這類 Job 存在期間較短，有可能 Prometheus 來 Pull 時就消失，因此透過一個閘道來推送。適合用於服務層面的 Metrics。</li>
+<li><strong>Exporter</strong>：用來曝露已有第三方服務的 Metrics 給 Prometheus Server，即以 Client Library 開發的 HTTP server。</li>
+<li><strong>AlertManager</strong>：接收來至 Prometheus Server 的 Alert event，並依據定義的 Notification 組態發送警報，ex: E-mail、Pagerduty、OpenGenie 與 Webhook 等等。</li>
+</ul>
+<h2 id="Prometheus-運作流程"><a href="#Prometheus-運作流程" class="headerlink" title="Prometheus 運作流程"></a>Prometheus 運作流程</h2><ol>
+<li>Prometheus Server 定期從組態好的 Jobs 或者 Exporters 中拉取 Metrics，或者接收來自 Pushgateway 發送的 Metrics，又或者從其他的 Prometheus Server 中拉取 Metrics。</li>
+<li>Prometheus Server 在 Local 儲存收集到的 Metrics，並運行已定義好的 alert.rules，然後紀錄新時間序列或者像 AlertManager 發送警報。</li>
+<li>AlertManager 根據組態檔案來對接受到的 Alert event 進行處理，然後發送警報。</li>
+<li>在視覺化介面呈現採集資料。</li>
+</ol>
+<p>Prometheus Server 拉取 Exporter 資料，然後透過 PromQL 語法進行查詢，再將資料給 Web UI or Dashboard。<br><img src="https://i.imgur.com/QkwEVge.png" alt></p>
+<p>Prometheus Server 觸發 Alert Definition 定義的事件，並發送給 AelertManager。<br><img src="https://i.imgur.com/6V3RJOh.png" alt></p>
+<p>AlertManager 依據設定發送警報給 E-mail、Slack 等等。<br><img src="https://i.imgur.com/mB789G2.png" alt></p>
+<h2 id="Prometheus-資料模型與-Metric-類型"><a href="#Prometheus-資料模型與-Metric-類型" class="headerlink" title="Prometheus 資料模型與 Metric 類型"></a>Prometheus 資料模型與 Metric 類型</h2><p>本節將介紹 Prometheus 的資料模型與 Metrics 類型。</p>
+<h3 id="資料模型"><a href="#資料模型" class="headerlink" title="資料模型"></a>資料模型</h3><p>Prometheus 儲存的資料為時間序列，主要以 Metrics name 以及一系列的唯一標籤(key-value)組成，不同標籤表示不同時間序列。模型資訊如下：</p>
+<ul>
+<li><strong>Metrics Name</strong>：該名稱通常用來表示 Metric 功能，例如 <code>http_requests_total</code>，即表示 HTTP 請求的總數。而 Metrics Name 是以 ASCII 字元、數字、英文、底線與冒號組成，並且要滿足<code>[a-zA-Z_:][a-zA-Z0-9_:]*</code> 正規表示法。</li>
+<li><strong>標籤</strong>：用來識別同一個時間序列不同維度。如 <code>http_request_total{method=&quot;Get&quot;}</code>表示所有 HTTP 的 Get Request 數量，因此當 <code>method=&quot;Post&quot;</code> 時又是另一個新的 Metric。標籤也需要滿足<code>[a-zA-Z_:][a-zA-Z0-9_:]*</code> 正規表示法。</li>
+<li><strong>樣本</strong>：實際的時間序列，每個序列包含一個 float64 值與一個毫秒的時間戳。</li>
+<li><strong>格式</strong>：一般為<code>&lt;metric name&gt;{&lt;label name&gt;=&lt;label value&gt;,...}</code>，例如：<code>http_requests_total{method=&quot;POST&quot;,endpoint=&quot;/api/tracks&quot;}</code>。</li>
+</ul>
+<h3 id="Metrics-類型"><a href="#Metrics-類型" class="headerlink" title="Metrics 類型"></a>Metrics 類型</h3><p>Prometheus Client 函式庫支援了四種主要 Metric 類型：</p>
+<ul>
+<li><strong>Counter</strong>: 可被累加的 Metric，比如一個 HTTP Get 錯誤的出現次數。</li>
+<li><strong>Gauge</strong>: 屬於瞬時、與時間無關的任意更動 Metric，如記憶體使用率。</li>
+<li><strong>Histogram</strong>: 主要使用在表示一段時間範圍內的資料採樣。</li>
+<li><strong>Summary</strong>： 類似 Histogram，用來表示一端時間範圍內的資料採樣總結。</li>
+</ul>
+<h2 id="Job-與-Instance"><a href="#Job-與-Instance" class="headerlink" title="Job 與 Instance"></a>Job 與 Instance</h2><p>Prometheus 中會將任意獨立資料來源(Target)稱為 Instance。而包含多個相同 Instance 的集合稱為 Job。如以下範例：</p>
+<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">- job:</span> <span class="string">api-server</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">instance</span> <span class="number">1</span><span class="string">:</span> <span class="number">1.2</span><span class="number">.3</span><span class="number">.4</span><span class="string">:5670</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">instance</span> <span class="number">2</span><span class="string">:</span> <span class="number">1.2</span><span class="number">.3</span><span class="number">.4</span><span class="string">:5671</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">instance</span> <span class="number">3</span><span class="string">:</span> <span class="number">5.6</span><span class="number">.7</span><span class="number">.8</span><span class="string">:5670</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">instance</span> <span class="number">4</span><span class="string">:</span> <span class="number">5.6</span><span class="number">.7</span><span class="number">.8</span><span class="string">:5671</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>Instance</strong>: 被抓取目標 URL 的<code>&lt;host&gt;:&lt;port&gt;</code>部分。</li>
+<li><strong>Job</strong>: 一個同類型的 Instances 集合。(主要確保可靠性與擴展性)</li>
+</ul>
+<h2 id="Prometheus-簡單部署與使用"><a href="#Prometheus-簡單部署與使用" class="headerlink" title="Prometheus 簡單部署與使用"></a>Prometheus 簡單部署與使用</h2><p>Prometheus 官方提供了已建構完成的二進制執行檔可以下載，只需要至 <a href="https://prometheus.io/download/" target="_blank" rel="noopener">Download</a> 頁面下載即可。首先下載符合作業系統的檔案，這邊以 Linux 為例：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ wget https://github.com/prometheus/prometheus/releases/download/v2.3.0/prometheus-2.3.0.linux-amd64.tar.gz</span><br><span class="line">$ tar xvfz prometheus-*.tar.gz</span><br><span class="line">$ tree prometheus-2.3.0.linux-amd64</span><br><span class="line">├── console_libraries <span class="comment"># Web console templates</span></span><br><span class="line">│   ├── menu.lib</span><br><span class="line">│   └── prom.lib</span><br><span class="line">├── consoles <span class="comment"># Web console templates</span></span><br><span class="line">│   ├── index.html.example</span><br><span class="line">│   ├── node-cpu.html</span><br><span class="line">│   ├── node-disk.html</span><br><span class="line">│   ├── node.html</span><br><span class="line">│   ├── node-overview.html</span><br><span class="line">│   ├── prometheus.html</span><br><span class="line">│   └── prometheus-overview.html</span><br><span class="line">├── LICENSE</span><br><span class="line">├── NOTICE</span><br><span class="line">├── prometheus     <span class="comment"># Prometheus 執行檔</span></span><br><span class="line">├── prometheus.yml <span class="comment"># Prometheus 設定檔</span></span><br><span class="line">└── promtool       <span class="comment"># 2.x+ 版本用來將一些 rules 格式轉成 YAML 用。</span></span><br></pre></td></tr></table></figure>
+
+<p>解壓縮完成後，編輯<code>prometheus.yml</code>檔案來調整設定：</p>
+<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">global:</span></span><br><span class="line"><span class="attr">  scrape_interval:</span> <span class="number">15</span><span class="string">s</span> <span class="comment"># 設定預設 scrape 的拉取間隔時間</span></span><br><span class="line"><span class="attr">  external_labels:</span> <span class="comment"># 外通溝通時標示在 time series 或 Alert 的 Labels。</span></span><br><span class="line"><span class="attr">    monitor:</span> <span class="string">'codelab-monitor'</span></span><br><span class="line"></span><br><span class="line"><span class="attr">scrape_configs:</span> <span class="comment"># 設定 scrape jobs</span></span><br><span class="line"><span class="attr">  - job_name:</span> <span class="string">'prometheus'</span></span><br><span class="line"><span class="attr">    scrape_interval:</span> <span class="number">5</span><span class="string">s</span> <span class="comment"># 若設定間隔時間，將會覆蓋 global 的預設時間。</span></span><br><span class="line"><span class="attr">    static_configs:</span></span><br><span class="line"><span class="attr">      - targets:</span> <span class="string">['localhost:9090']</span></span><br></pre></td></tr></table></figure>
+
+<p>完成後，直接執行 prometheus 檔案來啟動伺服器：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ./prometheus --config.file=prometheus.yml --storage.tsdb.path /tmp/data</span><br><span class="line">...</span><br><span class="line">level=info ts=2018-06-19T08:46:37.42756438Z <span class="built_in">caller</span>=main.go:500 msg=<span class="string">"Server is ready to receive web requests."</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>--storage.tsdb.path</code> 預設會直接存放在<code>./data</code>底下。</p>
+</blockquote>
+<p>啟動後就可以瀏覽 <code>:9090</code> 來查看 Web-based console。</p>
+<p><img src="https://i.imgur.com/qgi39CC.png" alt></p>
+<p>另外也可以進入 <code>:9090/metrics</code> 查看 Export metrics 資訊，並且可以在 console 來查詢指定 Metrics，並以圖表呈現。</p>
+<p><img src="https://i.imgur.com/Rv6XW6f.png" alt></p>
+<p>Prometheus 提供了 <a href="https://prometheus.io/docs/prometheus/latest/querying/basics/" target="_blank" rel="noopener">Functional Expression Language</a> 進行查詢與聚合時間序列資料，比如用<code>sum(http_requests_total{method=&quot;GET&quot;} offset 5m)</code>來查看指定時間的資訊總和。</p>
+<p>Prometheus 提供拉取第三方或者自己開發的 Exporter metrics 作為監測資料，這邊可以透過簡單的 <a href="https://github.com/prometheus/client_golang.git" target="_blank" rel="noopener">Go Client</a> 範例來簡單部署 Exporter：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://github.com/prometheus/client_golang.git</span><br><span class="line">$ <span class="built_in">cd</span> client_golang/examples/random</span><br><span class="line">$ go get -d</span><br><span class="line">$ go build</span><br></pre></td></tr></table></figure>
+
+<p>完成後，開啟三個 Terminals 分別啟動以下 Exporter：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># terminal 1</span></span><br><span class="line">$ ./random -listen-address=:8081</span><br><span class="line"></span><br><span class="line"><span class="comment"># terminal 2</span></span><br><span class="line">$ ./random -listen-address=:8082</span><br><span class="line"></span><br><span class="line"><span class="comment"># terminal 3</span></span><br><span class="line">$ ./random -listen-address=:8083</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>啟動後可以在<code>:8081</code>等 Ports 中查看 Metrics 資訊。</p>
+</blockquote>
+<p>確定沒問題後，修改<code>prometheus.yml</code>來新增 target，並重新啟動 Prometheus Server：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">global:</span></span><br><span class="line"><span class="attr">  scrape_interval:</span> <span class="number">15</span><span class="string">s</span> <span class="comment"># 設定預設 scrape 的拉取間隔時間</span></span><br><span class="line"><span class="attr">  external_labels:</span> <span class="comment"># 外通溝通時標示在 time series 或 Alert 的 Labels。</span></span><br><span class="line"><span class="attr">    monitor:</span> <span class="string">'codelab-monitor'</span></span><br><span class="line"></span><br><span class="line"><span class="attr">scrape_configs:</span> <span class="comment"># 設定 scrape jobs</span></span><br><span class="line"><span class="attr">  - job_name:</span> <span class="string">'prometheus'</span></span><br><span class="line"><span class="attr">    scrape_interval:</span> <span class="number">5</span><span class="string">s</span> <span class="comment"># 若設定間隔時間，將會覆蓋 global 的預設時間。</span></span><br><span class="line"><span class="attr">    static_configs:</span></span><br><span class="line"><span class="attr">      - targets:</span> <span class="string">['localhost:9090']</span></span><br><span class="line"><span class="attr">  - job_name:</span> <span class="string">'example-random'</span></span><br><span class="line"><span class="attr">    scrape_interval:</span> <span class="number">5</span><span class="string">s</span></span><br><span class="line"><span class="attr">    static_configs:</span></span><br><span class="line"><span class="attr">      - targets:</span> <span class="string">['localhost:8080',</span> <span class="string">'localhost:8081'</span><span class="string">]</span></span><br><span class="line"><span class="attr">        labels:</span></span><br><span class="line"><span class="attr">          group:</span> <span class="string">'production'</span></span><br><span class="line"><span class="attr">      - targets:</span> <span class="string">['localhost:8082']</span></span><br><span class="line"><span class="attr">        labels:</span></span><br><span class="line"><span class="attr">          group:</span> <span class="string">'canary'</span></span><br></pre></td></tr></table></figure>
+
+<p>啟動完成後，就可以 Web-console 的 Execute 執行以下來查詢：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">avg(rate(rpc_durations_seconds_count[5m])) by (job, service)</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://i.imgur.com/Bo7YGo5.png" alt></p>
+<p>另外 Prometheus 也提供自定義 Group rules 來將指定的 Expression query 當作一個 Metric，這邊建立一個檔案<code>prometheus.rules.yml</code>，並新增以下內容：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">groups:</span></span><br><span class="line"><span class="attr">- name:</span> <span class="string">example</span></span><br><span class="line"><span class="attr">  rules:</span></span><br><span class="line"><span class="attr">  - record:</span> <span class="attr">job_service:rpc_durations_seconds_count:avg_rate5m</span></span><br><span class="line"><span class="attr">    expr:</span> <span class="string">avg(rate(rpc_durations_seconds_count[5m]))</span> <span class="string">by</span> <span class="string">(job,</span> <span class="string">service)</span></span><br></pre></td></tr></table></figure>
+
+<p>接著修改<code>prometheus.yml</code>加入以下內容，並重新啟動 Prometheus Server：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">global:</span></span><br><span class="line">  <span class="string">...</span></span><br><span class="line"><span class="attr">scrape_configs:</span></span><br><span class="line">  <span class="string">...</span></span><br><span class="line"><span class="attr">rule_files:</span></span><br><span class="line"><span class="bullet">  -</span> <span class="string">'prometheus.rules.yml'</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>global</code> 與 <code>scrape_configs</code> 不做任何修改，只需加入<code>rule_files</code>即可，另外注意檔案路徑位置。</p>
+</blockquote>
+<p>正常啟動後，就可以看到新的 Metric 被加入。<br><img src="https://i.imgur.com/LhKcGVK.png" alt></p>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">Prometheus 介紹與基礎入門</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2018-6-10 12:06</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2018/06/23/devops/prometheus/prometheus-operator/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    Prometheus Operator 介紹與安裝
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2018/05/30/kubernetes/keystone-auth/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">以 Keystone 作為 Kubernetes 使用者認證</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2018/06/10/cncf/prometheus/" data-id="ck3ns7q51000jwmpfg9siji5m" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2018/06/10/cncf/prometheus/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2018/06/10/cncf/prometheus/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Prometheus-架構"><span class="toc-number">1.</span> <span class="toc-text">Prometheus 架構</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Prometheus-運作流程"><span class="toc-number">2.</span> <span class="toc-text">Prometheus 運作流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Prometheus-資料模型與-Metric-類型"><span class="toc-number">3.</span> <span class="toc-text">Prometheus 資料模型與 Metric 類型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#資料模型"><span class="toc-number">3.1.</span> <span class="toc-text">資料模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Metrics-類型"><span class="toc-number">3.2.</span> <span class="toc-text">Metrics 類型</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Job-與-Instance"><span class="toc-number">4.</span> <span class="toc-text">Job 與 Instance</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Prometheus-簡單部署與使用"><span class="toc-number">5.</span> <span class="toc-text">Prometheus 簡單部署與使用</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2018/06/10/cncf/prometheus/';
+        
+        this.page.identifier = 'cncf/prometheus';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

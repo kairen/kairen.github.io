@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>Docker 串接 OpenStack Neutron Kuryr 網路 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Kuryr 是 Docker network plugin 之一，主要是使用 Neutron 來提供網路服務給不同主機的 Docker 容器使用，目前也提供了容器化的 Neutron plugin 容器映像檔。 本篇說明如何透過 CentOS 來部署簡單的 Kuryr 與 Docker 串接。">
+<meta name="keywords" content="Docker,OpenStack">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Docker 串接 OpenStack Neutron Kuryr 網路">
+<meta property="og:url" content="https://k2r2bai.com/2016/06/02/openstack/kuryr-install/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Kuryr 是 Docker network plugin 之一，主要是使用 Neutron 來提供網路服務給不同主機的 Docker 容器使用，目前也提供了容器化的 Neutron plugin 容器映像檔。 本篇說明如何透過 CentOS 來部署簡單的 Kuryr 與 Docker 串接。">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.400Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Docker 串接 OpenStack Neutron Kuryr 網路">
+<meta name="twitter:description" content="Kuryr 是 Docker network plugin 之一，主要是使用 Neutron 來提供網路服務給不同主機的 Docker 容器使用，目前也提供了容器化的 Neutron plugin 容器映像檔。 本篇說明如何透過 CentOS 來部署簡單的 Kuryr 與 Docker 串接。">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-openstack/kuryr-install" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            Docker 串接 OpenStack Neutron Kuryr 網路
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2016/06/02/openstack/kuryr-install/">
+            <u><time datetime="2016-06-02T08:23:01.000Z" itemprop="datePublished">2016-06-02</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/OpenStack/">OpenStack</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Docker/">Docker</a>, <a class="tag-link" href="/tags/OpenStack/">OpenStack</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>Kuryr 是 Docker network plugin 之一，主要是使用 Neutron 來提供網路服務給不同主機的 Docker 容器使用，目前也提供了容器化的 Neutron plugin 容器映像檔。</p>
+<p>本篇說明如何透過 CentOS 來部署簡單的 Kuryr 與 Docker 串接。</p>
+<a id="more"></a>
+
+<h2 id="節點配置"><a href="#節點配置" class="headerlink" title="節點配置"></a>節點配置</h2><p>OpenStack Kuryr 我們使用到三台節點，以下為本次安裝的規格：</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>RAM</th>
+<th>Disk</th>
+<th>CPUs</th>
+<th>IP Address</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>controller</td>
+<td>4 GB</td>
+<td>50GB</td>
+<td>2vCPU</td>
+<td>172.16.1.115</td>
+</tr>
+<tr>
+<td>network-1</td>
+<td>4 GB</td>
+<td>50GB</td>
+<td>2vCPU</td>
+<td>172.16.1.118</td>
+</tr>
+<tr>
+<td>network-2</td>
+<td>4 GB</td>
+<td>50 GB</td>
+<td>2vCPU</td>
+<td>172.16.1.119</td>
+</tr>
+</tbody></table>
+<p>請以上節點都分別安裝 RHEL 或者 CentOS 作業系統。並且設定 IP 為靜態固定，編輯<code>/etc/sysconfig/network-scripts/ifcfg-&lt;name&gt;</code>檔案，加入以下內容：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">ONBOOT=<span class="string">"yes"</span></span><br><span class="line">IPADDR=<span class="string">"10.0.0.104"</span></span><br><span class="line">PREFIX=<span class="string">"24"</span></span><br><span class="line">GATEWAY=<span class="string">"10.0.0.1"</span></span><br><span class="line">DNS1=<span class="string">"8.8.8.8"</span></span><br><span class="line">DNS2=<span class="string">"8.8.8.4"</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><font color="red">P.S.</font> 若是虛擬機則不需要設定。</p>
+</blockquote>
+<h2 id="安裝前準備"><a href="#安裝前準備" class="headerlink" title="安裝前準備"></a>安裝前準備</h2><p>在開始安裝以前，首先需要在每一台節點將基本環境的軟體更新：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo yum update -y</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li>完成後檢查是否是最新版本，可以透過以下方式查看 Kernel：</li>
+</ul>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ uname -r</span><br><span class="line">3.10.0-327.13.1.el7.x86_64</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li>如果不是以上版本，請執行以下指令：</li>
+</ul>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo yum upgrade --assumeyes --tolerant</span><br><span class="line">$ sudo yum update --assumeyes</span><br></pre></td></tr></table></figure>
+
+<p>由於在 CentOS 與 RHEL 預設會開啟防火牆，故要關閉防火牆與開機時自動啟動：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo systemctl stop firewalld &amp;&amp; sudo systemctl <span class="built_in">disable</span> firewalld</span><br></pre></td></tr></table></figure>
+
+<p>設定關閉 SELinux 與設定一些資訊，並重新啟動：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo sed -i s/SELINUX=enforcing/SELINUX=permissive/g /etc/selinux/config &amp;&amp;</span><br><span class="line">sudo groupadd nogroup &amp;&amp;</span><br><span class="line">sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1 &amp;&amp;</span><br><span class="line">sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1 &amp;&amp;</span><br><span class="line">sudo reboot</span><br></pre></td></tr></table></figure>
+
+<p>完成重新啟動後，在所有<code>Network</code>節點安裝 Docker，首先要取得 repos，設定以下來讓 yum 可以抓取：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo tee /etc/yum.repos.d/docker.repo &lt;&lt;-<span class="string">'EOF'</span></span><br><span class="line">[dockerrepo]</span><br><span class="line">name=Docker Repository</span><br><span class="line">baseurl=https://yum.dockerproject.org/repo/main/centos/<span class="variable">$releasever</span>/</span><br><span class="line">enabled=1</span><br><span class="line">gpgcheck=1</span><br><span class="line">gpgkey=https://yum.dockerproject.org/gpg</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<p>在<code>Network</code>節點安裝 Docker engine，並啟動 docker 與設定開機啟動：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo yum install --assumeyes --tolerant docker-engine</span><br><span class="line">$ sudo systemctl start docker</span><br><span class="line">$ sudo systemctl <span class="built_in">enable</span> docker</span><br></pre></td></tr></table></figure>
+
+<p>在<code>所有</code>節點安裝一些基本工具軟體：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo yum install -y tar xz unzip curl ipset vim wget git python-pip</span><br><span class="line">$ sudo pip install --upgrade pip</span><br></pre></td></tr></table></figure>
+
+<p>在<code>Controller</code>節點，進入<code>root</code>使用者，並建置 ssh keys：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ssh-keygen -t rsa</span><br><span class="line">$ cat .ssh/id_rsa.pub &gt;&gt; .ssh/authorized_keys</span><br></pre></td></tr></table></figure>
+
+<p>複製<code>Controller</code>節點的<code>.ssh/id_rsa.pub</code>內容，並貼到<code>Network</code>節點的<code>root</code>使用者的<code>.ssh/authorized_keys</code>。並驗證 ssh 是否可以無密碼登入：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ssh 172.16.1.118</span><br></pre></td></tr></table></figure>
+
+<h3 id="安裝-OpenStack"><a href="#安裝-OpenStack" class="headerlink" title="安裝 OpenStack"></a>安裝 OpenStack</h3><p>這邊使用 RDO 進行安裝。由於只需要 Neutron 與 Keystone 服務，所以可以修改部署的<code>answer-file</code>設定檔。由於這邊使用的是虛擬機，因此 Neutron 網路採用 VXLAN 方式進行安裝。進入到<code>Controller</code>節點，並且進入到<code>root</code>使用者安裝 PackStack：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ yum install -y centos-release-openstack-mitaka.noarch</span><br><span class="line">$ yum install -y openstack-packstack</span><br><span class="line">$ wget https://gist.githubusercontent.com/kairen/637c707b960e188d32aba9044e652c0b/raw/6724a5177ca82ced555554635c6b0893e8c398ab/answer-file</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊可以更改安裝版本，如更改成 Liberty 的穩定版<code>centos-release-openstack-liberty.noarch</code></p>
+</blockquote>
+<p>編輯<code>answer-file</code>設定檔，修改以下內容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">CONFIG_CONTROLLER_HOST=172.16.1.115</span><br><span class="line">CONFIG_COMPUTE_HOSTS=172.16.1.118,172.16.1.119</span><br><span class="line">CONFIG_NETWORK_HOSTS=172.16.1.115,172.16.1.118,172.16.1.119</span><br><span class="line">CONFIG_STORAGE_HOST=172.16.1.115</span><br><span class="line">CONFIG_AMQP_HOST=172.16.1.115</span><br><span class="line">CONFIG_MARIADB_HOST=172.16.1.115</span><br><span class="line">CONFIG_KEYSTONE_LDAP_URL=ldap://172.16.1.115</span><br></pre></td></tr></table></figure>
+
+<p>設定檔都確認無誤後，透過以下指令進行安裝：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ packstack --answer-file=answer-file</span><br><span class="line">...</span><br><span class="line">**** Installation completed successfully ******</span><br><span class="line">* To access the OpenStack Dashboard browse to http://172.16.1.115/dashboard .</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>中途若發生安裝套件失敗問題，請直接重新執行一次。</p>
+</blockquote>
+<p>當成功安裝完成後，透過簡單的 OpenStack 指令來確認：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ . keystonerc_admin</span><br><span class="line">$ openstack user list</span><br><span class="line">+----------------------------------+---------+</span><br><span class="line">| ID                               | Name    |</span><br><span class="line">+----------------------------------+---------+</span><br><span class="line">| 70b80593320543bbb32e15d7f06036f0 | admin   |</span><br><span class="line">| 9600aaa2447940e789e548b2f5515690 | neutron |</span><br><span class="line">+----------------------------------+---------+</span><br></pre></td></tr></table></figure>
+
+<h3 id="安裝-Kuryr"><a href="#安裝-Kuryr" class="headerlink" title="安裝 Kuryr"></a>安裝 Kuryr</h3><p>進入<code>Network</code>節點，並且進入到<code>root</code>使用者，下載 Kuryr 最新的專案：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://github.com/openstack/kuryr.git</span><br><span class="line">$ pip install -r requirements.txt</span><br><span class="line">$ python setup.py install</span><br></pre></td></tr></table></figure>
+
+<p>建立 Kuryr 設定檔與 Log 目錄：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ mkdir -p /var/<span class="built_in">log</span>/kuryr /etc/kuryr</span><br><span class="line">$ wget https://gist.githubusercontent.com/kairen/637c707b960e188d32aba9044e652c0b/raw/6724a5177ca82ced555554635c6b0893e8c398ab/kuryr.conf -O /etc/kuryr/kuryr.conf</span><br></pre></td></tr></table></figure>
+
+<p>編輯<code>/etc/kuryr/kuryr.conf</code>設定檔，修改一下內容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[keystone_client]</span><br><span class="line">auth_uri = http://172.16.1.115:35357/v2.0</span><br><span class="line"></span><br><span class="line">[neutron_client]</span><br><span class="line">neutron_uri = http://172.16.1.115:9696</span><br></pre></td></tr></table></figure>
+
+<p>接著啟動 Kuryr 服務：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ./scripts/run_kuryr.sh &amp;</span><br><span class="line">2016-06-02 03:51:33.578 4758 INFO werkzeug [-]  * Running on http://0.0.0.0:2377/ (Press CTRL+C to quit)</span><br></pre></td></tr></table></figure>
+
+<h3 id="服務驗證"><a href="#服務驗證" class="headerlink" title="服務驗證"></a>服務驗證</h3><p>當所有<code>Network</code>節點都完成 Kuryr 安裝後，就可以透過以下方式來驗證，首先在<code>network-1</code>建立網路：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker network create --driver=kuryr \</span><br><span class="line">--ipam-driver=kuryr \</span><br><span class="line">--subnet 10.0.0.0/16 \</span><br><span class="line">--gateway 10.0.0.1 \</span><br><span class="line">--ip-range 10.0.0.0/24 kuryr</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line">821d6cd53af6c656969c1c96063a60c695a0313c9a119e44d4325ce2a9f2f935</span><br></pre></td></tr></table></figure>
+
+<p>透過 docker 指令來查看網路：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker network inspect kuryr</span><br><span class="line">[</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="string">"Name"</span>: <span class="string">"kuryr"</span>,</span><br><span class="line">        <span class="string">"Id"</span>: <span class="string">"821d6cd53af6c656969c1c96063a60c695a0313c9a119e44d4325ce2a9f2f935"</span>,</span><br><span class="line">        <span class="string">"Scope"</span>: <span class="string">"local"</span>,</span><br><span class="line">        <span class="string">"Driver"</span>: <span class="string">"kuryr"</span>,</span><br><span class="line">        <span class="string">"EnableIPv6"</span>: <span class="literal">false</span>,</span><br><span class="line">        <span class="string">"IPAM"</span>: &#123;</span><br><span class="line">            <span class="string">"Driver"</span>: <span class="string">"kuryr"</span>,</span><br><span class="line">            <span class="string">"Options"</span>: &#123;&#125;,</span><br><span class="line">            <span class="string">"Config"</span>: [</span><br><span class="line">                &#123;</span><br><span class="line">                    <span class="string">"Subnet"</span>: <span class="string">"10.0.0.0/16"</span>,</span><br><span class="line">                    <span class="string">"IPRange"</span>: <span class="string">"10.0.0.0/24"</span>,</span><br><span class="line">                    <span class="string">"Gateway"</span>: <span class="string">"10.0.0.1"</span></span><br><span class="line">                &#125;</span><br><span class="line">            ]</span><br><span class="line">        &#125;,</span><br><span class="line">        <span class="string">"Internal"</span>: <span class="literal">false</span>,</span><br><span class="line">        <span class="string">"Containers"</span>: &#123;</span><br><span class="line">            <span class="string">"367763a677ad180c57818631ee3e9151683d0218a15bb002d0995ab5c6e30446"</span>: &#123;</span><br><span class="line">                <span class="string">"Name"</span>: <span class="string">"awesome_dijkstra"</span>,</span><br><span class="line">                <span class="string">"EndpointID"</span>: <span class="string">"326aba6247266cfd0ca3771b0283e2142a3e934bb994d1b77fc93bb467c0df48"</span>,</span><br><span class="line">                <span class="string">"MacAddress"</span>: <span class="string">"fa:16:3e:7c:d8:b6"</span>,</span><br><span class="line">                <span class="string">"IPv4Address"</span>: <span class="string">"10.0.0.5/24"</span>,</span><br><span class="line">                <span class="string">"IPv6Address"</span>: <span class="string">""</span></span><br><span class="line">            &#125;,</span><br><span class="line">            <span class="string">"b740abd7976d274de233df0bad052c418516ba036132b92ad022a4b52a2d7d25"</span>: &#123;</span><br><span class="line">                <span class="string">"Name"</span>: <span class="string">"awesome_engelbart"</span>,</span><br><span class="line">                <span class="string">"EndpointID"</span>: <span class="string">"fcc642dae6323ce7d86ddda61c9583a19801eae70d8126d35b4b5846cd8598a4"</span>,</span><br><span class="line">                <span class="string">"MacAddress"</span>: <span class="string">"fa:16:3e:5b:6e:7f"</span>,</span><br><span class="line">                <span class="string">"IPv4Address"</span>: <span class="string">"10.0.0.3/24"</span>,</span><br><span class="line">                <span class="string">"IPv6Address"</span>: <span class="string">""</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;,</span><br><span class="line">        <span class="string">"Options"</span>: &#123;&#125;,</span><br><span class="line">        <span class="string">"Labels"</span>: &#123;&#125;</span><br><span class="line">    &#125;</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+
+<p>接著建立一個 container 來取得 IP：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker run -it -d --net kuryr --privileged=<span class="literal">true</span> ubuntu:14.04</span><br><span class="line">$ docker <span class="built_in">exec</span> -ti $(docker ps -lq) bash</span><br><span class="line">root@367763a677ad$ ip -4 a</span><br><span class="line">1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN group default</span><br><span class="line">    inet 127.0.0.1/8 scope host lo</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">14: eth0@if15: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc pfifo_fast state UP group default qlen 1000</span><br><span class="line">    inet 10.0.0.3/24 scope global eth0</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br></pre></td></tr></table></figure>
+
+<p>接著進入到<figure class="highlight plain"><figcaption><span>docker 指令建立網路，這邊採用跟上一個同樣的網路：</span></figcaption><table><tr><td class="code"><pre><span class="line">```sh</span><br><span class="line">$ docker network create --driver=kuryr \</span><br><span class="line">--ipam-driver=kuryr \</span><br><span class="line">--subnet 10.0.0.0/16 \</span><br><span class="line">--gateway 10.0.0.1 \</span><br><span class="line">--ip-range 10.0.0.0/24 \</span><br><span class="line">-o neutron.net.uuid=8c069d2c-772c-47ae-90bb-d22148f37dc8 kuryr</span><br></pre></td></tr></table></figure></p>
+<blockquote>
+<p>這邊<code>neutron.net.uuid</code>可以透過以下在<code>Controller</code>方式取得：</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ neutron net-list | awk <span class="string">'/kuryr/ &#123;print $2&#125;'</span></span><br><span class="line">8c069d2c-772c-47ae-90bb-d22148f37dc8</span><br></pre></td></tr></table></figure>
+
+<p>接著一樣建立一個 container 來取得 IP：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ docker run -it -d --net kuryr --privileged=<span class="literal">true</span> ubuntu:14.04</span><br><span class="line">$ docker <span class="built_in">exec</span> -ti $(docker ps -lq) bash</span><br><span class="line">root@f2b48a802e92$ ip -4 a</span><br><span class="line">1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN group default</span><br><span class="line">    inet 127.0.0.1/8 scope host lo</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">15: eth0@if16: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc pfifo_fast state UP group default qlen 1000</span><br><span class="line">    inet 10.0.0.4/24 scope global eth0</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br></pre></td></tr></table></figure>
+
+<p>透過 ping 來驗證網路是否有連接：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">root@f2b48a802e92$ ping -c 3 10.0.0.3</span><br><span class="line">PING 10.0.0.3 (10.0.0.3) 56(84) bytes of data.</span><br><span class="line">64 bytes from 10.0.0.3: icmp_seq=1 ttl=64 time=1.71 ms</span><br><span class="line">64 bytes from 10.0.0.3: icmp_seq=2 ttl=64 time=1.37 ms</span><br><span class="line">64 bytes from 10.0.0.3: icmp_seq=3 ttl=64 time=1.23 ms</span><br></pre></td></tr></table></figure>
+
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">Docker 串接 OpenStack Neutron Kuryr 網路</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2016-6-2 16:06</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2016/06/24/data-engineer/build-spark/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    Building Spark Source Code
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2016/05/27/linux/ubuntu/flashcache/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">用 Flashcache 建立高容量與高效能儲存</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2016/06/02/openstack/kuryr-install/" data-id="ck3ns7q6y005vwmpf3kmph5oy" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2016/06/02/openstack/kuryr-install/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2016/06/02/openstack/kuryr-install/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#節點配置"><span class="toc-number">1.</span> <span class="toc-text">節點配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安裝前準備"><span class="toc-number">2.</span> <span class="toc-text">安裝前準備</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#安裝-OpenStack"><span class="toc-number">2.1.</span> <span class="toc-text">安裝 OpenStack</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#安裝-Kuryr"><span class="toc-number">2.2.</span> <span class="toc-text">安裝 Kuryr</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#服務驗證"><span class="toc-number">2.3.</span> <span class="toc-text">服務驗證</span></a></li></ol></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2016/06/02/openstack/kuryr-install/';
+        
+        this.page.identifier = 'openstack/kuryr-install';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

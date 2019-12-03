@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>Docker 基礎介紹 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Docker 是一個開源的專案，主要提供容器化應用程式的部署與自動化的管理，透過部署 Docker engine 於 Linux 作業系統上，提供軟體抽象層以及作業系統層虛擬化自動管理機制。Docker 使用一些 Linux Kernel 中的軟體，如 Control Groups（cgroups）、namespaces（核心命名空間）、Another UnionFS 等來達到建置獨立的環境與存取">
+<meta name="keywords" content="Container,Docker">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Docker 基礎介紹">
+<meta property="og:url" content="https://k2r2bai.com/2015/11/09/container/docker-introduction/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Docker 是一個開源的專案，主要提供容器化應用程式的部署與自動化的管理，透過部署 Docker engine 於 Linux 作業系統上，提供軟體抽象層以及作業系統層虛擬化自動管理機制。Docker 使用一些 Linux Kernel 中的軟體，如 Control Groups（cgroups）、namespaces（核心命名空間）、Another UnionFS 等來達到建置獨立的環境與存取">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/docker/docker-logo.png">
+<meta property="og:image" content="https://k2r2bai.com/images/docker/vmm-layer.png">
+<meta property="og:image" content="https://k2r2bai.com/images/docker/container-layer.png">
+<meta property="og:image" content="https://k2r2bai.com/images/docker/communication.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.380Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Docker 基礎介紹">
+<meta name="twitter:description" content="Docker 是一個開源的專案，主要提供容器化應用程式的部署與自動化的管理，透過部署 Docker engine 於 Linux 作業系統上，提供軟體抽象層以及作業系統層虛擬化自動管理機制。Docker 使用一些 Linux Kernel 中的軟體，如 Control Groups（cgroups）、namespaces（核心命名空間）、Another UnionFS 等來達到建置獨立的環境與存取">
+<meta name="twitter:image" content="https://k2r2bai.com/images/docker/docker-logo.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-container/docker-introduction" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            Docker 基礎介紹
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2015/11/09/container/docker-introduction/">
+            <u><time datetime="2015-11-09T09:08:54.000Z" itemprop="datePublished">2015-11-09</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Container/">Container</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Container/">Container</a>, <a class="tag-link" href="/tags/Docker/">Docker</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p><a href="http://www.docker.com/" target="_blank" rel="noopener">Docker</a> 是一個開源的專案，主要提供容器化應用程式的部署與自動化的管理，透過部署 Docker engine 於 Linux 作業系統上，提供軟體抽象層以及作業系統層虛擬化自動管理機制。Docker 使用一些 Linux Kernel 中的軟體，如 Control Groups（cgroups）、namespaces（核心命名空間）、Another UnionFS 等來達到建置獨立的環境與存取 CPU、Memory 以及網路資源等，最終提供一個輕量級的虛擬化。Docker 的發展非常迅速，從 0.9.0 版本後，採用自己開發的 Libcontainer 函式庫作為直接存取由 Linux Kernel 提供的虛擬化基礎設施。Docker 也支援了多平台，從個人電腦到私有、公有雲都能夠進行使用與部署輕量級虛擬化。</p>
+<blockquote>
+<p>Docker 並非一個新興技術，而是過往的 Linux Container 技術的基礎上進行封裝。因此使用者只需要關注應用程式如何被部署與執行就好，而不用管容器是如何被建置出來。</p>
+</blockquote>
+<p><img src="/images/docker/docker-logo.png" alt="Docker"></p>
+<a id="more"></a>
+
+<p>使用 Docker 有以下幾項好處：</p>
+<ul>
+<li>更快速的交付和部署</li>
+<li>高效能的虛擬化環境</li>
+<li>易遷移和擴展服務</li>
+<li>管理簡單化</li>
+<li>更有效的使用實體主機資源</li>
+<li>可建置任何語言的 Dockerized 應用程式</li>
+<li>跨平台的管理、部署與使用</li>
+</ul>
+<blockquote>
+<p>微軟過往許多需要相依於 Windows 語言應用程式也慢慢被支援到 Docker 了。</p>
+</blockquote>
+<h2 id="Docker-Container-vs-傳統虛擬化"><a href="#Docker-Container-vs-傳統虛擬化" class="headerlink" title="Docker Container vs 傳統虛擬化"></a>Docker Container vs 傳統虛擬化</h2><p>傳統虛擬化技術一般是透過在 Host OS 上安裝 Hypervisor（VMM），然後由 Hypervisor 來管理不同虛擬主機，每個虛擬主機都需要安裝不同的作業系統，因此每個環境被獨立的完全隔離。</p>
+<p><img src="/images/docker/vmm-layer.png" alt="虛擬化"></p>
+<p>然而 Docker 提供應用程式在獨立的 Container 中執行，這些Container 並不需要像虛擬化一樣額外依附在 Hypervisor 甚至 Guest OS 上，而是透過 Docker engine 來進行管理。</p>
+<p><img src="/images/docker/container-layer.png" alt="Docker Container"></p>
+<h2 id="Docker-基本概念"><a href="#Docker-基本概念" class="headerlink" title="Docker 基本概念"></a>Docker 基本概念</h2><p>Docker 擁有幾個基本概念，其中包含 Docker 三大重要部分與元件。我們將針對這些概念進行概述，也會在其他章節進一步說明。</p>
+<ul>
+<li><p><strong>Docker images</strong>：Image（映像檔）被用來啟動容器的實際執行得應用程式環境。這概念類似 VM 的映像檔，VM 透過映像檔來啟動作業系統，並執行許多服務，但 Docker 的映像檔則只是檔案系統的儲存狀態，是一個唯讀的板模。</p>
+</li>
+<li><p><strong>Docker containers</strong>：Container（容器）是一個應用程式執行的實例，Docker 會提供獨立、安全的環境給應用程式執行，容器是從映像檔建立，並運作於主機上。</p>
+<blockquote>
+<p>P.S 盡量不要在一個 Container 執行過多的服務。</p>
+</blockquote>
+</li>
+<li><p><strong>Docker registries</strong>：Registries 是被用來儲存 Docker 所建立的映像檔的地方，我們可以把自己建立的映像檔透過上傳到 Registries 來分享給其他人。Registries 也被分為了公有與私有，一般公有的 Registries 是 <a href="https://hub.docker.com/" target="_blank" rel="noopener">Docker Hub</a>，提供了所有基礎的映像檔與全球使用者上傳的映像檔。私人的則是企業或者個人環境建置的，可參考 <a href="https://docs.docker.com/registry/deploying/" target="_blank" rel="noopener">Deploying a registry server</a>。</p>
+</li>
+</ul>
+<p>Docker 的推出與發展非常迅速，相關的部署工具與資源相繼出現，更因此讓原名為 dotcloud 變成 Docker, Inc。Docker 也在 2014 - 2015 年推出了以下三大工具：</p>
+<ul>
+<li><strong><a href="https://docs.docker.com/machine/overview/" target="_blank" rel="noopener">docker-machine</a></strong>：Docker machine 是可以透過指令來安裝 Docker engine 的工具。該工具可以讓使用者不需要學習一堆安裝指令來部署容器環境，目前已經支援了許多驅動程式，例如：OpenStack、Amazon EC2、Google Cloud Engine 與 Microsoft Azure等，更可以被用來建立混合環境。</li>
+<li><strong><a href="https://docs.docker.com/compose/overview/" target="_blank" rel="noopener">docker-compose</a></strong>：Compose 是 Docker 的編配工具，可以用來建置 Swarm 上的多節點容器化叢集與單一節點的應用程式。Compose 的前身是 Fig，使用者可以透過定義 YAML 檔案來描述與維護所有應用程式服務定義與部署，如多個服務之間如何連接等，使用 Compose 部署的應用程式可以在不影響其他服務情況下自動更新。</li>
+<li><strong><a href="https://docs.docker.com/swarm/overview/" target="_blank" rel="noopener">docker-swarm</a></strong>：Swarm 是 Docker 的原生叢集與調度工具，它基於應用程式生命週期、容器使用、效能需求自動優化分散式應用程式的基礎架構。且 Swarm 可以透過許多服務發現（Service Discovery）套件來打造 HA 的叢集，Swarm 也提供很高的靈活性，使應用程式可以簡單的分散部署在多主機環境上。</li>
+</ul>
+<h2 id="使用者操作-Docker-的方法"><a href="#使用者操作-Docker-的方法" class="headerlink" title="使用者操作 Docker 的方法"></a>使用者操作 Docker 的方法</h2><p>Docker 主機上會執行一個 Docker daemon，就能夠開啟許多 Container。如果要對 Docker 進行操作的話，可以使用 Docker client 軟體，如 docker client、docker-py、Kitematic，這些工具會分別採用以下兩種方式來對部署 Docker daemon 進行管理：</p>
+<ol>
+<li><a href="http://en.wikipedia.org/wiki/Unix_domain_socket" target="_blank" rel="noopener">UNIX Sockets</a></li>
+<li><a href="http://en.wikipedia.org/wiki/Representational_state_transfer" target="_blank" rel="noopener">RESTful API</a></li>
+</ol>
+<p>溝通方式如下圖所示，其中 Docker daemon 可以同時安裝 Docker client 來直接進行 Docker 使用（一般安裝都會有），詳細資訊可以參閱 <a href="https://docs.docker.com/reference/api/docker_remote_api/" target="_blank" rel="noopener">Docker Remote API - Docker Documentation</a>。</p>
+<p><img src="/images/docker/communication.png" alt="溝通方式"></p>
+<p>最後有興趣看每週 Docker 的新聞可以訂閱 Docker Weekly，參閱   <a href="https://www.docker.com/newsletter-subscription" target="_blank" rel="noopener">Docker Newsletter</a></p>
+<h2 id="參考資源"><a href="#參考資源" class="headerlink" title="參考資源"></a>參考資源</h2><ul>
+<li><a href="https://www.docker.com/" target="_blank" rel="noopener">Docker 官方</a></li>
+<li><a href="https://blog.docker.com/2016/03/swarmweek-swarm-maintainers/?mkt_tok=3RkMMJWWfF9wsRonuqTMZKXonjHpfsX54uQqUKO1lMI%2F0ER3fOvrPUfGjI4DS8piI%2BSLDwEYGJlv6SgFQ7LMMaZq1rgMXBk%3D" target="_blank" rel="noopener">Docker Blog</a></li>
+<li><a href="http://www.infoq.com/cn/dockerdeep/" target="_blank" rel="noopener">InfoQ Docker 深入淺出</a></li>
+<li><a href="https://www.gitbook.com/book/philipzheng/docker_practice/details" target="_blank" rel="noopener">Docker —— 從入門到實踐</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">Docker 基礎介紹</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2015-11-9 17:11</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2015/11/10/cncf/kubernetes/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    Kuberentes 是什麼？
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2015/11/04/linux/ubuntu/apache2-proxy/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">簡單設定 Apache2 Proxy 與 VirtualHost</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2015/11/09/container/docker-introduction/" data-id="ck3ns7q53000pwmpf3f072z2n" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2015/11/09/container/docker-introduction/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2015/11/09/container/docker-introduction/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Docker-Container-vs-傳統虛擬化"><span class="toc-number">1.</span> <span class="toc-text">Docker Container vs 傳統虛擬化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Docker-基本概念"><span class="toc-number">2.</span> <span class="toc-text">Docker 基本概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#使用者操作-Docker-的方法"><span class="toc-number">3.</span> <span class="toc-text">使用者操作 Docker 的方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#參考資源"><span class="toc-number">4.</span> <span class="toc-text">參考資源</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2015/11/09/container/docker-introduction/';
+        
+        this.page.identifier = 'container/docker-introduction';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

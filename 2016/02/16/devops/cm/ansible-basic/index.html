@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>Ansible 介紹與使用 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Ansible 是最近越來越夯多 DevOps 自動化組態管理軟體，從 2013 年發起的專案，由於該架構為無 agent 程式的架構，以部署靈活與程式碼易讀而受到矚目。Ansible 除了有開源版本之外，還針對企業用戶推出 Ansible Tower 版本，已有許多知名企業採用，如 Apple、Twitter 等。 Ansible 架構圖如下所示，使用者透過 Ansible 編配操控公有與私有雲">
+<meta name="keywords" content="DevOps,Automation Engine">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Ansible 介紹與使用">
+<meta property="og:url" content="https://k2r2bai.com/2016/02/16/devops/cm/ansible-basic/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Ansible 是最近越來越夯多 DevOps 自動化組態管理軟體，從 2013 年發起的專案，由於該架構為無 agent 程式的架構，以部署靈活與程式碼易讀而受到矚目。Ansible 除了有開源版本之外，還針對企業用戶推出 Ansible Tower 版本，已有許多知名企業採用，如 Apple、Twitter 等。 Ansible 架構圖如下所示，使用者透過 Ansible 編配操控公有與私有雲">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/devops/ansible-arch.jpg">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.384Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Ansible 介紹與使用">
+<meta name="twitter:description" content="Ansible 是最近越來越夯多 DevOps 自動化組態管理軟體，從 2013 年發起的專案，由於該架構為無 agent 程式的架構，以部署靈活與程式碼易讀而受到矚目。Ansible 除了有開源版本之外，還針對企業用戶推出 Ansible Tower 版本，已有許多知名企業採用，如 Apple、Twitter 等。 Ansible 架構圖如下所示，使用者透過 Ansible 編配操控公有與私有雲">
+<meta name="twitter:image" content="https://k2r2bai.com/images/devops/ansible-arch.jpg">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-devops/cm/ansible-basic" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            Ansible 介紹與使用
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2016/02/16/devops/cm/ansible-basic/">
+            <u><time datetime="2016-02-16T04:23:01.000Z" itemprop="datePublished">2016-02-16</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/DevOps/">DevOps</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Automation-Engine/">Automation Engine</a>, <a class="tag-link" href="/tags/DevOps/">DevOps</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>Ansible 是最近越來越夯多 DevOps 自動化組態管理軟體，從 2013 年發起的專案，由於該架構為無 agent 程式的架構，以部署靈活與程式碼易讀而受到矚目。Ansible 除了有開源版本之外，還針對企業用戶推出 Ansible Tower 版本，已有許多知名企業採用，如 Apple、Twitter 等。</p>
+<p>Ansible 架構圖如下所示，使用者透過 Ansible 編配操控公有與私有雲或 CMDB（組態管理資料庫）中的主機，其中 Ansible 編排是由<code>Inventory(主機與群組規則)</code>、<code>API</code>、<code>Modules(模組)</code>與<code>Plugins(插件)</code>組合而成。</p>
+<a id="more"></a>
+
+<p><img src="/images/devops/ansible-arch.jpg" alt></p>
+<p><a href="https://github.com/ansible/ansible" target="_blank" rel="noopener">Ansible</a> 與其他管理工具最大差異在於不需要任何 Agent，預設使用 SSH 來做遠端操控與配置，並採用 YAML 格式來描述配置資訊。</p>
+<blockquote>
+<p>Ansible 提供了一個 Playbook 分享平台，可以讓管理與開發者上傳自己的功能與角色配置的 Playbook，該網址為 <a href="https://galaxy.ansible.com/intro" target="_blank" rel="noopener">Ansible Galaxy</a>。</p>
+</blockquote>
+<p><strong>優點：</strong></p>
+<ul>
+<li>開發社群活躍。</li>
+<li>playbook 使用的 yaml 語言，很簡潔。</li>
+<li>社群相關文件容易理解。。</li>
+<li>沒有 Agent 端。</li>
+<li>安裝與執行的速度快</li>
+<li>配置簡單、功能強大、擴展性強</li>
+<li>可透過 Python 擴展功能</li>
+<li>提供用好的 Web 管理介面與 REST API 介面（AWX 平台）</li>
+</ul>
+<p><strong>缺點：</strong></p>
+<ul>
+<li>Web UI 需要收費。</li>
+<li>官方資料都比較淺顯。</li>
+</ul>
+<h2 id="Ansible-安裝與基本操作"><a href="#Ansible-安裝與基本操作" class="headerlink" title="Ansible 安裝與基本操作"></a>Ansible 安裝與基本操作</h2><p>Ansible 有許多種安裝方式，如使用 Github 來透過 Source Code 安裝，也可以透過 python-pip 來安裝，甚至是使用作業系統的套件管理系統安裝，以下使用 Ubuntu APT 來進行安裝：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get install software-properties-common</span><br><span class="line">$ sudo apt-add-repository ppa:ansible/ansible</span><br><span class="line">$ sudo apt-get update</span><br><span class="line">$ sudo apt-get install ansible</span><br></pre></td></tr></table></figure>
+
+<p>也可以使用 Python-pip 來進行安裝：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo easy_install pip</span><br><span class="line">$ sudo pip install -U pip</span><br><span class="line">$ sudo pip install ansible</span><br></pre></td></tr></table></figure>
+
+<h3 id="節點準備"><a href="#節點準備" class="headerlink" title="節點準備"></a>節點準備</h3><p>首先我們要在各節點先安裝 SSH Server ，並配置需要的相關環境：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get install openssh-server</span><br></pre></td></tr></table></figure>
+
+<p>設定特權模式不需要輸入密碼：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">echo</span> <span class="string">"ubuntu ALL = (root) NOPASSWD:ALL"</span> | sudo tee /etc/sudoers.d/ubuntu</span><br><span class="line">$ sudo chmod 440 /etc/sudoers.d/ubuntu</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊 User 為<code>ubuntu</code>，若使用者不一樣請更換。</p>
+</blockquote>
+<p>建立 SSH Key，並複製 Key 使之不用密碼登入：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ssh-keygen -t rsa</span><br><span class="line">$ ssh-copy-id localhost</span><br></pre></td></tr></table></figure>
+
+<p>新增各節點 Domain name 至<code>/etc/hosts</code>檔案：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">172.16.1.205 ansible-master</span><br><span class="line">172.16.1.206 ansible-slave-1</span><br><span class="line">172.16.1.207 ansible-slave-2</span><br><span class="line">172.16.1.208 ansible-slave-3</span><br></pre></td></tr></table></figure>
+
+<p>並在 Master 節點複製所有 Slave 的 SSH Key：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ssh-copy-id ubuntu@ansible-slave-1</span><br><span class="line">$ ssh-copy-id ubuntu@ansible-slave-2</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<h3 id="設定-Invetory-File"><a href="#設定-Invetory-File" class="headerlink" title="設定 Invetory File"></a>設定 Invetory File</h3><p>Ansible 能夠在同一時間工作於多個基礎設施的系統中。透過作用於 Ansible 的 Inventory 檔案所列出的主機與群組，該檔案預設被存在<code>/etc/ansible/hosts</code>。</p>
+<p><code>/etc/ansible/hosts</code> 是一個 INI-like  的檔案格式，如以下內容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ansible-slave-1</span><br><span class="line">ansible-slave-2</span><br><span class="line">ansible-slave-3</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>也可以建立成 Groups，如以下內容：</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">[openstack]</span><br><span class="line">ansible-slave-1</span><br><span class="line">ansible-slave-2</span><br><span class="line">ansible-slave-3</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若要參考更多資訊，可看 <a href="http://docs.ansible.com/ansible/intro_inventory.html" target="_blank" rel="noopener">Invetory File</a>。</p>
+</blockquote>
+<h3 id="基本功能操作"><a href="#基本功能操作" class="headerlink" title="基本功能操作"></a>基本功能操作</h3><p>Ansible 基本操作如以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible &lt;pattern_goes_here&gt; -m &lt;module_name&gt; -a &lt;arguments&gt;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>&lt;pattern_goes_here&gt;</code>部分可以參考 <a href="http://docs.ansible.com/ansible/intro_patterns.html" target="_blank" rel="noopener">Patterns</a>。</p>
+</blockquote>
+<p>比如我們可以用 Ping 模組來測試是否連線成功：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible all -m ping</span><br><span class="line"></span><br><span class="line">ansible-slave-2 | SUCCESS =&gt; &#123;</span><br><span class="line">    <span class="string">"changed"</span>: <span class="literal">false</span>,</span><br><span class="line">    <span class="string">"ping"</span>: <span class="string">"pong"</span></span><br><span class="line">&#125;</span><br><span class="line">ansible-slave-3 | SUCCESS =&gt; &#123;</span><br><span class="line">    <span class="string">"changed"</span>: <span class="literal">false</span>,</span><br><span class="line">    <span class="string">"ping"</span>: <span class="string">"pong"</span></span><br><span class="line">&#125;</span><br><span class="line">ansible-slave-1 | SUCCESS =&gt; &#123;</span><br><span class="line">    <span class="string">"changed"</span>: <span class="literal">false</span>,</span><br><span class="line">    <span class="string">"ping"</span>: <span class="string">"pong"</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>其中<code>all</code>為所有 Invetory 的主機，<code>-m</code>為使用的模組。若使用指定的 Inventory 檔案可以使用<code>-i</code>。</p>
+</blockquote>
+<p>也可以執行指定指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible all -a <span class="string">"/bin/echo hello"</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>-a</code> 後面為要執行的指令。</p>
+</blockquote>
+<p>若要指定登入的使用者，且執行特權模式，可以使用以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible all -a <span class="string">"apt-get update"</span> -u vagrant -b</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>-u</code>為登入使用者，<code>-b</code> 為切換成特權模式（root），早期版本為<code>--sudo</code>。</p>
+</blockquote>
+<h3 id="主機的-SSH-Key-檢查"><a href="#主機的-SSH-Key-檢查" class="headerlink" title="主機的 SSH Key 檢查"></a>主機的 SSH Key 檢查</h3><p>在 Ansible 1.2.1 與之後的版本預設都需要做主機 SSH key 檢查。</p>
+<p>如果一台主機重新安裝或者在 ‘known_hosts’  有不同的 SSH Key 的話，將會導致錯誤發生，但不希望這樣的問題影響 Ansible 使用，可以在 <code>/etc/ansible/ansible.cfg</code> 或者<code>~/.ansible.cfg</code>檔案關閉檢查。</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">[defaults]</span><br><span class="line">host_key_checking = False</span><br></pre></td></tr></table></figure>
+
+<p>也可以代替為設定環境變數：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">export</span> ANSIBLE_HOST_KEY_CHECKING=False</span><br></pre></td></tr></table></figure>
+
+<p>還要注意在 paramiko 模式主機金鑰檢查緩慢是合理的<br>，因此建議切換使用 SSH。</p>
+<p>Ansible 會在遠端系統上記錄有關模組參數的一些資訊存於 syslog，除非該執行任務有標示 ‘no_log: True’。</p>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">Ansible 介紹與使用</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2016-2-16 12:02</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2016/02/17/devops/cm/ansible-inventory/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    Ansible Inventory
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2016/02/15/ceph/deploy/ceph-ansible/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">透過 Ansible 部署 Ceph 叢集</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2016/02/16/devops/cm/ansible-basic/" data-id="ck3ns7qaj00fcwmpfqukdnuya" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2016/02/16/devops/cm/ansible-basic/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2016/02/16/devops/cm/ansible-basic/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Ansible-安裝與基本操作"><span class="toc-number">1.</span> <span class="toc-text">Ansible 安裝與基本操作</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#節點準備"><span class="toc-number">1.1.</span> <span class="toc-text">節點準備</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#設定-Invetory-File"><span class="toc-number">1.2.</span> <span class="toc-text">設定 Invetory File</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基本功能操作"><span class="toc-number">1.3.</span> <span class="toc-text">基本功能操作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#主機的-SSH-Key-檢查"><span class="toc-number">1.4.</span> <span class="toc-text">主機的 SSH Key 檢查</span></a></li></ol></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2016/02/16/devops/cm/ansible-basic/';
+        
+        this.page.identifier = 'devops/cm/ansible-basic';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

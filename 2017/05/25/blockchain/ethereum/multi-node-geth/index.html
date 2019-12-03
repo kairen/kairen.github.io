@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>建立 Go Ethereum 私有網路鏈 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Ethereum 專案是以區塊鏈原理，並進一步增加容納值、儲存資料，並且能封裝程式碼來建立智能合約(Smart Contracts)，形成區塊鏈應用程式，來執行運算任務。類似於比特幣(Bitcoin)，Ethereum 也具有一種貨幣，它叫做乙太幣(Ether)。乙太幣是開採於儲存在共享一致性的區塊鏈前驗證交易節點。乙太幣可以在賬戶(公有金鑰, Pubilc keys)與智能合約(Smart Co">
+<meta name="keywords" content="Blockchain,Ethereum">
+<meta property="og:type" content="article">
+<meta property="og:title" content="建立 Go Ethereum 私有網路鏈">
+<meta property="og:url" content="https://k2r2bai.com/2017/05/25/blockchain/ethereum/multi-node-geth/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Ethereum 專案是以區塊鏈原理，並進一步增加容納值、儲存資料，並且能封裝程式碼來建立智能合約(Smart Contracts)，形成區塊鏈應用程式，來執行運算任務。類似於比特幣(Bitcoin)，Ethereum 也具有一種貨幣，它叫做乙太幣(Ether)。乙太幣是開採於儲存在共享一致性的區塊鏈前驗證交易節點。乙太幣可以在賬戶(公有金鑰, Pubilc keys)與智能合約(Smart Co">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/blockchain/ethereum-logo.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.376Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="建立 Go Ethereum 私有網路鏈">
+<meta name="twitter:description" content="Ethereum 專案是以區塊鏈原理，並進一步增加容納值、儲存資料，並且能封裝程式碼來建立智能合約(Smart Contracts)，形成區塊鏈應用程式，來執行運算任務。類似於比特幣(Bitcoin)，Ethereum 也具有一種貨幣，它叫做乙太幣(Ether)。乙太幣是開採於儲存在共享一致性的區塊鏈前驗證交易節點。乙太幣可以在賬戶(公有金鑰, Pubilc keys)與智能合約(Smart Co">
+<meta name="twitter:image" content="https://k2r2bai.com/images/blockchain/ethereum-logo.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-blockchain/ethereum/multi-node-geth" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+            
+	
+		<img src="/images/blockchain/ethereum-logo.png" class="article-banner" />
+	
+
+
+
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            建立 Go Ethereum 私有網路鏈
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2017/05/25/blockchain/ethereum/multi-node-geth/">
+            <u><time datetime="2017-05-25T09:08:54.000Z" itemprop="datePublished">2017-05-25</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Blockchain/">Blockchain</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Blockchain/">Blockchain</a>, <a class="tag-link" href="/tags/Ethereum/">Ethereum</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>Ethereum 專案是以區塊鏈原理，並進一步增加容納值、儲存資料，並且能封裝程式碼來建立智能合約(Smart Contracts)，形成區塊鏈應用程式，來執行運算任務。類似於比特幣(Bitcoin)，Ethereum 也具有一種貨幣，它叫做<code>乙太幣(Ether)</code>。乙太幣是開採於儲存在共享一致性的區塊鏈前驗證交易節點。乙太幣可以在賬戶(公有金鑰, Pubilc keys)與智能合約(Smart Contracts)之間進行轉移。</p>
+<p>本節將說明如何透過 Ubuntu 部署 Go Ethereum。並利用簡單的指令來進行 Demo。</p>
+<a id="more"></a>
+
+<h2 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h2><p>本次會使用到兩個節點來建立 Geth Instances，其規格如下：</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>CPUs</th>
+<th>RAM</th>
+<th>Disk</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>geth-1</td>
+<td>2vCPU</td>
+<td>4 GB</td>
+<td>40 GB</td>
+</tr>
+<tr>
+<td>geth-2</td>
+<td>2vCPU</td>
+<td>4 GB</td>
+<td>40 GB</td>
+</tr>
+</tbody></table>
+<p>首先在每個節點安裝 Ethereum 最新版本，可以依照官方透過以下方式快速安裝：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get install -y software-properties-common</span><br><span class="line">$ sudo add-apt-repository -y ppa:ethereum/ethereum</span><br><span class="line">$ sudo apt-get update &amp;&amp; sudo apt-get install ethereum</span><br></pre></td></tr></table></figure>
+
+<p>在每個節點建立一個<code>private.json</code>檔案來定義起源區塊(Genesis Block)，內容如下：</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"coinbase"</span> : <span class="string">"0x0000000000000000000000000000000000000000"</span>,</span><br><span class="line">  <span class="attr">"difficulty"</span> : <span class="string">"0x40000"</span>,</span><br><span class="line">  <span class="attr">"extraData"</span> : <span class="string">"Custem Ethereum Genesis Block"</span>,</span><br><span class="line">  <span class="attr">"gasLimit"</span> : <span class="string">"0xffffffff"</span>,</span><br><span class="line">  <span class="attr">"nonce"</span> : <span class="string">"0x0000000000000042"</span>,</span><br><span class="line">  <span class="attr">"mixhash"</span> : <span class="string">"0x0000000000000000000000000000000000000000000000000000000000000000"</span>,</span><br><span class="line">  <span class="attr">"parentHash"</span> : <span class="string">"0x0000000000000000000000000000000000000000000000000000000000000000"</span>,</span><br><span class="line">  <span class="attr">"timestamp"</span> : <span class="string">"0x00"</span>,</span><br><span class="line">  <span class="attr">"config"</span>: &#123;</span><br><span class="line">		<span class="attr">"chainId"</span>: <span class="number">123</span>,</span><br><span class="line">		<span class="attr">"homesteadBlock"</span>: <span class="number">0</span>,</span><br><span class="line">		<span class="attr">"eip155Block"</span>: <span class="number">0</span>,</span><br><span class="line">		<span class="attr">"eip158Block"</span>: <span class="number">0</span></span><br><span class="line">	&#125;,</span><br><span class="line">	<span class="attr">"alloc"</span>: &#123; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>初始化創世區塊：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ geth init --datadir=data/ private.json</span><br></pre></td></tr></table></figure>
+
+<p>在每個節點新增一名稱為<code>geth-private.sh</code>的腳本程式，將用於啟動 geth，並放置背景：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="comment"># Program:</span></span><br><span class="line"><span class="comment">#       This program is a private geth runner.</span></span><br><span class="line"><span class="comment"># History:</span></span><br><span class="line"><span class="comment"># 2016/05/22 Kyle Bai Release</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">"Starting private geth"</span></span><br><span class="line">screen -dmS geth /usr/bin/geth \</span><br><span class="line">            --datadir data/ \</span><br><span class="line">            --networkid 123 \</span><br><span class="line">            --nodiscover \</span><br><span class="line">            --maxpeers 5 \</span><br><span class="line">            --port 30301 \</span><br><span class="line">            --rpc \</span><br><span class="line">            --rpcaddr <span class="string">"0.0.0.0"</span> \</span><br><span class="line">            --rpcport <span class="string">"8545"</span> \</span><br><span class="line">            --rpcapi <span class="string">"admin,db,eth,debug,miner,net,shh,txpool,personal,web3"</span> \</span><br><span class="line">            --rpccorsdomain <span class="string">"*"</span> \</span><br><span class="line">            -verbosity 6</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>更多的參數，請參考 <a href="https://github.com/ethereum/go-ethereum/wiki/Command-Line-Options" target="_blank" rel="noopener">Command-Line-Options</a>。</p>
+</blockquote>
+<p>建立完成後，修改執行權限：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ chmod u+x geth-private.sh</span><br></pre></td></tr></table></figure>
+
+<h2 id="建立-Ethereum-環境"><a href="#建立-Ethereum-環境" class="headerlink" title="建立 Ethereum 環境"></a>建立 Ethereum 環境</h2><p>首先進入到<code>geth-1</code>節點透過以下方式來啟動：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ./geth-private.sh</span><br><span class="line">Starting private geth</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這時候會透過 screen 執行於背景，我們可以透過<code>screen -x geth</code>來進行前景。若要回到背景則透過<code>[Ctrl-A] + [Ctrl-D]</code>來 detached。要關閉 screen 則透過 <code>[Ctrl-C]</code>。</p>
+</blockquote>
+<p>接著為了確認是否正確啟動，我們可以透過 geth 的 attach 指令來連接 console：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ geth attach ipc:data/geth.ipc</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>也可以透過 HTTP 方式 attach，<code>geth attach http://localhost:8545</code>。
+若一開始建立沒有 RPC，但想要加入 RPC 可以 attach 後，輸入以下 function：</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">&gt; admin.startRPC(<span class="string">"0.0.0.0"</span>, 8545, <span class="string">"*"</span>, <span class="string">"web3,db,net,eth"</span>)</span><br></pre></td></tr></table></figure>
+
+<p>進入後透過 admin API 來取得節點的資訊：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">&gt; admin.nodeInfo.enode</span><br><span class="line"><span class="string">"enode://e3dd0392a2971c4b0c4c43a01cd682e19f31aaa573c43a9b227685af7ffed5070217392ae5ada278968d5c4bfddd9c93547bcf4592852196a8facbcdad64d257@[::]:30301?discport=0"</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊要取代<code>[::]</code>為主機 IP，如以下：</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&quot;enode://e3dd0392a2971c4b0c4c43a01cd682e19f31aaa573c43a9b227685af7ffed5070217392ae5ada278968d5c4bfddd9c93547bcf4592852196a8facbcdad64d257@172.16.1.99:30301?discport=0&quot;</span><br></pre></td></tr></table></figure>
+
+<p>上面沒問題後，接著進入到<code>geth-2</code>節點，然後透過以下指令開啟 console：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ geth init --datadir=data/ private.json</span><br><span class="line">$ geth --datadir data/ \</span><br><span class="line">       --networkid 123 \</span><br><span class="line">       --nodiscover \</span><br><span class="line">       --maxpeers 5 \</span><br><span class="line">       --port 30301 \</span><br><span class="line">       --rpc \</span><br><span class="line">       --rpcaddr <span class="string">"0.0.0.0"</span> \</span><br><span class="line">       --rpcport <span class="string">"8545"</span> \</span><br><span class="line">       --rpcapi <span class="string">"admin,db,eth,debug,miner,net,shh,txpool,personal,web3"</span> \</span><br><span class="line">      --rpccorsdomain <span class="string">"*"</span> \</span><br><span class="line">      -verbosity 6 \</span><br><span class="line">       console</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>也可以透過上一個節點的方式將服務放到背景，在 attach。</p>
+</blockquote>
+<p>完成上面指令會直接進入 console，接著透過以下方式來連接<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">```sh</span><br><span class="line">&gt; admin.addPeer(&quot;enode://e3dd0392a2971c4b0c4c43a01cd682e19f31aaa573c43a9b227685af7ffed5070217392ae5ada278968d5c4bfddd9c93547bcf4592852196a8facbcdad64d257@172.16.1.99:30301?discport=0&quot;)</span><br><span class="line">true</span><br><span class="line"></span><br><span class="line">I0525 12:56:40.623642 eth/downloader/downloader.go:239] Registering peer e3dd0392a2971c4b</span><br><span class="line">I0525 12:57:10.622920 p2p/server.go:467] &lt;-taskdone: wait for dial hist expire (29.99999387s)</span><br></pre></td></tr></table></figure></p>
+<p>接著透過 net API 進行查看連接狀態：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">&gt; net.peerCount</span><br><span class="line">1</span><br><span class="line"></span><br><span class="line">&gt; admin.peers</span><br><span class="line">[&#123;</span><br><span class="line">    caps: [<span class="string">"eth/61"</span>, <span class="string">"eth/62"</span>, <span class="string">"eth/63"</span>],</span><br><span class="line">    id: <span class="string">"e3dd0392a2971c4b0c4c43a01cd682e19f31aaa573c43a9b227685af7ffed5070217392ae5ada278968d5c4bfddd9c93547bcf4592852196a8facbcdad64d257"</span>,</span><br><span class="line">    name: <span class="string">"Geth/v1.4.5-stable/linux/go1.5.1"</span>,</span><br><span class="line">    network: &#123;</span><br><span class="line">      localAddress: <span class="string">"172.16.1.100:51038"</span>,</span><br><span class="line">      remoteAddress: <span class="string">"172.16.1.99:30301"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    protocols: &#123;</span><br><span class="line">      eth: &#123;</span><br><span class="line">        difficulty: 131072,</span><br><span class="line">        head: <span class="string">"882048e0d045ea48903eddb4c50825a4e3c6c1a055df6a32244e9a9239f8c5e8"</span>,</span><br><span class="line">        version: 63</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;]</span><br></pre></td></tr></table></figure>
+
+<h2 id="驗證服務"><a href="#驗證服務" class="headerlink" title="驗證服務"></a>驗證服務</h2><p>這部分將透過幾個指令與流程來驗證服務，首先在<code>geth-1</code>透過 attach 進入，並建立一個賬戶與查看乙太幣：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ geth attach http://localhost:8545</span><br><span class="line"></span><br><span class="line">&gt; kairen = personal.newAccount();</span><br><span class="line">Passphrase:</span><br><span class="line">Repeat passphrase:</span><br><span class="line"><span class="string">"0xcb41ad8ba28c4b8b52eee159ef3bb6da197ff60b"</span></span><br><span class="line"></span><br><span class="line">&gt; personal.listAccounts</span><br><span class="line">[<span class="string">"0xcb41ad8ba28c4b8b52eee159ef3bb6da197ff60b"</span>]</span><br><span class="line"></span><br><span class="line">&gt; web3.fromWei(eth.getBalance(kairen), <span class="string">"ether"</span>);</span><br><span class="line">0</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>P.S. 若要移除帳號，可以刪除<code>data/keystore</code>底下的檔案。</p>
+</blockquote>
+<p>接著在<code>geth-2</code>透過以下指令建立一個賬戶與查看乙太幣：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">&gt; pingyu = personal.newAccount();</span><br><span class="line">Passphrase:</span><br><span class="line">Repeat passphrase:</span><br><span class="line"><span class="string">"0xf8c70df559cb9225f6e426d0f139fd6e8752c644"</span></span><br><span class="line"></span><br><span class="line">&gt; personal.listAccounts</span><br><span class="line">[<span class="string">"0xf8c70df559cb9225f6e426d0f139fd6e8752c644"</span>]</span><br><span class="line"></span><br><span class="line">&gt; web3.fromWei(eth.getBalance(pingyu), <span class="string">"ether"</span>);</span><br><span class="line">0</span><br></pre></td></tr></table></figure>
+
+<p>接著回到<code>geth-1</code>來賺取一些要交易的乙太幣：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">&gt; miner.setEtherbase(kairen)</span><br><span class="line"><span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<p>當賬戶設定完成後，就可以執行以下指令進行採礦：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">&gt; miner.start(1)</span><br><span class="line"><span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊需要一點時間產生 DAG，可以開一個新的命令列透過<code>screen -x geth</code>查看。<br>經過一段時間後，當 DAG 完成並開始採擴時就可以<code>miner.stop()</code>。</p>
+</blockquote>
+<p>接著在<code>geth-1</code>查看賬戶的乙太幣：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">&gt; web3.fromWei(eth.getBalance(kairen), <span class="string">"ether"</span>);</span><br><span class="line">40.78125</span><br></pre></td></tr></table></figure>
+
+<p>當成開採區塊後，就可以查看<code>geth-1</code>共採集的 ether balance 的數值：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&gt; eth.getBalance(eth.coinbase).toNumber()</span><br><span class="line">40781250000000000000</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>即為<code>40.78125</code>乙太幣。</p>
+</blockquote>
+<p>接著我們要在將<code>geth-1</code>的賬戶乙太幣轉移到<code>geth-2</code>上，首先在<code>geth-1</code>上建立一個變數來存<code>geth-2</code>的賬戶位址：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">&gt; consumer = <span class="string">"0xf8c70df559cb9225f6e426d0f139fd6e8752c644"</span></span><br><span class="line"><span class="string">"0xf8c70df559cb9225f6e426d0f139fd6e8752c644"</span></span><br></pre></td></tr></table></figure>
+
+<p>完成上述後，首先要將賬戶解鎖：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">&gt; personal.unlockAccount(kairen)</span><br><span class="line"><span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>輸入當初建立賬戶的密碼。</p>
+</blockquote>
+<p>並透過 eth API 的交易函式還將 ether balance 數值轉移：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ eth.sendTransaction(&#123;from: kairen, to: consumer, value: web3.toWei(10, <span class="string">"ether"</span>)&#125;)</span><br><span class="line"><span class="string">"0x1aee9082a55751c59077a273e7b08acd028d5099a4986f002518b0c8919d9e36"</span></span><br></pre></td></tr></table></figure>
+
+<p>若有在每一台 geth 節點上進入 debug 模式的話，會發現該交易資訊被存到一個區塊，這邊也可以透過 txpool 與 eth API 來查看：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">&gt; txpool.status</span><br><span class="line">&#123;</span><br><span class="line">  pending: 1,</span><br><span class="line">  queued: 0</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&gt; eth.getBlock(<span class="string">"pending"</span>, <span class="literal">true</span>).transactions</span><br><span class="line">[&#123;</span><br><span class="line">    blockHash: <span class="string">"0x0b58d0b17e02f56746b0b5b22f195b6ae71d47343bf778763c4c476386ad7db7"</span>,</span><br><span class="line">    blockNumber: 112,</span><br><span class="line">    from: <span class="string">"0xcb41ad8ba28c4b8b52eee159ef3bb6da197ff60b"</span>,</span><br><span class="line">    gas: 90000,</span><br><span class="line">    gasPrice: 20000000000,</span><br><span class="line">    <span class="built_in">hash</span>: <span class="string">"0x1aee9082a55751c59077a273e7b08acd028d5099a4986f002518b0c8919d9e36"</span>,</span><br><span class="line">    input: <span class="string">"0x"</span>,</span><br><span class="line">    nonce: 0,</span><br><span class="line">    to: <span class="string">"0xf8c70df559cb9225f6e426d0f139fd6e8752c644"</span>,</span><br><span class="line">    transactionIndex: 0,</span><br><span class="line">    value: 10000000000000000000</span><br><span class="line">&#125;]</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊的<code>pending</code>表示目前還沒有被驗證，因此我們需要一些節點來進行採礦驗證。這邊也可以發現該交易資訊被存在區塊編號<code>112</code>，可以提供往後查詢之用。</p>
+</blockquote>
+<p>接著回到<code>geth-2</code>節點，查看目前的數值變化：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">&gt; web3.fromWei(eth.getBalance(pingyu), <span class="string">"ether"</span>);</span><br><span class="line">0</span><br></pre></td></tr></table></figure>
+
+<p>這邊會發現沒有任何錢進來，Why? so sad。其實是因為該區塊還沒有被採集與認證，因此該交易不會被執行。</p>
+<p>因此我們需要在任一節點提供運算，這邊在<code>geth-1</code>執行以下指令來進行採礦，這樣就可以看到該交易被驗證與接受：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">&gt; miner.start(1)</span><br><span class="line"><span class="literal">true</span></span><br><span class="line"></span><br><span class="line">TX(1aee9082a55751c59077a273e7b08acd028d5099a4986f002518b0c8919d9e36)</span><br><span class="line">Contract: <span class="literal">false</span></span><br><span class="line">From:     cb41ad8ba28c4b8b52eee159ef3bb6da197ff60b</span><br><span class="line">To:       f8c70df559cb9225f6e426d0f139fd6e8752c644</span><br><span class="line">Nonce:    0</span><br><span class="line">GasPrice: 20000000000</span><br><span class="line">GasLimit  90000</span><br><span class="line">Value:    10000000000000000000</span><br><span class="line">Data:     0x</span><br><span class="line">V:        0x1c</span><br><span class="line">R:        0x9de7d843959f55a553577dc68a887893adf1b80eccd872021dfa6b8bcf3db43</span><br><span class="line">S:        0x287f8e01640ccd5924308725d2d274def7edc4a18169b36ae26c95216fdf0fed</span><br><span class="line">Hex:      f86d808504a817c80083015f9094f8c70df559cb9225f6e426d0f139fd6e8752c644888ac7230489e80000801ca009de7d843959f55a553577dc68a887893adf1b80eccd872021dfa6b8bcf3db43a0287f8e01640ccd5924308725d2d274def7edc4a18169b36ae26c95216fdf0fed</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>當該區塊的交易確認沒問題被執行後，就可以透過<code>miner.stop()</code>停止採礦。</p>
+</blockquote>
+<p>這時再回到<code>geth-2</code>節點，查看目前的數值變化，會發現增加了 10 枚乙太幣：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">&gt; web3.fromWei(eth.getBalance(pingyu), <span class="string">"ether"</span>);</span><br><span class="line">10</span><br></pre></td></tr></table></figure>
+
+<p>之後可以在任一節點透過 eth web3 的 API 來查找指定區塊的交易資訊：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">&gt; eth.getTransactionFromBlock(40)</span><br><span class="line">&#123;</span><br><span class="line">  blockHash: <span class="string">"0xe839c1392657731417fc04b9aecf7a181dd339086d5f7cdea0bccc2b1483b885"</span>,</span><br><span class="line">  blockNumber: 112,</span><br><span class="line">  from: <span class="string">"0xcb41ad8ba28c4b8b52eee159ef3bb6da197ff60b"</span>,</span><br><span class="line">  gas: 90000,</span><br><span class="line">  gasPrice: 20000000000,</span><br><span class="line">  <span class="built_in">hash</span>: <span class="string">"0x1aee9082a55751c59077a273e7b08acd028d5099a4986f002518b0c8919d9e36"</span>,</span><br><span class="line">  input: <span class="string">"0x"</span>,</span><br><span class="line">  nonce: 0,</span><br><span class="line">  to: <span class="string">"0xf8c70df559cb9225f6e426d0f139fd6e8752c644"</span>,</span><br><span class="line">  transactionIndex: 0,</span><br><span class="line">  value: 10000000000000000000</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="簡單的-Contract"><a href="#簡單的-Contract" class="headerlink" title="簡單的 Contract"></a>簡單的 Contract</h2><p>這邊將說明如何建立一個簡單的合約(Contract)來部署於區塊鏈上，首先複製以下內容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">contract SimpleStorage &#123;</span><br><span class="line">    uint storedData;</span><br><span class="line">    function set(uint x) &#123;</span><br><span class="line">        storedData = x;</span><br><span class="line">    &#125;</span><br><span class="line">    function get() constant returns (uint retVal) &#123;</span><br><span class="line">        return storedData;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接著將內容貼到 <a href="https://ethereum.github.io/browser-solidity" target="_blank" rel="noopener">browser-solidity</a> 進行編譯成 JavaScript。如快照畫面所示。</p>
+<p><img src="/images/blockchain/snapshot-contract.png" alt></p>
+<p>透過這個 IDE 可以將 Solidity 語言轉換成 web3 code(JavaScript)，複製 web3 code 的內容，並儲存成<code>SimpleStorage.js</code>檔案放置到<code>geth-1</code>上。接著 attach 進入 geth 執行以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">&gt; loadScript(<span class="string">'SimpleStorage.js'</span>);</span><br></pre></td></tr></table></figure>
+
+<p>若有自行安裝<code>browser-solidity</code>的話，則可以使用如下圖一樣的方式連接。</p>
+<p><img src="/images/blockchain/snapshot-dash-web3-provider.png" alt></p>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">建立 Go Ethereum 私有網路鏈</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2017-5-25 17:05</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2017/05/26/blockchain/ethereum/geth-monitoring/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    監控 Go Ethereum 的區塊鏈狀況
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2017/05/16/blockchain/hyperledger/quick-start/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">透過 Docker 體驗 Hyperledger</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2017/05/25/blockchain/ethereum/multi-node-geth/" data-id="ck3ns7qa700euwmpfgz4pl4et" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2017/05/25/blockchain/ethereum/multi-node-geth/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2017/05/25/blockchain/ethereum/multi-node-geth/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#事前準備"><span class="toc-number">1.</span> <span class="toc-text">事前準備</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#建立-Ethereum-環境"><span class="toc-number">2.</span> <span class="toc-text">建立 Ethereum 環境</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#驗證服務"><span class="toc-number">3.</span> <span class="toc-text">驗證服務</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#簡單的-Contract"><span class="toc-number">4.</span> <span class="toc-text">簡單的 Contract</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2017/05/25/blockchain/ethereum/multi-node-geth/';
+        
+        this.page.identifier = 'blockchain/ethereum/multi-node-geth';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

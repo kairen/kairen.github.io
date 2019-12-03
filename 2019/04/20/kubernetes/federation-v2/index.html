@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>KubeFed: Kubernetes Federation v2 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Kubernetes Federation(聯邦) 一直是很有趣的議題，並被重視的功能，Federation 目的是希望實現單一叢集統一管理多個 Kubernetes 叢集的機制，這些叢集可能是跨地區(Region)，也可能是在不同公有雲供應商(Cloud Provider)上，亦或者是公司內部自行建立的叢集。一但叢集進行聯邦後，就可以利用 Federation API 資源來統一管理多個叢集的">
+<meta name="keywords" content="Kubernetes,Federation">
+<meta property="og:type" content="article">
+<meta property="og:title" content="KubeFed: Kubernetes Federation v2">
+<meta property="og:url" content="https://k2r2bai.com/2019/04/20/kubernetes/federation-v2/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Kubernetes Federation(聯邦) 一直是很有趣的議題，並被重視的功能，Federation 目的是希望實現單一叢集統一管理多個 Kubernetes 叢集的機制，這些叢集可能是跨地區(Region)，也可能是在不同公有雲供應商(Cloud Provider)上，亦或者是公司內部自行建立的叢集。一但叢集進行聯邦後，就可以利用 Federation API 資源來統一管理多個叢集的">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/k8s/federation/banner.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.395Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="KubeFed: Kubernetes Federation v2">
+<meta name="twitter:description" content="Kubernetes Federation(聯邦) 一直是很有趣的議題，並被重視的功能，Federation 目的是希望實現單一叢集統一管理多個 Kubernetes 叢集的機制，這些叢集可能是跨地區(Region)，也可能是在不同公有雲供應商(Cloud Provider)上，亦或者是公司內部自行建立的叢集。一但叢集進行聯邦後，就可以利用 Federation API 資源來統一管理多個叢集的">
+<meta name="twitter:image" content="https://k2r2bai.com/images/k8s/federation/banner.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-kubernetes/federation-v2" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+            
+	
+		<img src="/images/k8s/federation/banner.png" class="article-banner" />
+	
+
+
+
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            KubeFed: Kubernetes Federation v2
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2019/04/20/kubernetes/federation-v2/">
+            <u><time datetime="2019-04-19T16:00:00.000Z" itemprop="datePublished">2019-04-20</time></u>
+        </a>
+    </div>
+
+
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-check-o"></i>
+        Edited on
+        <a href="/2019/04/20/kubernetes/federation-v2/">
+             <u><time datetime="2019-06-13T16:00:00.000Z" itemprop="datePublished">2019-06-14</time></u>
+        </a>
+    </div>
+
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Federation/">Federation</a>, <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p><a href="https://kubernetes.io/docs/concepts/cluster-administration/federation/" target="_blank" rel="noopener">Kubernetes Federation(聯邦)</a> 一直是很有趣的議題，並被重視的功能，Federation 目的是希望實現單一叢集統一管理多個 Kubernetes 叢集的機制，這些叢集可能是跨地區(Region)，也可能是在不同公有雲供應商(Cloud Provider)上，亦或者是公司內部自行建立的叢集。一但叢集進行聯邦後，就可以利用 Federation API 資源來統一管理多個叢集的 Kubernetes API 資源，如定義 Deployment 如何部署到不同叢集上，其叢集所需的副本數等。</p>
+<p>而 Kubernetes Federation 的誕生正是希望利用聯邦機制來解決一些問題，並達到一些好處，如以下：</p>
+<ul>
+<li>簡化管理多個叢集的 Kubernetes 物件(如 Deployment, Service 等)。</li>
+<li>在多個叢集之間分散工作負載(容器)，以提升應用程式(服務)的可靠性。</li>
+<li>跨叢集的資源排程，依據排程策略在多個叢集進行應用程式(服務)部署。</li>
+<li>在不同叢集中，能更快速更容易地遷移應用程式(服務)。</li>
+<li>跨叢集的服務發現，服務可以提供給當地存取，以降低延遲。</li>
+<li>實踐多雲(Multi-cloud)或混合雲(Hybird Cloud)的部署。</li>
+</ul>
+<a id="more"></a>
+
+<p>雖然 Kubernetes 社區很早之前就已實現 Federation(v1) 機制，但隨著 Kubernetes 成長，Federation v1 發展的越來越緩慢，並在之後版被棄用了，而 SIG Multi-Cluster 團隊也隨即提出新架構 Federation v2 來取代。</p>
+<p>至於 v1 為何被棄用?而 v2 又帶來什麼變化呢?我將在接下來部分簡單說明。</p>
+<h1 id="為什麼-v1-被棄用？"><a href="#為什麼-v1-被棄用？" class="headerlink" title="為什麼 v1 被棄用？"></a>為什麼 v1 被棄用？</h1><p><a href="https://github.com/kubernetes-retired/federation" target="_blank" rel="noopener">Federation v1</a> 在 Kubernetes v1.3 左右時，就已經著手設計(<a href="https://github.com/kubernetes/community/blob/master/contributors/design-proposals/multicluster/federation.md" target="_blank" rel="noopener">Design Proposal</a>)，並在後面幾個版本中釋出了相關的元件與命令列工具(kubefed)，來用於幫助使用者快速建立聯邦叢集，並在 Kubernetes v1.6 時，進入了 Beta 階段。</p>
+<p>但 Federation v1 在進入 Beta 後，就沒有更進一步的發展，一直到 Kubernetes v1.11 左右正式被棄用。至於為什麼被棄用呢？這是因為開發團隊認為叢集聯邦的實踐比想象中還要困難，有許多問題是 v1 架構沒被考慮進去的，比如說：</p>
+<ul>
+<li>控制平面元件會因為發生問題，而影響整體叢集效能。</li>
+<li>無法相容新的 Kubernetes API 資源。</li>
+<li>無法有效的在多個叢集管理權限，如不支援 RBAC。</li>
+<li>聯邦層級的設定與策略依賴 API 資源的 Annotations 物件內容，這使得彈性不佳。</li>
+</ul>
+<p>而這些問題基本上是當初設計架構所延伸而來。我們可以透過了解整體架構來更容易知道問題點。</p>
+<p><img src="/images/k8s/federation/v1.png" alt></p>
+<p>從上圖架構中得知 Federation v1 的設計沿用類似 Kubernetes 控制平面架構，其主要元件有以下:</p>
+<ul>
+<li><strong>federation-apiserver</strong>: 提供 Federation API 資源，只支援部分 <a href="https://kubernetes.io/docs/concepts/cluster-administration/federation/#api-resources" target="_blank" rel="noopener">Kubernetes API resources</a>。</li>
+<li><strong>federation-controller-manager</strong>: 協調不同叢集之間的狀態，如同步 Federated 資源與策略，並建立 Kubernetes 物件至對應叢集上。</li>
+<li><strong>etcd</strong>: 儲存 Federation 的狀態。</li>
+</ul>
+<blockquote>
+<p>Federation v1 提供了<code>kubefed</code>工具來簡化安裝 Federation 控制平面元件的過程，並提供新增/刪除叢集的操作。</p>
+</blockquote>
+<p>從程式碼大致可以了解 Federation v1 的 API Server 在基礎上是透過 <a href="https://github.com/kubernetes/apiserver" target="_blank" rel="noopener">k8s.io/apiserver</a> 套件開發，這種是採用 API Aggregation 方式來擴充 Kubernetes API。而 Federated API 資源則是實作 Adapter 來管理 Kubernetes API 資源，但這些 Adapter 都是寫死 API 版本的，比如說 Deployment 只支援<code>extensions/v1beta1</code>版本 API，所以當建立一個<code>apps/v1</code>的 Deployment，並且在 Annotations 設定聯邦策略時，就會無法正常運作。</p>
+<p>因此，若想要支援其他資源(如 CronJob)或版本，就必須在 <a href="https://github.com/kubernetes-retired/federation/blob/master/pkg/federatedtypes" target="_blank" rel="noopener">Federation types</a> 新增對應的 Adapter，然後透過 <a href="https://github.com/kubernetes/code-generator" target="_blank" rel="noopener">Code Generator</a> 產生 API 的 client-go 套件給 Controller Manager 操作 API 使用，最後重新建構一版本來更新 API Server 與 Controller Manager 以提供對其他資源與版本的支援。另外 Federation v1 在設計之初未考慮 RBAC 與 CRD(TPR) 功能，因此無法提供跨叢集的權限控管，以及客製化資源的擴展。從上述狀況中，就能感受到 Federation v1 在擴展性有很多挑戰。</p>
+<p>也正因為在架構上無法很好解決這些問題，Federation v1 才會發展的越來越緩慢，並在最後被棄用。當然也是因為有這樣的發展過程與經驗，才能有 Federation v2 的誕生。</p>
+<h1 id="Federation-v2"><a href="#Federation-v2" class="headerlink" title="Federation v2"></a>Federation v2</h1><p><a href="https://github.com/kubernetes-sigs/kubefed" target="_blank" rel="noopener">Kubernetes Cluster Federation</a> 又名 KubeFed 或 Federation v2，是 Kubernetes SIG Multi-Cluster 團隊新提出的叢集聯邦架構(<a href="https://docs.google.com/document/d/159cQGlfgXo6O4WxXyWzjZiPoIuiHVl933B43xhmqPEE/edit#" target="_blank" rel="noopener">Architecture Doc</a> 與 <a href="https://docs.google.com/document/d/1ihWETo-zE8U_QNuzw5ECxOWX0Df_2BVfO3lC4OesKRQ/edit#" target="_blank" rel="noopener">Brainstorming Doc</a>)，新架構在 Federation v1 基礎之上，簡化擴展 Federated API 過程，並加強跨叢集服務發現與排程的功能。另外 KubeFed 在設計之初，有兩個最重要核心理念是 KubeFed 希望實現的，分別為<code>Modularization（模組化）</code>與<code>Customizable(可客制)</code>，這兩個理念大概是希望 KubeFed 能夠跟隨著 Kubernetes 生態發展，並持續保持相容性與擴展性。</p>
+<p>KubeFed 在元件上最大改變是將 API Server 移除，並透過 <a href="https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/" target="_blank" rel="noopener">CRD</a> 機制來完成 Federated Resources 的擴充。而 KubeFed Controller 則管理這些 CRD，並實作同步 Resources、跨叢集排程等功能。從架構圖中看到，KubeFed 提出了一些新概念來加強功能的擴展。</p>
+<p><img src="/images/k8s/federation/v2.png" alt></p>
+<h2 id="Concepts"><a href="#Concepts" class="headerlink" title="Concepts"></a>Concepts</h2><p>目前 KubeFed 透過 CRD 方式新增了四種 API 群組來實現聯邦機制的核心功能：</p>
+<table>
+<thead>
+<tr>
+<th>API Group</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>core.kubefed.k8s.io</td>
+<td>叢集組態、聯邦資源組態、KubeFed Controller 設定檔等。</td>
+</tr>
+<tr>
+<td>types.kubefed.k8s.io</td>
+<td>被聯邦的 Kubernetes API 資源。</td>
+</tr>
+<tr>
+<td>scheduling.kubefed.k8s.io</td>
+<td>副本排程策略。</td>
+</tr>
+<tr>
+<td>multiclusterdns.kubefed.k8s.io</td>
+<td>跨叢集服務發現設定。</td>
+</tr>
+</tbody></table>
+<p>而在這些核心功能中，我們必須先瞭解一些 KebeFed 提出的基礎概念後，才能更清楚知道 KubeFed 是如何運作的。</p>
+<h3 id="Cluster-Configuration"><a href="#Cluster-Configuration" class="headerlink" title="Cluster Configuration"></a>Cluster Configuration</h3><p>用來定義哪些 Kubernetes 叢集要被聯邦。可透過<code>kubefedctl join/unjoin</code>來加入/刪除叢集，當成功加入時，會建立一個 KubeFedCluster 物件來儲存叢集相關資訊，如 API Endpoint、CA Bundle 等。這些資訊會被用在 KubeFed Controller 存取不同 Kubernetes 叢集上，以確保能夠建立 Kubernetes API 資源，示意圖如下所示。</p>
+<p><img src="/images/k8s/federation/sync-controller.png" alt></p>
+<blockquote>
+<p>在 Federation 中，會區分 Host 與 Member 兩種類型叢集。</p>
+<ul>
+<li><strong>Host</strong>: 用於提供 KubeFed API 與控制平面的叢集。</li>
+<li><strong>Member</strong>: 透過 KubeFed API 註冊的叢集，並提供相關身份憑證來讓 KubeFed Controller 能夠存取叢集。Host 叢集也可以作為 Member 被加入。</li>
+</ul>
+</blockquote>
+<h3 id="Type-Configuration"><a href="#Type-Configuration" class="headerlink" title="Type Configuration"></a>Type Configuration</h3><p>定義了哪些 Kubernetes API 資源要被用於聯邦管理。比如說想將 ConfigMap 資源透過聯邦機制建立在不同叢集上時，就必須先在 Federation Host 叢集中，透過 <a href="https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/" target="_blank" rel="noopener">CRD</a> 建立新資源 FederatedConfigMap，接著再建立名稱為 configmaps 的 Type configuration(FederatedTypeConfig) 資源，然後描述 ConfigMap 要被 FederatedConfigMap 所管理，這樣 KubeFed Controllers 才能知道如何建立 Federated 資源。以下為簡單範例：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">core.kubefed.k8s.io/v1beta1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">FederatedTypeConfig</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">configmaps</span></span><br><span class="line"><span class="attr">  namespace:</span> <span class="string">kube-federation-system</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  federatedType:</span></span><br><span class="line"><span class="attr">    group:</span> <span class="string">types.kubefed.k8s.io</span></span><br><span class="line"><span class="attr">    kind:</span> <span class="string">FederatedConfigMap</span></span><br><span class="line"><span class="attr">    pluralName:</span> <span class="string">federatedconfigmaps</span></span><br><span class="line"><span class="attr">    scope:</span> <span class="string">Namespaced</span></span><br><span class="line"><span class="attr">    version:</span> <span class="string">v1beta1</span></span><br><span class="line"><span class="attr">  propagation:</span> <span class="string">Enabled</span></span><br><span class="line"><span class="attr">  targetType:</span></span><br><span class="line"><span class="attr">    kind:</span> <span class="string">ConfigMap</span></span><br><span class="line"><span class="attr">    pluralName:</span> <span class="string">configmaps</span></span><br><span class="line"><span class="attr">    scope:</span> <span class="string">Namespaced</span></span><br><span class="line"><span class="attr">    version:</span> <span class="string">v1</span></span><br></pre></td></tr></table></figure>
+
+<p>若想新增 CRD 的 Federated API 的話，可透過 <code>kubefedctl enable &lt;res&gt;</code> 指令來建立，如下:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubefedctl <span class="built_in">enable</span> etcdclusters</span><br><span class="line">$ kubectl api-resources | grep etcd</span><br><span class="line">etcdclusters                      etcd         etcd.database.coreos.com         <span class="literal">true</span>         EtcdCluster</span><br><span class="line">federatedetcdclusters             fetcd        types.kubefed.k8s.io             <span class="literal">true</span>         FederatedEtcdCluster</span><br><span class="line"></span><br><span class="line">$ kubectl -n kube-federation-system get federatedtypeconfigs | grep etcd</span><br><span class="line">etcdclusters.etcd.database.coreos.com    3m16s</span><br></pre></td></tr></table></figure>
+
+<p>而一個 Federated 資源一般都會具備三個主要功能，這些資訊能夠在 <code>spec</code> 中由使用者自行定義，如下範例：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">types.kubefed.k8s.io/v1beta1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">FederatedDeployment</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">test-deployment</span></span><br><span class="line"><span class="attr">  namespace:</span> <span class="string">test-namespace</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  template:</span> <span class="comment"># 定義 Deployment 的所有內容，可理解成 Deployment 與 Pod 之間的關析。</span></span><br><span class="line"><span class="attr">    metadata:</span></span><br><span class="line"><span class="attr">      labels:</span></span><br><span class="line"><span class="attr">        app:</span> <span class="string">nginx</span></span><br><span class="line"><span class="attr">    spec:</span></span><br><span class="line">      <span class="string">...</span></span><br><span class="line"><span class="attr">  placement:</span> <span class="comment"># 定義哪些叢集要建立該 Federated 物件。</span></span><br><span class="line"><span class="attr">    clusters:</span></span><br><span class="line"><span class="attr">    - name:</span> <span class="string">cluster2</span></span><br><span class="line"><span class="attr">    - name:</span> <span class="string">cluster1</span></span><br><span class="line"><span class="attr">  overrides:</span> <span class="comment"># 定義叢集的 spec.template 中哪個欄位要被覆寫。</span></span><br><span class="line"><span class="attr">  - clusterName:</span> <span class="string">cluster2</span></span><br><span class="line"><span class="attr">    clusterOverrides:</span></span><br><span class="line"><span class="attr">    - path:</span> <span class="string">spec.replicas</span></span><br><span class="line"><span class="attr">      value:</span> <span class="number">5</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>Template</strong>: 定義 Federated 資源所引用的(即 Type configuration 的目標資源)物件資訊。如 FederatedDeployment 中的<code>spec.template</code>會定義 Deployment 所有內容。</li>
+<li><strong>Placement</strong>: 定義 Federated 資源要分散到哪些叢集上，若沒有該物件，則不會分散到任何叢集中。如 FederatedDeployment 中的<code>spec.placement</code>定義了兩個叢集時，這些叢集將被同步建立相同的 Deployment。另外也支援用 <code>spec.placement.clusterSelector</code> 的方式來選擇要放置的叢集。</li>
+<li><strong>Override</strong>: 定義修改指定叢集的 Federated 資源中的<code>spec.template</code>內容。如部署FederatedDeployment 到不同公有雲上的叢集時，就能透過<code>spec.overrides</code>來調整 Volume 或副本數。</li>
+</ul>
+<blockquote>
+<p>目前 Override 不支援<code>List(Array)</code>的欄位。比如說無法修改<code>spec.template.spec.containers[0].image</code>。</p>
+</blockquote>
+<h3 id="Scheduling"><a href="#Scheduling" class="headerlink" title="Scheduling"></a>Scheduling</h3><p>KubeFed 提供了一種自動化機制來將工作負載實例分散到不同的叢集中，這能夠基於<code>總副本數</code>與<code>叢集的放置策略</code>來將 Deployment 或 ReplicaSet 資源進行排程。排程策略是透過建立 ReplicaSchedulingPreference(RSP) 物件，再由 KubeFed RSP Controller 監聽與擷取 RSP 內容來將工作負載實例建立到指定的叢集上。</p>
+<p>以下為一個 RSP 範例。假設有三個叢集被聯邦，名稱分別為 ap-northeast、us-east 與 us-west。</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">scheduling.kubefed.k8s.io/v1alpha1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">ReplicaSchedulingPreference</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">test-deployment</span></span><br><span class="line"><span class="attr">  namespace:</span> <span class="string">test-ns</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  targetKind:</span> <span class="string">FederatedDeployment</span></span><br><span class="line"><span class="attr">  totalReplicas:</span> <span class="number">15</span> <span class="comment"># 所有叢集 Pod 副本數總和</span></span><br><span class="line"><span class="attr">  clusters:</span> <span class="comment"># 定義叢集排程策略</span></span><br><span class="line">    <span class="string">"*"</span><span class="string">:</span></span><br><span class="line"><span class="attr">      weight:</span> <span class="number">2</span></span><br><span class="line"><span class="attr">      maxReplicas:</span> <span class="number">12</span></span><br><span class="line"><span class="attr">    ap-northeast:</span></span><br><span class="line"><span class="attr">      minReplicas:</span> <span class="number">1</span></span><br><span class="line"><span class="attr">      maxReplicas:</span> <span class="number">3</span></span><br><span class="line"><span class="attr">      weight:</span> <span class="number">1</span></span><br></pre></td></tr></table></figure>
+
+<p>當該範例建立後，RSP Controller 會收到資源，並匹配對應 <code>namespace/name</code> 的 FederatedDeployment 與 FederatedReplicaSet 是否存在，若存在的話，會根據設定的策略計算出每個叢集預期的副本數，之後覆寫 Federated 資源中的<code>spec.overrides</code>內容以修改每個叢集的副本數，最後再由 KubeFed Sync Controller 來同步至每個叢集的 Deployment。以上面為例，結果會是 ap-northeast 叢集會擁有 3 個 Pod，us-east 跟 us-west 則分別會有 6 個 Pod。</p>
+<blockquote>
+<ul>
+<li>若<code>spec.clusters</code>未定義的話，則預設為<code>{&quot;*&quot;:{Weight: 1}}</code>。</li>
+<li>若有定義 spec.replicas 的 overrides 時，副本會以 RSP 為優先考量。</li>
+<li>分配的計算機制可以參考 <a href="https://github.com/kubernetes-sigs/kubefed/blob/master/pkg/controller/util/planner/planner.go" target="_blank" rel="noopener">kubefed/pkg/controller/util/planner/planner.go</a>。</li>
+</ul>
+</blockquote>
+<p><img src="/images/k8s/federation/rsp.png" alt></p>
+<h3 id="Multi-Cluster-DNS"><a href="#Multi-Cluster-DNS" class="headerlink" title="Multi-Cluster DNS"></a>Multi-Cluster DNS</h3><p>KubeFed 提供了一組 API 資源，以及 Controllers 來實現跨叢集 Service/Ingress 的 DNS records 自動產生機制，並結合 <a href="https://github.com/kubernetes-incubator/external-dns" target="_blank" rel="noopener">ExternalDNS</a> 來同步更新至 DNS 服務供應商。以下為簡單範例：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">multiclusterdns.kubefed.k8s.io/v1alpha1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Domain</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">test</span></span><br><span class="line"><span class="attr">  namespace:</span> <span class="string">kube-federation-system</span></span><br><span class="line"><span class="attr">domain:</span> <span class="string">k8s.example.com</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">multiclusterdns.kubefed.k8s.io/v1alpha1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">ServiceDNSRecord</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">nginx</span></span><br><span class="line"><span class="attr">  namespace:</span> <span class="string">development</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  domainRef:</span> <span class="string">test</span></span><br><span class="line"><span class="attr">  recordTTL:</span> <span class="number">300</span></span><br></pre></td></tr></table></figure>
+
+<p>首先假設已建立一個名稱為 nginx 的 FederatedDeployment，然後放到 development namespace 中，並且也建立了對應的 FederatedService 提供 LoadBalancer。這時當建立上述 Domain 與 ServiceDNSRecord 後，KubeFed 的 Service DNS Controller 會依據 ServiceDNSRecord 物件內容，去收集不同叢集的 Service 資訊，並將這些資訊更新至 ServiceDNSRecord 狀態中，接著 DNS Endpoint Controller 會依據該 ServiceDNSRecord 的狀態內容，建立一個 DNSEndpoint 物件，並產生 DNS records 資源，最後再由 <a href="https://github.com/kubernetes-incubator/external-dns" target="_blank" rel="noopener">ExternalDNS</a> 來同步更新 DNS records 至 DNS 供應商。下圖是 Service DNS 建立的架構。</p>
+<p><img src="/images/k8s/federation/service-dns.png" alt></p>
+<blockquote>
+<p>若是 Ingress 的話，會由 IngressDNSRecord 物件取代，並由 Ingress DNS Controller 收集資訊。</p>
+</blockquote>
+<h1 id="Setup-Federation-v2-on-AWS"><a href="#Setup-Federation-v2-on-AWS" class="headerlink" title="Setup Federation v2 on AWS"></a>Setup Federation v2 on AWS</h1><p>本節將簡單說明如何在 AWS 建立跨不同地區的 Kubernetes 聯邦叢集，其架構如下圖所示。</p>
+<p><img src="/images/k8s/federation/aws-cluster.png" alt></p>
+<blockquote>
+<ul>
+<li>KubeFed 官方文件也提供了 On-premises(minikube 與 kind)、GKE 與 IBM ICP 的教學，來讓使用者快速學習如何建置。</li>
+</ul>
+</blockquote>
+<h2 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h2><p>開始前，需要先安裝下列工具到操作機器上來提供使用：</p>
+<ul>
+<li><p><a href="https://kubernetes.io/docs/tasks/tools/install-kubectl/" target="_blank" rel="noopener">kubectl</a>：用來操作部署完成的 Kubernetes 叢集。版本為 <code>v1.14.1</code>。</p>
+</li>
+<li><p><a href="https://github.com/kubernetes/kops" target="_blank" rel="noopener">kops</a>：用來部署與管理公有雲上的 Kubernetes 叢集。版本為 <code>v1.14.0</code>。</p>
+<ul>
+<li><p>Mac OS X：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ brew update &amp;&amp; brew install kops</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>Linux distro：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl -LO https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d <span class="string">'"'</span> -f 4)/kops-linux-amd64</span><br><span class="line">$ chmod +x kops-linux-amd64 &amp;&amp; sudo mv kops-linux-amd64 /usr/<span class="built_in">local</span>/bin/kops</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+<li><p><a href="https://helm.sh/docs/using_helm/#installing-helm" target="_blank" rel="noopener">helm</a>: 用來部署 Federation v2 元件的工具。</p>
+</li>
+<li><p><a href="https://github.com/kubernetes-sigs/kubefed/releases" target="_blank" rel="noopener">kubefedctl</a>：用來新增與加入叢集成為聯邦的工具。可以到連結中下載二進制檔，版本為 <code>v0.1.0-rc1</code></p>
+</li>
+<li><p><a href="https://aws.amazon.com/cli/?nc1=h_ls" target="_blank" rel="noopener">AWS CLI</a>：用來操作 AWS 服務的工具。</p>
+</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo pip install awscli</span><br><span class="line">$ aws --version</span><br><span class="line">aws-cli/1.15.4</span><br></pre></td></tr></table></figure>
+
+<p>上述工具完成後，還要準備一下資訊：</p>
+<ul>
+<li>申請 AWS 帳號，並在 IAM 服務新增一個 User 設定存取所有服務(AdministratorAccess)。另外這邊要記住 AccessKey 與 SecretKey。</li>
+</ul>
+<blockquote>
+<p>一般來說只需開啟 S3、Route53、EC2、EBS、ELB 與 VPC 權限，但由於偷懶就全開。以下為各 AWS 服務在本次安裝中的用意：</p>
+<ul>
+<li>IAM: 提供身份認證與存取管理。</li>
+<li>EC2: Kubernetes 叢集部署的虛擬機環境。</li>
+<li>ELB: Kubernetes 元件與 Service 負載平衡。</li>
+<li>Route53: 提供 Public domain 存取 Kubernetes 叢集環境與應用程式。</li>
+<li>S3: 儲存 Kops 狀態。</li>
+<li>VPC: 提供 Kubernetes 的 Host 與 CNI 網路環境。</li>
+</ul>
+</blockquote>
+<ul>
+<li>擁有自己的 Domain Name，這邊可以在 AWS Route53 註冊，或者是到 GoDaddy 購買。</li>
+</ul>
+<h2 id="設定腳本參數"><a href="#設定腳本參數" class="headerlink" title="設定腳本參數"></a>設定腳本參數</h2><p>教學將使用撰寫好的腳本 <a href="https://github.com/kairen/aws-k8s-federation" target="_blank" rel="noopener">aws-k8s-federation</a> 進行部署。首先在操作的節點透過 Git 取得腳本：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://github.com/kairen/aws-k8s-federation</span><br><span class="line">$ <span class="built_in">cd</span> aws-k8s-federation</span><br><span class="line">$ cp .env.sample .env</span><br></pre></td></tr></table></figure>
+
+<p>編輯<code>.env</code>檔案並修改一下參數：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Kubernetes version</span></span><br><span class="line"><span class="built_in">export</span> KUBERNETES_VERSION=<span class="string">"1.14.1"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Your domain name and envs</span></span><br><span class="line"><span class="built_in">export</span> DOMAIN_NAME=<span class="string">"k8s.example.com"</span> <span class="comment"># 你的 Domain Name(這邊為 &lt;hoste_dzone_name&gt;.&lt;domain_name&gt;)</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="建立-Route53-Hosted-Zone"><a href="#建立-Route53-Hosted-Zone" class="headerlink" title="建立 Route53 Hosted Zone"></a>建立 Route53 Hosted Zone</h2><p>首先透過 aws 工具進行設定使用指定 AccessKey 與 SecretKey：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ aws configure</span><br><span class="line">AWS Access Key ID [****************QGEA]:</span><br><span class="line">AWS Secret Access Key [****************zJ+w]:</span><br><span class="line">Default region name [None]:</span><br><span class="line">Default output format [None]:</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>設定的 Keys 可以在<code>~/.aws/credentials</code>找到。</p>
+</blockquote>
+<p>接著需要在 Route53 建立一個 Hosted Zone，並在 Domain Name 供應商上設定<code>NameServers</code>：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ./0-create-hosted-domain.sh</span><br><span class="line"><span class="comment"># output</span></span><br><span class="line">...</span><br><span class="line">&#123;</span><br><span class="line">    <span class="string">"HostedZone"</span>: &#123;</span><br><span class="line">        <span class="string">"ResourceRecordSetCount"</span>: 2,</span><br><span class="line">        <span class="string">"CallerReference"</span>: <span class="string">"2018-04-25-16:16"</span>,</span><br><span class="line">        <span class="string">"Config"</span>: &#123;</span><br><span class="line">            <span class="string">"PrivateZone"</span>: <span class="literal">false</span></span><br><span class="line">        &#125;,</span><br><span class="line">        <span class="string">"Id"</span>: <span class="string">"/hostedzone/Z2JR49ADZ0P3WC"</span>,</span><br><span class="line">        <span class="string">"Name"</span>: <span class="string">"k8s.example.com."</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="string">"DelegationSet"</span>: &#123;</span><br><span class="line">        <span class="string">"NameServers"</span>: [</span><br><span class="line">            <span class="string">"ns-1547.awsdns-01.co.uk"</span>,</span><br><span class="line">            <span class="string">"ns-1052.awsdns-03.org"</span>,</span><br><span class="line">            <span class="string">"ns-886.awsdns-46.net"</span>,</span><br><span class="line">            <span class="string">"ns-164.awsdns-20.com"</span></span><br><span class="line">        ]</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="string">"Location"</span>: <span class="string">"https://route53.amazonaws.com/2013-04-01/hostedzone/Z2JR49ADZ0P3WC"</span>,</span><br><span class="line">    <span class="string">"ChangeInfo"</span>: &#123;</span><br><span class="line">        <span class="string">"Status"</span>: <span class="string">"PENDING"</span>,</span><br><span class="line">        <span class="string">"SubmittedAt"</span>: <span class="string">"2018-04-25T08:16:57.462Z"</span>,</span><br><span class="line">        <span class="string">"Id"</span>: <span class="string">"/change/C3802PE0C1JVW2"</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>之後將上述<code>NameServers</code>新增至自己的 Domain name 的 record 中，如 Godaddy：</p>
+<p><img src="/images/k8s/federation/godday-ns.png" alt></p>
+<h2 id="部署叢集"><a href="#部署叢集" class="headerlink" title="部署叢集"></a>部署叢集</h2><p>當上述流程都完成後，即可依照腳本順序來完成 Kubernetes 叢集與 Federation 叢集的建立，過程中也會包含操作 Federation v2 的功能。最終會以 Federated 物件建立一個 NGINX 應用程式，並部署到不同叢集中，然後透過 MultiClusterDNS + ExternalDNS 來自動建立 DNS records 到 AWS 上。</p>
+<p><img src="/images/k8s/federation/nginx-example.png" alt></p>
+<h1 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h1><p>雖然 KubeFed 還處於 Alpha 階段，但整體架構基於 Federation v1 進行了很多改善，而從 GitHub 近幾個月的貢獻來看，可以發現 Red Hat 在此專案投入許多的貢獻，這對於 KubeFed 來說是很好的發展。而現在 KubeFed 官方也有釋出一些文件，用來幫助使用者快速在 Minikube、kind(Kubernetes IN Docker)、GCP 上部署，這對於初次接觸的人是一項福利。</p>
+<p>另外有趣的是從 OpenShift v4.0 Roadmap 中，也能看到 KubeFed 被放入其中，在 <a href="https://operatorhub.io/" target="_blank" rel="noopener">Operator Hub</a> 跟 <a href="https://github.com/openshift/federation-v2-operator" target="_blank" rel="noopener">federation-v2-operator</a> 也能看到 Red Hat 在這方面的佈局。我想之後 Kubernetes 叢集聯邦又會再次成為熱烈討論的議題，或許 Red Hat 也是希望透過 KubeFed 實現 OpenShift 的<code>多雲(Multi-cloud)</code>與<code>混合雲(Hybird Cloud)</code>部署吧(個人覺得拉)。</p>
+<p>不過這不完全表示 KubeFed 在今後勢必會發展得很好，因為隨著 Kubernetes 發展，想必還會有更多的問題需要去發現、提出與解決的，比如說有狀態服務(Stateful Service)、Federation Host 叢集掛了怎麼辦等問題，這些問題若之後有相關社群的資訊，我也會更新上來。</p>
+<h1 id="Related-Posts"><a href="#Related-Posts" class="headerlink" title="Related Posts"></a>Related Posts</h1><ul>
+<li><a href="https://k2r2bai.com/2018/03/21/kubernetes/federation-v1/">https://k2r2bai.com/2018/03/21/kubernetes/federation-v1/</a></li>
+<li><a href="https://k2r2bai.com/2018/04/21/kubernetes/aws-federation-v1/">https://k2r2bai.com/2018/04/21/kubernetes/aws-federation-v1/</a></li>
+<li><a href="https://speakerdeck.com/kairen/setup-kubernetes-federation-v2-on-aws" target="_blank" rel="noopener">https://speakerdeck.com/kairen/setup-kubernetes-federation-v2-on-aws</a></li>
+<li><a href="https://speakerdeck.com/kairen/setup-eks-multi-cluster-using-federation-v2" target="_blank" rel="noopener">https://speakerdeck.com/kairen/setup-eks-multi-cluster-using-federation-v2</a></li>
+</ul>
+<h1 id="References"><a href="#References" class="headerlink" title="References"></a>References</h1><ul>
+<li><a href="https://github.com/kubernetes-sigs/kubefed" target="_blank" rel="noopener">https://github.com/kubernetes-sigs/kubefed</a></li>
+<li><a href="https://kubernetes.io/blog/2018/12/12/kubernetes-federation-evolution/" target="_blank" rel="noopener">https://kubernetes.io/blog/2018/12/12/kubernetes-federation-evolution/</a></li>
+<li><a href="https://containerjournal.com/2019/04/09/kubernetes-and-the-challenge-of-federation/" target="_blank" rel="noopener">https://containerjournal.com/2019/04/09/kubernetes-and-the-challenge-of-federation/</a></li>
+<li><a href="https://blog.openshift.com/combining-federation-v2-and-istio-multicluster/" target="_blank" rel="noopener">https://blog.openshift.com/combining-federation-v2-and-istio-multicluster/</a></li>
+<li><a href="https://medium.com/condenastengineering/k8s-federation-v2-a-guide-on-how-to-get-started-ec9cc26b1fa7" target="_blank" rel="noopener">https://medium.com/condenastengineering/k8s-federation-v2-a-guide-on-how-to-get-started-ec9cc26b1fa7</a></li>
+<li><a href="https://podctl.com/multi-cluster-and-federation-v2/" target="_blank" rel="noopener">https://podctl.com/multi-cluster-and-federation-v2/</a></li>
+<li><a href="https://www.youtube.com/watch?v=q27rbaX5Jis&amp;feature=youtu.be&amp;t=7m20s" target="_blank" rel="noopener">https://www.youtube.com/watch?v=q27rbaX5Jis&amp;feature=youtu.be&amp;t=7m20s</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">KubeFed: Kubernetes Federation v2</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2019-4-20 00:04</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2019/09/16/ironman2020/day01/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    淺談 Kubernetes 的部署工具選擇 Part1
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2019/01/22/kubernetes/deploy/minikube-multi-node/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">利用 Minikube 快速建立測試用多節點 Kubernetes 叢集</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2019/04/20/kubernetes/federation-v2/" data-id="ck3ns7q6n004ywmpf2n7r7z1j" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2019/04/20/kubernetes/federation-v2/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/04/20/kubernetes/federation-v2/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#為什麼-v1-被棄用？"><span class="toc-number">1.</span> <span class="toc-text">為什麼 v1 被棄用？</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Federation-v2"><span class="toc-number">2.</span> <span class="toc-text">Federation v2</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Concepts"><span class="toc-number">2.1.</span> <span class="toc-text">Concepts</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Cluster-Configuration"><span class="toc-number">2.1.1.</span> <span class="toc-text">Cluster Configuration</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Type-Configuration"><span class="toc-number">2.1.2.</span> <span class="toc-text">Type Configuration</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Scheduling"><span class="toc-number">2.1.3.</span> <span class="toc-text">Scheduling</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Multi-Cluster-DNS"><span class="toc-number">2.1.4.</span> <span class="toc-text">Multi-Cluster DNS</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Setup-Federation-v2-on-AWS"><span class="toc-number">3.</span> <span class="toc-text">Setup Federation v2 on AWS</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#事前準備"><span class="toc-number">3.1.</span> <span class="toc-text">事前準備</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#設定腳本參數"><span class="toc-number">3.2.</span> <span class="toc-text">設定腳本參數</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#建立-Route53-Hosted-Zone"><span class="toc-number">3.3.</span> <span class="toc-text">建立 Route53 Hosted Zone</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#部署叢集"><span class="toc-number">3.4.</span> <span class="toc-text">部署叢集</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Summary"><span class="toc-number">4.</span> <span class="toc-text">Summary</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Related-Posts"><span class="toc-number">5.</span> <span class="toc-text">Related Posts</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#References"><span class="toc-number">6.</span> <span class="toc-text">References</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2019/04/20/kubernetes/federation-v2/';
+        
+        this.page.identifier = 'kubernetes/federation-v2';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

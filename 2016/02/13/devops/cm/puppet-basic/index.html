@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>Puppet 介紹與使用 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Puppet 是一個開放原始碼專案，基於 Ruby 的系統組態管理工具，採用 Client/Server 的部署架構。是一個為了實現資料中心自動化管理，而被設計的組態管理軟體，它使用跨平台語言規範，管理組態檔案、使用者、軟體套件與系統服務等。用戶端預設每個半小時會與伺服器溝通一次，來確定是否有更新。當然也可以配置主動觸發來強制用戶端更新。這樣可以把平常的系統管理工作程式碼化，透過程式碼化的好處是可">
+<meta name="keywords" content="DevOps,Automation Engine">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Puppet 介紹與使用">
+<meta property="og:url" content="https://k2r2bai.com/2016/02/13/devops/cm/puppet-basic/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Puppet 是一個開放原始碼專案，基於 Ruby 的系統組態管理工具，採用 Client/Server 的部署架構。是一個為了實現資料中心自動化管理，而被設計的組態管理軟體，它使用跨平台語言規範，管理組態檔案、使用者、軟體套件與系統服務等。用戶端預設每個半小時會與伺服器溝通一次，來確定是否有更新。當然也可以配置主動觸發來強制用戶端更新。這樣可以把平常的系統管理工作程式碼化，透過程式碼化的好處是可">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/devops/puppet-dataflow.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.385Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Puppet 介紹與使用">
+<meta name="twitter:description" content="Puppet 是一個開放原始碼專案，基於 Ruby 的系統組態管理工具，採用 Client/Server 的部署架構。是一個為了實現資料中心自動化管理，而被設計的組態管理軟體，它使用跨平台語言規範，管理組態檔案、使用者、軟體套件與系統服務等。用戶端預設每個半小時會與伺服器溝通一次，來確定是否有更新。當然也可以配置主動觸發來強制用戶端更新。這樣可以把平常的系統管理工作程式碼化，透過程式碼化的好處是可">
+<meta name="twitter:image" content="https://k2r2bai.com/images/devops/puppet-dataflow.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-devops/cm/puppet-basic" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            Puppet 介紹與使用
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2016/02/13/devops/cm/puppet-basic/">
+            <u><time datetime="2016-02-13T04:23:01.000Z" itemprop="datePublished">2016-02-13</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/DevOps/">DevOps</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Automation-Engine/">Automation Engine</a>, <a class="tag-link" href="/tags/DevOps/">DevOps</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>Puppet 是一個開放原始碼專案，基於 Ruby 的系統組態管理工具，採用 Client/Server 的部署架構。是一個為了實現資料中心自動化管理，而被設計的組態管理軟體，它使用跨平台語言規範，管理組態檔案、使用者、軟體套件與系統服務等。用戶端預設每個半小時會與伺服器溝通一次，來確定是否有更新。當然也可以配置主動觸發來強制用戶端更新。這樣可以把平常的系統管理工作程式碼化，透過程式碼化的好處是可以分享、保存與避免重複勞動，也可以快速恢復以及快速的大規模環境部署伺服器。</p>
+<a id="more"></a>
+
+<p><img src="/images/devops/puppet-dataflow.png" alt="puppet-dataflow.png"></p>
+<p><strong>優點：</strong></p>
+<ul>
+<li>成熟的組態管理軟體。</li>
+<li>應用廣泛。</li>
+<li>功能很完善。</li>
+<li>提供許多資源可以配置</li>
+<li>擁有許多的支持者。</li>
+</ul>
+<p><strong>缺點：</strong></p>
+<ul>
+<li>無法批次處理。</li>
+<li>語言採用 DSL 與 Ruby。</li>
+<li>缺少錯誤回報與檢查。</li>
+<li>要透過程式定義先後順序。</li>
+</ul>
+<h2 id="基本概念介紹"><a href="#基本概念介紹" class="headerlink" title="基本概念介紹"></a>基本概念介紹</h2><h3 id="基礎設施即程式碼-Infrastructure-as-Code"><a href="#基礎設施即程式碼-Infrastructure-as-Code" class="headerlink" title="基礎設施即程式碼(Infrastructure as Code)"></a>基礎設施即程式碼(Infrastructure as Code)</h3><p>在官方可以了解到 puppet 是一個概念為<code>Infrastructure as Code</code>的工具。Infrastructure as Code 與一般撰寫的 shell scrip 類似，但是比後者更高一個層次，將這一層虛擬化，使管理者只需要定義 Infrastructure 的狀況即可。這樣除了可以模組化、reuse外，也可以清楚透過 code 了解環境安裝了什麼與設定了什麼，因此 code 就是一個 infrastructure。</p>
+<h3 id="資源-Resource"><a href="#資源-Resource" class="headerlink" title="資源(Resource)"></a>資源(Resource)</h3><p>Puppet 中一個基礎元素為<code>resource</code>，一個 resource 可以是<code>file</code>、<code>package</code>或者是<code>service</code>等，透過 resource 我們可以查看環境上檔案、套件、服務狀態等。更多資訊可以參考 <a href="http://docs.puppetlabs.com/references/latest/type.html" target="_blank" rel="noopener">Resource 列表與使用方式</a>。</p>
+<blockquote>
+<p>P.S resource type 要注意大小寫，當作 metaparameters 的時候寫作 Type[title] Type 要大寫。</p>
+</blockquote>
+<h3 id="相依性-Dependencies"><a href="#相依性-Dependencies" class="headerlink" title="相依性(Dependencies)"></a>相依性(Dependencies)</h3><p>在使用 Puppet 時，通常會撰寫 manifest 檔案來定義 resource。而這些 resource 在執行時會以同步的方式完成。</p>
+<blockquote>
+<p>P.S 因為是同步(Sync)執行，故會有相依性的問題產生。這時候就可以用 Puppet 提供的 <code>before</code> / <code>require</code> 關鍵字來配置先後順序。</p>
+</blockquote>
+<h2 id="Puppet-安裝與基本操作"><a href="#Puppet-安裝與基本操作" class="headerlink" title="Puppet 安裝與基本操作"></a>Puppet 安裝與基本操作</h2><h3 id="環境建置"><a href="#環境建置" class="headerlink" title="環境建置"></a>環境建置</h3><p>我們將使用兩台 Ubuntu 14.04  主機來進行操作，一台為<code>主控節點</code>，另一台為<code>Agent 節點</code>。下面是我們將用到的伺服器的基礎資訊：</p>
+<ul>
+<li><strong>puupet 主控節點</strong><ul>
+<li>IP：10.21.20.10</li>
+<li>主機名稱：puppetmaster</li>
+<li>完整主機名稱：puppetmaster.example.com</li>
+</ul>
+</li>
+<li><strong>puupet agent 節點</strong><ul>
+<li>IP：10.21.20.8</li>
+<li>主機名稱：puppetslave</li>
+<li>完整主機名稱：puppetslave.example.com</li>
+</ul>
+</li>
+</ul>
+<p>在每台節點完成以下步驟：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get update &amp;&amp; sudo apt-get -y install ntp</span><br><span class="line">$ sudo vim /etc/ntp.conf</span><br><span class="line"></span><br><span class="line">server 1.tw.pool.ntp.org iburst</span><br><span class="line">server 3.asia.pool.ntp.org iburst</span><br><span class="line">server 2.asia.pool.ntp.org iburst</span><br></pre></td></tr></table></figure>
+
+<h3 id="Puppet-主控節點部署"><a href="#Puppet-主控節點部署" class="headerlink" title="Puppet 主控節點部署"></a>Puppet 主控節點部署</h3><p>首先我們要先安裝 puppet 套件，透過<code>wget</code>下載<code>puppetlabs-release.deb</code>資源庫套件：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ wget https://apt.puppetlabs.com/puppetlabs-release-trusty.deb</span><br><span class="line">$ sudo dpkg -i puppetlabs-release-trusty.deb</span><br><span class="line">$ sudo apt-get update</span><br></pre></td></tr></table></figure>
+
+<p>完成後，我們就可以下載<code>puppetmaster-passenger</code>：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get install puppetmaster-passenger</span><br></pre></td></tr></table></figure>
+
+<p>安裝過程中會發現錯誤，這部分可以忽略：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Warning: Setting templatedir is deprecated. See http://links.puppetlabs.com/env-settings-deprecations</span><br><span class="line">   (at /usr/lib/ruby/vendor_ruby/puppet/settings.rb:1139:in `issue_deprecation_warning&apos;)</span><br></pre></td></tr></table></figure>
+
+<p>安裝完後，可以透過以下指令查看版本：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ puppet --version</span><br><span class="line">3.8.4</span><br></pre></td></tr></table></figure>
+
+<p>這時我們可以透過<code>resource</code>指令來查看可用資源：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ puppet resource [<span class="built_in">type</span>]</span><br><span class="line">$ puppet resource service</span><br><span class="line"></span><br><span class="line">service &#123; <span class="string">'acpid'</span>:</span><br><span class="line">  ensure =&gt; <span class="string">'running'</span>,</span><br><span class="line">  <span class="built_in">enable</span> =&gt; <span class="string">'true'</span>,</span><br><span class="line">&#125;</span><br><span class="line">service &#123; <span class="string">'apache2'</span>:</span><br><span class="line">  ensure =&gt; <span class="string">'running'</span>,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>更多的 resource 可以查看 <a href="http://docs.puppetlabs.com/references/latest/type.html" target="_blank" rel="noopener">Type Reference</a>。</p>
+</blockquote>
+<p>在開始之前，我們先將 <code>apache2</code> 關閉，來讓 puppet 主控伺服器關閉：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo service apache2 stop</span><br></pre></td></tr></table></figure>
+
+<p>接著我們要建立一個檔案<code>/etc/apt/preferences.d/00-puppet.pref</code>來鎖定 APT 自動更新套件，因為套件更新會造成組態檔的混亂：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo vim /etc/apt/preferences.d/00-puppet.pref</span><br><span class="line"></span><br><span class="line">Package: puppet puppet-common puppetmaster-passenger</span><br><span class="line">Pin: version 3.8*</span><br><span class="line">Pin-Priority: 501</span><br></pre></td></tr></table></figure>
+
+<p>Puppet 主控伺服器是一個認證推送機構，需要產生自己的認證，用於簽署所有 agent 的認證要求。首先要刪除所有該套件安裝過程建立的 ssl 憑證。預設憑證放在 <code>/var/lib/puppet/ssl</code>底下。</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo rm  -rf /var/lib/puppet/ssl</span><br></pre></td></tr></table></figure>
+
+<p>接著我們要修改<code>puppet.conf</code> 檔案，來配置節點之前認證溝通，這邊要註解<code>templatedir</code>這行。然後在檔案的<code>[main]</code>增加以下資訊。</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo vim /etc/puppet/puppet.conf</span><br><span class="line"></span><br><span class="line">[main]</span><br><span class="line">...</span><br><span class="line">server = puppetmaster</span><br><span class="line">environment = production</span><br><span class="line">runinterval =  1h</span><br><span class="line">strict_variables =  <span class="literal">true</span></span><br><span class="line">certname = puppetmaster</span><br><span class="line">dns_alt_names = puppetmaster, puppetmaster.example.com</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>詳細的檔案可以參閱<a href="https://docs.puppetlabs.com/puppet/latest/reference/config_file_main.html" target="_blank" rel="noopener">Main Config File (puppet.conf)
+</a></p>
+</blockquote>
+<p>修改完後，透過<code>puppet</code>指令建立新的憑證：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ puppet master --verbose --no-daemonize</span><br><span class="line"></span><br><span class="line">Info: Creating a new certificate revocation list</span><br><span class="line">Info: Creating a new SSL key <span class="keyword">for</span> puppetmaster</span><br><span class="line">Info: csr_attributes file loading from /etc/puppet/csr_attributes.yaml</span><br><span class="line">Info: Creating a new SSL certificate request <span class="keyword">for</span> puppetmaster</span><br><span class="line">Info: Certificate Request fingerprint (SHA256): 9B:C5:45:F8:C5:8F:C2:B1:4D:15:E3:64:5F:DB:19:AB:06:C4:60:99:48:F3:BA:8F:D3:03:7E:35:BE:BC:4E:B1</span><br><span class="line">Notice: puppetmaster has a waiting certificate request</span><br><span class="line">Notice: Signed certificate request <span class="keyword">for</span> puppetmaster</span><br><span class="line">Notice: Removing file Puppet::SSL::CertificateRequest puppetmaster at <span class="string">'/var/lib/puppet/ssl/ca/requests/puppetmaster.pem'</span></span><br><span class="line">Notice: Removing file Puppet::SSL::CertificateRequest puppetmaster at <span class="string">'/var/lib/puppet/ssl/certificate_requests/puppetmaster.pem'</span></span><br><span class="line">Notice: Starting Puppet master version 3.8.4</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>當看到<code>Notice: Starting Puppet master version 3.8.4</code>代表完成，這時候可用 <code>CTRL-C</code>離開。</p>
+</blockquote>
+<p>檢查新產生的 SSL 憑證，可以使用以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ puppet cert list -all</span><br><span class="line"></span><br><span class="line">+ <span class="string">"puppetmaster"</span> (SHA256) 8C:5E:39:A7:81:94:2B:09:7E:20:B8:F2:46:59:60:D9:FA:5D:4A:9E:BF:27:D7:C1:1A:A4:3E:97:12:D3:BE:21 (alt names: <span class="string">"DNS:puppet-master"</span>, <span class="string">"DNS:puppet-master.example.com"</span>, <span class="string">"DNS:puppetmaster"</span>)</span><br></pre></td></tr></table></figure>
+
+<h3 id="設定一個-Puppet-manifests"><a href="#設定一個-Puppet-manifests" class="headerlink" title="設定一個 Puppet manifests"></a>設定一個 Puppet manifests</h3><p>預設的 manifests 為<code>/etc/puppet/manifests/site.pp</code>。這個主要 manifests 檔案包括了用於在 Agent 節點執行的組態定義：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo vim /etc/puppet/manifests/site.pp</span><br><span class="line"></span><br><span class="line"><span class="comment"># execute 'apt-get update'</span></span><br><span class="line"><span class="built_in">exec</span> &#123; <span class="string">'apt-update'</span>: <span class="comment"># exec resource named 'apt-update'</span></span><br><span class="line"><span class="built_in">command</span> =&gt; <span class="string">'/usr/bin/apt-get update'</span> <span class="comment"># command this resource will run</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># install apache2 package</span></span><br><span class="line">package &#123; <span class="string">'apache2'</span>:</span><br><span class="line">require =&gt; Exec[<span class="string">'apt-update'</span>], <span class="comment"># require 'apt-update' before installing</span></span><br><span class="line">ensure =&gt; installed,</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># ensure apache2 service is running</span></span><br><span class="line">service &#123; <span class="string">'apache2'</span>:</span><br><span class="line">ensure =&gt; running,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>上面幾行用來部署 apache2 到 agent 節點。</p>
+</blockquote>
+<p>完成後，修改<code>/etc/apache2/sites-enabled/puppetmaster.conf</code>檔，修改<code>SSLCertificateFile</code>與<code>SSLCertificateKeyFile</code>對應到新的憑證：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">SSLCertificateFile      /var/lib/puppet/ssl/certs/puppetmaster.pem</span><br><span class="line">SSLCertificateKeyFile   /var/lib/puppet/ssl/private_keys/puppetmaster.pem</span><br></pre></td></tr></table></figure>
+
+<p>然後重新開啟服務：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo service apache2 restart</span><br></pre></td></tr></table></figure>
+
+<h3 id="Puppet-agent-節點部署"><a href="#Puppet-agent-節點部署" class="headerlink" title="Puppet agent 節點部署"></a>Puppet agent 節點部署</h3><p>首先在 agent 節點上使用以下指令下載 puppet labs 的套件，並安裝：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ wget https://apt.puppetlabs.com/puppetlabs-release-trusty.deb</span><br><span class="line">$ sudo dpkg -i puppetlabs-release-trusty.deb</span><br><span class="line">$ sudo apt-get update</span><br><span class="line">$ sudo apt-get install -y puppet</span><br></pre></td></tr></table></figure>
+
+<p>由於 puppet 預設是不會啟動的，所以要編輯<code>/etc/default/puppet</code>檔案來設定：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo vim /etc/default/puppet</span><br><span class="line"></span><br><span class="line">START=yes</span><br></pre></td></tr></table></figure>
+
+<p>之後一樣設定防止 APT 更新到 puppet，修改<code>/etc/apt/preferences.d/00-puppet.pref</code>檔案：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo vim /etc/apt/preferences.d/00-puppet.pref</span><br><span class="line"></span><br><span class="line">Package: puppet puppet-common</span><br><span class="line">Pin: version 3.8*</span><br><span class="line">Pin-Priority: 501</span><br></pre></td></tr></table></figure>
+
+<h3 id="設定-puppet-agent"><a href="#設定-puppet-agent" class="headerlink" title="設定 puppet agent"></a>設定 puppet agent</h3><p>編輯<code>/etc/puppet/puppet.conf</code>檔案，將<code>templatedir</code>這行註解掉，並移除<code>[master]</code>部分的相關設定：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo vim /etc/puppet/puppet.conf</span><br><span class="line"></span><br><span class="line">[main]</span><br><span class="line">logdir=/var/<span class="built_in">log</span>/puppet</span><br><span class="line">vardir=/var/lib/puppet</span><br><span class="line">ssldir=/var/lib/puppet/ssl</span><br><span class="line">rundir=/var/run/puppet</span><br><span class="line">factpath=<span class="variable">$vardir</span>/lib/facter</span><br><span class="line"><span class="comment"># templatedir=$confdir/templates</span></span><br><span class="line"></span><br><span class="line">[agent]</span><br><span class="line">server = puppetmaster.example.com</span><br><span class="line">certname = puppetslave.example.com</span><br></pre></td></tr></table></figure>
+
+<p>完成後啟動 puppet：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo service puppet start</span><br></pre></td></tr></table></figure>
+
+<h3 id="在主控伺服器上對憑證要求進行簽證"><a href="#在主控伺服器上對憑證要求進行簽證" class="headerlink" title="在主控伺服器上對憑證要求進行簽證"></a>在主控伺服器上對憑證要求進行簽證</h3><p>當完成 master 節點與 slave 節點後，可以在主控伺服器上使用以下指令來列出當前憑證請求：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ puppet cert list</span><br><span class="line"></span><br><span class="line"><span class="string">"puppetnode.example.com"</span> (SHA256) 52:43:4C:ED:16:34:A3:EA:E7:5D:B0:97:FF:66:4F:C8:E0:51:AD:80:E6:32:95:53:FC:24:AE:15:17:17:3A:C0</span><br></pre></td></tr></table></figure>
+
+<p>接著使用以下指令進行簽證：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ puppet cert sign puppetnode.example.com</span><br><span class="line"></span><br><span class="line">Notice: Signed certificate request <span class="keyword">for</span> puppetnode.example.com</span><br><span class="line">Notice: Removing file Puppet::SSL::CertificateRequest puppetnode.example.com at <span class="string">'/var/lib/puppet/ssl/ca/requests/puppetnode.example.com.pem'</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li>也可以使用<code>puppet cert sign --all</code>來一次簽署多個。</li>
+<li>若想要移除可以使用<code>puppet cert clean hostname</code>。</li>
+</ul>
+</blockquote>
+<p>簽署成功後，可以用以下指令查看：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ puppet cert list --all</span><br><span class="line"></span><br><span class="line">+ <span class="string">"puppetmaster"</span>           (SHA256) 8C:5E:39:A7:81:94:2B:09:7E:20:B8:F2:46:59:60:D9:FA:5D:4A:9E:BF:27:D7:C1:1A:A4:3E:97:12:D3:BE:21 (alt names: <span class="string">"DNS:puppet-master"</span>, <span class="string">"DNS:puppet-master.example.com"</span>, <span class="string">"DNS:puppetmaster"</span>)</span><br><span class="line">+ <span class="string">"puppetnode.example.com"</span> (SHA256) EF:D6:E5:7E:45:B0:5D:EC:D4:17:E6:31:A2:97:F6:C2:31:2A:19:B9:0E:9D:31:77:9A:02:93:BC:73:B9:5E:58</span><br></pre></td></tr></table></figure>
+
+<h3 id="部署主節點的-manifests"><a href="#部署主節點的-manifests" class="headerlink" title="部署主節點的 manifests"></a>部署主節點的 manifests</h3><p>當配置並完成 puppet manifests，現在需要部署 manifests 到 slave 節點上。要載入 puppet manifests 可以使用以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ puppet agent --<span class="built_in">test</span></span><br><span class="line"></span><br><span class="line">Info: Retrieving pluginfacts</span><br><span class="line">Info: Retrieving plugin</span><br><span class="line">Info: Caching catalog <span class="keyword">for</span> puppetnode.example.com</span><br><span class="line">Info: Applying configuration version <span class="string">'1452086629'</span></span><br><span class="line">Notice: /Stage[main]/Main/Exec[apt-update]/returns: executed successfully</span><br><span class="line">Notice: Finished catalog run <span class="keyword">in</span> 17.31 seconds</span><br></pre></td></tr></table></figure>
+
+<p>之後我們可以使用<code>puppet apply</code>來提交 manifests：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ puppet apply /etc/puppet/manifests/site.pp</span><br></pre></td></tr></table></figure>
+
+<p>若要指定節點，可以建立如以下的<code>*.pp</code>檔：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo vim /etc/puppet/manifests/site-example.pp</span><br><span class="line"></span><br><span class="line">node <span class="string">'puppetslave1'</span>, <span class="string">'puppetslave2'</span> &#123;</span><br><span class="line"><span class="comment"># execute 'apt-get update'</span></span><br><span class="line"><span class="built_in">exec</span> &#123; <span class="string">'apt-update'</span>: <span class="comment"># exec resource named 'apt-update'</span></span><br><span class="line"><span class="built_in">command</span> =&gt; <span class="string">'/usr/bin/apt-get update'</span> <span class="comment"># command this resource will run</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># install apache2 package</span></span><br><span class="line">package &#123; <span class="string">'apache2'</span>:</span><br><span class="line">require =&gt; Exec[<span class="string">'apt-update'</span>], <span class="comment"># require 'apt-update' before installing</span></span><br><span class="line">ensure =&gt; installed,</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># ensure apache2 service is running</span></span><br><span class="line">service &#123; <span class="string">'apache2'</span>:</span><br><span class="line">ensure =&gt; running,</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Puppet 是一個很成熟的工具，已有許多模組被貢獻，我們可以透過以下方式下載模組：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$  puppet module install puppetlabs-apache</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注意，不要在一個已經部署 Apache 的環境上使用該模組，否則會清空為沒有被 puppet 管理的 apache 配置。</p>
+</blockquote>
+<p>接著我們修改<code>site.pp</code>來配置 apache：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo vim /etc/puppet/manifest/site.pp</span><br><span class="line"></span><br><span class="line">node <span class="string">'puppetslave'</span> &#123;</span><br><span class="line">class &#123; <span class="string">'apache'</span>: &#125; <span class="comment"># use apache module</span></span><br><span class="line">apache::vhost &#123; <span class="string">'example.com'</span>: <span class="comment"># define vhost resource</span></span><br><span class="line">port =&gt; <span class="string">'8080'</span>,</span><br><span class="line">docroot =&gt; <span class="string">'/var/www/html'</span></span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="參考資源"><a href="#參考資源" class="headerlink" title="參考資源"></a>參考資源</h2><ul>
+<li><a href="https://forge.puppetlabs.com/" target="_blank" rel="noopener">Modules Search</a></li>
+<li><a href="http://www.infoq.com/cn/articles/introduction-puppet" target="_blank" rel="noopener">InfoQ Puppet 介紹</a></li>
+<li><a href="http://amyhehe.blog.51cto.com/9406021/1708500" target="_blank" rel="noopener">Puppet 學習</a></li>
+<li><a href="http://blog.hsatac.net/2013/02/puppet-study-note/" target="_blank" rel="noopener">Puppet 筆記</a></li>
+<li><a href="http://blog.csdn.net/linux_player_c/article/details/50148415" target="_blank" rel="noopener">puppet學習筆記：puppet資源file詳細介紹</a></li>
+<li><a href="https://www.digitalocean.com/community/tutorials/how-to-install-puppet-to-manage-your-server-infrastructure" target="_blank" rel="noopener">How To Install Puppet To Manage Your Server Infrastructure</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">Puppet 介紹與使用</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2016-2-13 12:02</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2016/02/14/devops/cm/puppet-foreman/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    透過 Foreman 管理 Puppet
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2016/02/12/devops/cm/saltstack-basic/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">SaltStack 介紹</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2016/02/13/devops/cm/puppet-basic/" data-id="ck3ns7qap00fvwmpfz99ujqyh" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2016/02/13/devops/cm/puppet-basic/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2016/02/13/devops/cm/puppet-basic/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#基本概念介紹"><span class="toc-number">1.</span> <span class="toc-text">基本概念介紹</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#基礎設施即程式碼-Infrastructure-as-Code"><span class="toc-number">1.1.</span> <span class="toc-text">基礎設施即程式碼(Infrastructure as Code)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#資源-Resource"><span class="toc-number">1.2.</span> <span class="toc-text">資源(Resource)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#相依性-Dependencies"><span class="toc-number">1.3.</span> <span class="toc-text">相依性(Dependencies)</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Puppet-安裝與基本操作"><span class="toc-number">2.</span> <span class="toc-text">Puppet 安裝與基本操作</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#環境建置"><span class="toc-number">2.1.</span> <span class="toc-text">環境建置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Puppet-主控節點部署"><span class="toc-number">2.2.</span> <span class="toc-text">Puppet 主控節點部署</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#設定一個-Puppet-manifests"><span class="toc-number">2.3.</span> <span class="toc-text">設定一個 Puppet manifests</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Puppet-agent-節點部署"><span class="toc-number">2.4.</span> <span class="toc-text">Puppet agent 節點部署</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#設定-puppet-agent"><span class="toc-number">2.5.</span> <span class="toc-text">設定 puppet agent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#在主控伺服器上對憑證要求進行簽證"><span class="toc-number">2.6.</span> <span class="toc-text">在主控伺服器上對憑證要求進行簽證</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#部署主節點的-manifests"><span class="toc-number">2.7.</span> <span class="toc-text">部署主節點的 manifests</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#參考資源"><span class="toc-number">3.</span> <span class="toc-text">參考資源</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2016/02/13/devops/cm/puppet-basic/';
+        
+        this.page.identifier = 'devops/cm/puppet-basic';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

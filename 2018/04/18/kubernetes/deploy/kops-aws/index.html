@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>使用 Kops 部署 Kubernetes 至公有雲(AWS) | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Kops 是 Kubernetes 官方維護的專案，是一套 Production ready 的 Kubernetes 部署、升級與管理工具，早期用於 AWS 公有雲上建置 Kubernetes 叢集使用，但隨著社群的推進已支援 GCP、vSphere(Alpha)，未來也會有更多公有雲平台慢慢被支援(Maybe)。本篇簡單撰寫使用 Kops 部署一個叢集，過去自己因為公司都是屬於建置 On-pr">
+<meta name="keywords" content="Kubernetes,AWS">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用 Kops 部署 Kubernetes 至公有雲(AWS)">
+<meta property="og:url" content="https://k2r2bai.com/2018/04/18/kubernetes/deploy/kops-aws/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Kops 是 Kubernetes 官方維護的專案，是一套 Production ready 的 Kubernetes 部署、升級與管理工具，早期用於 AWS 公有雲上建置 Kubernetes 叢集使用，但隨著社群的推進已支援 GCP、vSphere(Alpha)，未來也會有更多公有雲平台慢慢被支援(Maybe)。本篇簡單撰寫使用 Kops 部署一個叢集，過去自己因為公司都是屬於建置 On-pr">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/kops/iam-user2.png">
+<meta property="og:image" content="https://k2r2bai.com/images/kops/route53-hostedzone.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.392Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="使用 Kops 部署 Kubernetes 至公有雲(AWS)">
+<meta name="twitter:description" content="Kops 是 Kubernetes 官方維護的專案，是一套 Production ready 的 Kubernetes 部署、升級與管理工具，早期用於 AWS 公有雲上建置 Kubernetes 叢集使用，但隨著社群的推進已支援 GCP、vSphere(Alpha)，未來也會有更多公有雲平台慢慢被支援(Maybe)。本篇簡單撰寫使用 Kops 部署一個叢集，過去自己因為公司都是屬於建置 On-pr">
+<meta name="twitter:image" content="https://k2r2bai.com/images/kops/iam-user2.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-kubernetes/deploy/kops-aws" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            使用 Kops 部署 Kubernetes 至公有雲(AWS)
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2018/04/18/kubernetes/deploy/kops-aws/">
+            <u><time datetime="2018-04-18T09:08:54.000Z" itemprop="datePublished">2018-04-18</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/AWS/">AWS</a>, <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p><a href="https://github.com/kubernetes/kops" target="_blank" rel="noopener">Kops</a> 是 Kubernetes 官方維護的專案，是一套 Production ready 的 Kubernetes 部署、升級與管理工具，早期用於 AWS 公有雲上建置 Kubernetes 叢集使用，但隨著社群的推進已支援 GCP、vSphere(Alpha)，未來也會有更多公有雲平台慢慢被支援(Maybe)。本篇簡單撰寫使用 Kops 部署一個叢集，過去自己因為公司都是屬於建置 On-premises 的 Kubernetes，因此很少使用 Kops，剛好最近社群分享又再一次接觸的關析，所以就來寫個文章。</p>
+<p>本次安裝的軟體版本：</p>
+<ul>
+<li>Kubernetes v1.9.3</li>
+<li>Kops v1.9.0</li>
+</ul>
+<a id="more"></a>
+
+<h2 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h2><p>開始使用 Kops 前，需要先安裝下列工具到操作機器上來提供使用：</p>
+<ul>
+<li><a href="https://kubernetes.io/docs/tasks/tools/install-kubectl/" target="_blank" rel="noopener">kubectl</a>：用來操作部署完成的 Kubernetes 叢集。</li>
+<li><a href="https://github.com/kubernetes/kops" target="_blank" rel="noopener">kops</a>：本次使用工具，用來部署與管理公有雲上的 Kubernetes 叢集。</li>
+</ul>
+<p>Mac OS X：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ brew update &amp;&amp; brew install kops</span><br></pre></td></tr></table></figure>
+
+<p>Linux distro：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl -LO https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d <span class="string">'"'</span> -f 4)/kops-linux-amd64</span><br><span class="line">$ chmod +x kops-linux-amd64 &amp;&amp; sudo mv kops-linux-amd64 /usr/<span class="built_in">local</span>/bin/kops</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><a href="https://aws.amazon.com/cli/?nc1=h_ls" target="_blank" rel="noopener">AWS CLI</a>：用來操作 AWS 服務的工具。</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo pip install awscli</span><br><span class="line">$ aws --version</span><br><span class="line">aws-cli/1.15.4</span><br></pre></td></tr></table></figure>
+
+<p>上述工具完成後，我們還要準備一下資訊：</p>
+<ul>
+<li>申請 AWS 帳號，並在 IAM 服務新增一個 User 設定存取所有服務(AdministratorAccess)。另外這邊要記住 AccessKey 與 SecretKey。<blockquote>
+<p>一般來說只需開啟 S3、Route53、EC2、EBS 與 ELB 就好，但由於偷懶就全開。</p>
+</blockquote>
+</li>
+</ul>
+<p><img src="/images/kops/iam-user2.png" alt></p>
+<ul>
+<li>擁有自己的 Domain Name，這邊可以在 AWS Route53 註冊，或者是到 GoDaddy 購買。</li>
+</ul>
+<h2 id="建立-S3-Bucket-與-Route53-Hosted-Zone"><a href="#建立-S3-Bucket-與-Route53-Hosted-Zone" class="headerlink" title="建立 S3 Bucket 與 Route53 Hosted Zone"></a>建立 S3 Bucket 與 Route53 Hosted Zone</h2><p>首先透過 aws 工具進行設定使用指定 AccessKey 與 SecretKey：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ aws configure</span><br><span class="line">AWS Access Key ID [****************QGEA]:</span><br><span class="line">AWS Secret Access Key [****************zJ+w]:</span><br><span class="line">Default region name [None]:</span><br><span class="line">Default output format [None]:</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>設定的 Keys 可以在<code>~/.aws/credentials</code>找到。</p>
+</blockquote>
+<p>完成後建立一個 S3 bucket 用來儲存 Kops 狀態：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ aws s3 mb s3://kops-k8s-1 --region us-west-2</span><br><span class="line">make_bucket: kops-k8s-1</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊 region 可自行選擇，這邊選用 Oregon。</p>
+</blockquote>
+<p>接著建立一個 Route53 Hosted Zone：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ aws route53 create-hosted-zone \</span><br><span class="line">    --name k8s.example.com \</span><br><span class="line">    --<span class="built_in">caller</span>-reference $(date <span class="string">'+%Y-%m-%d-%H:%M'</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># output</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="string">"HostedZone"</span>: &#123;</span><br><span class="line">        <span class="string">"ResourceRecordSetCount"</span>: 2,</span><br><span class="line">        <span class="string">"CallerReference"</span>: <span class="string">"2018-04-25-16:16"</span>,</span><br><span class="line">        <span class="string">"Config"</span>: &#123;</span><br><span class="line">            <span class="string">"PrivateZone"</span>: <span class="literal">false</span></span><br><span class="line">        &#125;,</span><br><span class="line">        <span class="string">"Id"</span>: <span class="string">"/hostedzone/Z2JR49ADZ0P3WC"</span>,</span><br><span class="line">        <span class="string">"Name"</span>: <span class="string">"k8s.example.com."</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="string">"DelegationSet"</span>: &#123;</span><br><span class="line">        <span class="string">"NameServers"</span>: [</span><br><span class="line">            <span class="string">"ns-1547.awsdns-01.co.uk"</span>,</span><br><span class="line">            <span class="string">"ns-1052.awsdns-03.org"</span>,</span><br><span class="line">            <span class="string">"ns-886.awsdns-46.net"</span>,</span><br><span class="line">            <span class="string">"ns-164.awsdns-20.com"</span></span><br><span class="line">        ]</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="string">"Location"</span>: <span class="string">"https://route53.amazonaws.com/2013-04-01/hostedzone/Z2JR49ADZ0P3WC"</span>,</span><br><span class="line">    <span class="string">"ChangeInfo"</span>: &#123;</span><br><span class="line">        <span class="string">"Status"</span>: <span class="string">"PENDING"</span>,</span><br><span class="line">        <span class="string">"SubmittedAt"</span>: <span class="string">"2018-04-25T08:16:57.462Z"</span>,</span><br><span class="line">        <span class="string">"Id"</span>: <span class="string">"/change/C3802PE0C1JVW2"</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>請修改<code>--name</code>為自己所擁有的 domain name。</p>
+</blockquote>
+<p>之後將上述<code>NameServers</code>新增至自己的 Domain name 的 record 中，如 Godaddy：</p>
+<p><img src="/images/kops/route53-hostedzone.png" alt></p>
+<h2 id="部署-Kubernetes-叢集"><a href="#部署-Kubernetes-叢集" class="headerlink" title="部署 Kubernetes 叢集"></a>部署 Kubernetes 叢集</h2><p>當上述階段完成後，在自己機器建立 SSH key，就可以使用 Kops 來建立 Kubernetes 叢集：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ssh-keygen -t rsa</span><br><span class="line">$ kops create cluster \</span><br><span class="line">    --name=k8s.example.com \</span><br><span class="line">    --state=s3://kops-k8s-1 \</span><br><span class="line">    --zones=us-west-2a \</span><br><span class="line">    --master-size=t2.micro \</span><br><span class="line">    --node-size=t2.micro \</span><br><span class="line">    --node-count=2 \</span><br><span class="line">    --dns-zone=k8s.example.com</span><br><span class="line"></span><br><span class="line"><span class="comment"># output</span></span><br><span class="line">...</span><br><span class="line">Finally configure your cluster with: kops update cluster k8s.example.com --yes</span><br></pre></td></tr></table></figure>
+
+<p>若過程沒有發生錯誤的話，最後會提示再執行 update 來正式進行部署：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kops update cluster k8s.example.com --state=s3://kops-k8s-1 --yes</span><br><span class="line"><span class="comment"># output</span></span><br><span class="line">...</span><br><span class="line">Cluster is starting.  It should be ready <span class="keyword">in</span> a few minutes.</span><br></pre></td></tr></table></figure>
+
+<p>當看到上述資訊時，表示叢集已建立，這時候等待環境初始化完成後就可以使用 kubectl 來操作：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl get node</span><br><span class="line">NAME                                          STATUS    ROLES     AGE       VERSION</span><br><span class="line">ip-172-20-32-194.us-west-2.compute.internal   Ready     master    1m        v1.9.3</span><br><span class="line">ip-172-20-32-21.us-west-2.compute.internal    Ready     node      22s       v1.9.3</span><br><span class="line">ip-172-20-54-100.us-west-2.compute.internal   Ready     node      28s       v1.9.3</span><br></pre></td></tr></table></figure>
+
+<h2 id="測試"><a href="#測試" class="headerlink" title="測試"></a>測試</h2><p>完成後就可以進行功能測試，這邊簡單建立 Nginx app：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl run nginx --image nginx --port 80</span><br><span class="line">$ kubectl expose deploy nginx --<span class="built_in">type</span>=LoadBalancer --port 80</span><br><span class="line">$ kubectl get po,svc</span><br><span class="line">NAME                        READY     STATUS    RESTARTS   AGE</span><br><span class="line">po/nginx-7587c6fdb6-7qtlr   1/1       Running   0          50s</span><br><span class="line"></span><br><span class="line">NAME             TYPE           CLUSTER-IP    EXTERNAL-IP        PORT(S)        AGE</span><br><span class="line">svc/kubernetes   ClusterIP      100.64.0.1    &lt;none&gt;             443/TCP        8m</span><br><span class="line">svc/nginx        LoadBalancer   100.68.96.3   ad99f206f486e...   80:30174/TCP   28s</span><br></pre></td></tr></table></figure>
+
+<p>這邊會看到<code>EXTERNAL-IP</code>會直接透過 AWS ELB 建立一個 Load Balancer，這時只要更新 Route53 的 record set 就可以存取到服務：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">export</span> DOMAIN_NAME=k8s.example.com</span><br><span class="line">$ <span class="built_in">export</span> NGINX_LB=$(kubectl get svc/nginx \</span><br><span class="line">  --template=<span class="string">"&#123;&#123;range .status.loadBalancer.ingress&#125;&#125; &#123;&#123;.hostname&#125;&#125; &#123;&#123;end&#125;&#125;"</span>)</span><br><span class="line"></span><br><span class="line">$ cat &lt;&lt;EOF &gt; dns-record.json</span><br><span class="line">&#123;</span><br><span class="line">  <span class="string">"Comment"</span>: <span class="string">"Create/Update a latency-based CNAME record for a federated Deployment"</span>,</span><br><span class="line">  <span class="string">"Changes"</span>: [</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="string">"Action"</span>: <span class="string">"UPSERT"</span>,</span><br><span class="line">      <span class="string">"ResourceRecordSet"</span>: &#123;</span><br><span class="line">        <span class="string">"Name"</span>: <span class="string">"nginx.<span class="variable">$&#123;DOMAIN_NAME&#125;</span>"</span>,</span><br><span class="line">        <span class="string">"Type"</span>: <span class="string">"CNAME"</span>,</span><br><span class="line">        <span class="string">"Region"</span>: <span class="string">"us-west-2"</span>,</span><br><span class="line">        <span class="string">"TTL"</span>: 300,</span><br><span class="line">        <span class="string">"SetIdentifier"</span>: <span class="string">"us-west-2"</span>,</span><br><span class="line">        <span class="string">"ResourceRecords"</span>: [</span><br><span class="line">          &#123;</span><br><span class="line">            <span class="string">"Value"</span>: <span class="string">"<span class="variable">$&#123;NGINX_LB&#125;</span>"</span></span><br><span class="line">          &#125;</span><br><span class="line">        ]</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  ]</span><br><span class="line">&#125;</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line">$ <span class="built_in">export</span> HOSTED_ZONE_ID=$(aws route53 list-hosted-zones \</span><br><span class="line">       | jq -r <span class="string">'.HostedZones[] | select(.Name=="'</span><span class="variable">$&#123;DOMAIN_NAME&#125;</span><span class="string">'.") | .Id'</span> \</span><br><span class="line">       | sed <span class="string">'s/\/hostedzone\///'</span>)</span><br><span class="line"></span><br><span class="line">$ aws route53 change-resource-record-sets \</span><br><span class="line">    --hosted-zone-id <span class="variable">$&#123;HOSTED_ZONE_ID&#125;</span> \</span><br><span class="line">    --change-batch file://dns-record.json</span><br><span class="line"></span><br><span class="line"><span class="comment"># output</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="string">"ChangeInfo"</span>: &#123;</span><br><span class="line">        <span class="string">"Status"</span>: <span class="string">"PENDING"</span>,</span><br><span class="line">        <span class="string">"Comment"</span>: <span class="string">"Create/Update a latency-based CNAME record for a federated Deployment"</span>,</span><br><span class="line">        <span class="string">"SubmittedAt"</span>: <span class="string">"2018-04-25T10:06:02.545Z"</span>,</span><br><span class="line">        <span class="string">"Id"</span>: <span class="string">"/change/C79MFJRHCF05R"</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>完成後透過 cURL 工作來測試：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ curl nginx.k8s.example.com</span><br><span class="line">...</span><br><span class="line">&lt;title&gt;Welcome to nginx!&lt;/title&gt;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<h2 id="刪除節點"><a href="#刪除節點" class="headerlink" title="刪除節點"></a>刪除節點</h2><p>當叢集測完後，可以利用以下指令來刪除：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kops delete cluster \</span><br><span class="line"> --name=k8s.example.com \</span><br><span class="line"> --state=s3://kops-k8s-1 --yes</span><br><span class="line"></span><br><span class="line">Deleted cluster: <span class="string">"k8s.k2r2bai.com"</span></span><br><span class="line"></span><br><span class="line">$ aws s3 rb s3://kops-k8s-1 --force</span><br><span class="line">remove_bucket: kops-k8s-1</span><br></pre></td></tr></table></figure>
+
+<p>接著清除 Route53 所有 record 並刪除 hosted zone：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ aws route53 list-resource-record-sets \</span><br><span class="line">  --hosted-zone-id <span class="variable">$&#123;HOSTED_ZONE_ID&#125;</span> |</span><br><span class="line">jq -c <span class="string">'.ResourceRecordSets[]'</span> |</span><br><span class="line"><span class="keyword">while</span> <span class="built_in">read</span> -r resourcerecordset; <span class="keyword">do</span></span><br><span class="line">  <span class="built_in">read</span> -r name <span class="built_in">type</span> &lt;&lt;&lt;$(<span class="built_in">echo</span> $(jq -r <span class="string">'.Name,.Type'</span> &lt;&lt;&lt;<span class="string">"<span class="variable">$resourcerecordset</span>"</span>))</span><br><span class="line">  <span class="keyword">if</span> [ <span class="variable">$type</span> != <span class="string">"NS"</span> -a <span class="variable">$type</span> != <span class="string">"SOA"</span> ]; <span class="keyword">then</span></span><br><span class="line">    aws route53 change-resource-record-sets \</span><br><span class="line">      --hosted-zone-id <span class="variable">$&#123;HOSTED_ZONE_ID&#125;</span> \</span><br><span class="line">      --change-batch <span class="string">'&#123;"Changes":[&#123;"Action":"DELETE","ResourceRecordSet":</span></span><br><span class="line"><span class="string">          '</span><span class="string">"<span class="variable">$resourcerecordset</span>"</span><span class="string">'</span></span><br><span class="line"><span class="string">        &#125;]&#125;'</span> \</span><br><span class="line">      --output text --query <span class="string">'ChangeInfo.Id'</span></span><br><span class="line">  <span class="keyword">fi</span></span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"></span><br><span class="line">$ aws route53 delete-hosted-zone --id <span class="variable">$&#123;HOSTED_ZONE_ID&#125;</span></span><br></pre></td></tr></table></figure>
+
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">使用 Kops 部署 Kubernetes 至公有雲(AWS)</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2018-4-18 17:04</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2018/04/21/kubernetes/aws-federation-v1/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    在 AWS 上建立跨地區的 Kubernetes Federation 叢集
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2018/03/21/kubernetes/federation-v1/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">使用 kubefed 建立 Kubernetes Federation(On-premises)</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2018/04/18/kubernetes/deploy/kops-aws/" data-id="ck3ns7qb600h2wmpf6pjekch2" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2018/04/18/kubernetes/deploy/kops-aws/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2018/04/18/kubernetes/deploy/kops-aws/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#事前準備"><span class="toc-number">1.</span> <span class="toc-text">事前準備</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#建立-S3-Bucket-與-Route53-Hosted-Zone"><span class="toc-number">2.</span> <span class="toc-text">建立 S3 Bucket 與 Route53 Hosted Zone</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#部署-Kubernetes-叢集"><span class="toc-number">3.</span> <span class="toc-text">部署 Kubernetes 叢集</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#測試"><span class="toc-number">4.</span> <span class="toc-text">測試</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#刪除節點"><span class="toc-number">5.</span> <span class="toc-text">刪除節點</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2018/04/18/kubernetes/deploy/kops-aws/';
+        
+        this.page.identifier = 'kubernetes/deploy/kops-aws';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

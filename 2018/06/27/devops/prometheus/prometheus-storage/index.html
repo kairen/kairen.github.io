@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>Prometheus 儲存系統解析 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Prometheus 系統包含了 Local on-disk storage 與 Remote storage，本節將說明兩者差異，以了解作為實現資料儲存可靠性的基礎。">
+<meta name="keywords" content="CNCF,Monitoring,Prometheus">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Prometheus 儲存系統解析">
+<meta property="og:url" content="https://k2r2bai.com/2018/06/27/devops/prometheus/prometheus-storage/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Prometheus 系統包含了 Local on-disk storage 與 Remote storage，本節將說明兩者差異，以了解作為實現資料儲存可靠性的基礎。">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://i.imgur.com/ax4OA0H.png">
+<meta property="og:image" content="https://i.imgur.com/JMWECmy.png">
+<meta property="og:image" content="https://i.imgur.com/9W32KWT.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.386Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Prometheus 儲存系統解析">
+<meta name="twitter:description" content="Prometheus 系統包含了 Local on-disk storage 與 Remote storage，本節將說明兩者差異，以了解作為實現資料儲存可靠性的基礎。">
+<meta name="twitter:image" content="https://i.imgur.com/ax4OA0H.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-devops/prometheus/prometheus-storage" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            Prometheus 儲存系統解析
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2018/06/27/devops/prometheus/prometheus-storage/">
+            <u><time datetime="2018-06-27T04:23:01.000Z" itemprop="datePublished">2018-06-27</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/DevOps/">DevOps</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/CNCF/">CNCF</a>, <a class="tag-link" href="/tags/Monitoring/">Monitoring</a>, <a class="tag-link" href="/tags/Prometheus/">Prometheus</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>Prometheus 系統包含了 Local on-disk storage 與 Remote storage，本節將說明兩者差異，以了解作為實現資料儲存可靠性的基礎。</p>
+<a id="more"></a>
+
+<h2 id="Time-Series-Database"><a href="#Time-Series-Database" class="headerlink" title="Time Series Database"></a>Time Series Database</h2><p><a href="https://en.wikipedia.org/wiki/Time_series_database" target="_blank" rel="noopener">時間序列資料庫(Time Series Database, TSDB)</a> 是經過優化後，專門用來儲存與管理時間序列資料(Time Series Data)的資料庫系統，目標是提供一套高效能讀寫的資料庫系統。時間序列資料庫一般在資料中以時間作為索引(index)。</p>
+<p>TSDB 通常會具備以下特點：</p>
+<ul>
+<li>系統主要以寫入為主。</li>
+<li>寫入資料時是依序新增，並且大多數時間做資料排序。</li>
+<li>不會頻繁更新資料，且寫入時間通常非常短，約幾秒內完成。</li>
+<li>資料以區塊為單位進行刪除，很少單除某時間的資料。</li>
+<li>讀取一般以升冪或降冪做循序讀取。</li>
+<li>支援高並行與叢集式。</li>
+</ul>
+<p>常見的 TSDB 可以查看 <a href="https://github.com/search?o=desc&q=Time+Series+Database&s=stars&type=Repositories" target="_blank" rel="noopener">TSDB Projects</a>。</p>
+<h2 id="Local-Storage"><a href="#Local-Storage" class="headerlink" title="Local Storage"></a>Local Storage</h2><h3 id="On-disk-Layout"><a href="#On-disk-Layout" class="headerlink" title="On-disk Layout"></a>On-disk Layout</h3><p>Prometheus 從 2.0 版本開始引入自定義儲存格式，來將拉取的時間序列資料保存到 Local on-disk。其中存在 Local 的資料樣本會以<code>兩小時(預設)為一個區塊</code>被儲存(表示一個 Sliding Window)，而每個區塊會包含該 Sliding Window 的所有<code>樣本資料(Chunks)</code>、<code>詮釋資料檔案(meta.json)</code>與<code>索引檔案(index)</code>。</p>
+<p><img src="https://i.imgur.com/ax4OA0H.png" alt></p>
+<p>而 Prometheus 透過 <a href="https://zh.wikipedia.org/wiki/%E9%A2%84%E5%86%99%E5%BC%8F%E6%97%A5%E5%BF%97" target="_blank" rel="noopener">write-ahead-log(WAL)</a> 機制來防止當前區塊在收集樣本資料(剛抓取的資料會保存在記憶體中)時，發生伺服器錯誤或重啟等問題。一旦 Promethesu 重新啟動時，將依據 WAL 進行恢復資料，並以此重播(replayed)。然而當在這期間透過 API 刪除時間序列資料時，刪除紀錄將被儲存在<code>單獨的邏輯檔案(tombstone)</code>中(不是立即從區塊檔案中刪除資料)。</p>
+<p>Prometheus 的資料目錄結構如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># 透過以下指令觀察</span><br><span class="line">$ ./prometheus --storage.tsdb.min-block-duration=5m</span><br><span class="line"></span><br><span class="line"># 當經過 5m 後，用 tree 查看 data 結構</span><br><span class="line">$ tree data</span><br><span class="line">data</span><br><span class="line">├── 01CGDH53DJXHE1M1971QM0NHMD</span><br><span class="line">│   ├── chunks</span><br><span class="line">│   │   └── 000001</span><br><span class="line">│   ├── index</span><br><span class="line">│   ├── meta.json</span><br><span class="line">│   └── tombstones</span><br><span class="line">├── lock</span><br><span class="line">└── wal</span><br><span class="line">    ├── 000001</span><br><span class="line">    └── 000003</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>TSDB 的儲存格式可以參考 <a href="https://github.com/prometheus/tsdb/tree/master/docs/format" target="_blank" rel="noopener">TSDB format</a>。</p>
+</blockquote>
+<p>可以看到每五分鐘會產生一個區塊的 Sliding Window，透過這種形式來保存所有樣本資料，可以有效提升 Prometheus 的查詢效率，比如說要查詢某個時間範圍內的資料，只需要查詢該時間範圍的區塊資料即可。</p>
+<p>另外這種儲存方式也能夠簡化歷史資料的刪除，只要某一個區塊的時間範圍落在設置的保留範圍外，就會將該區塊丟棄。</p>
+<p><img src="https://i.imgur.com/JMWECmy.png" alt></p>
+<p>而 Prometheus 的每個樣本大約為 1 - 2 位元組(byte)，因此規劃 Prometheus 伺服器容量可以使用以下公式來做簡單計算：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">needed_disk_space = retention_time_seconds * ingested_samples_per_second * bytes_per_sample</span><br></pre></td></tr></table></figure>
+
+<p>因此在規劃時若想降低儲存容量需求的話，要依據上述規則來計算估計，如 retention_time_seconds 與 bytes_per_sample 不變下，就只能對 ingested_samples_per_second 做處理。</p>
+<blockquote class="colorquote warning"><p>注意! Local on-disk 方式雖然能夠提供高效能的查詢與檢索，但也存在著侷限性問題，因為儲存資料並不會被叢集同步或進行複製等功能，這表示當磁碟出錯或節點故障時，將有可能遺失儲存的時間序列資料。然而若本身對於這問題不嚴謹的話，依然能夠使用 Local on-disk 方式來儲存樣本資料。</p>
+</blockquote>
+
+<h3 id="Memory-Usage"><a href="#Memory-Usage" class="headerlink" title="Memory Usage"></a>Memory Usage</h3><p>Prometheus <code>2.0</code> 版本以前會在記憶體中儲存當前使用的所有 Chunks，並且會盡可能使用最近使用過的 Chunks。由於可能會使用到很多記憶體來快取資料，因此 Prometheus 可以透過設定 Heap memory size(bytes) 來確保不會發生 OOM(Out of memory)。而設定 Heap size 時要注意 Prometheus 使用的實體記憶體是 Go runtime 與作業系統的複雜溝通結果，因此很難精準預定大小，因此建議設定實體記憶體的 <code>2/3</code>大小(預設為 2G)。</p>
+<p>假設設定 Heap size 為 2G，這表示 Prometheus 真正使用的實體記憶體約為 3G 左右。</p>
+<h2 id="Remote-Storage"><a href="#Remote-Storage" class="headerlink" title="Remote Storage"></a>Remote Storage</h2><p>Prometheus 的 Local storage 可擴展性與耐用性會受到單節點限制，然而 Prometheus 並沒有實作自身的叢集式儲存，而是以一套 gRPC 介面來實作遠程儲存系統(Remote Storage)的整合。</p>
+<p><img src="https://i.imgur.com/9W32KWT.png" alt></p>
+<p>Prometheus 透過兩種方式來整合遠端儲存系統，分別為：</p>
+<ul>
+<li><p><strong>Remote write</strong>: Prometheus 能夠以標準的格式<code>寫入</code>樣本到遠程的 URL。使用者能夠在 組態檔案設定指定 Remote write 的 URL，一但設定後 Prometheus 將樣本資料透過 HTTP 形式發送給 Adaptor。而使用者則可以在 Adaptor 中串接外部任意服務，其中外部服務可以是分散式儲存系統、公有雲儲存服務，或是是 Message Queue 等等。</p>
+</li>
+<li><p><strong>Remote read</strong>: Prometheus 能夠以標準的格式從遠端 URL <code>讀取(返回)</code>樣本資料。如 Remote write 類似，Remote read 也能夠透過 Adaptor 來實作與儲存服務的整合，在 Remote read 中，當使用者發送查詢請求後，Prometheus 將向 remote_read 中設定的 URL 發起查詢請求(mathchers, ranges)，而 Adaptor 將根據請求條件從第三方儲存服務中取得響應的資料，同時將資料轉換成 Prometheus 的原始樣本資料(Raw samples)傳給 Prometheus Server。</p>
+</li>
+</ul>
+<p>從 Prometheus 原始碼中，可以找到 Remote storage gRPC 的 ProtoBuff 的定義資訊，開發者能夠透過實作這些介面來串接儲存服務：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">syntax = <span class="string">"proto3"</span>;</span><br><span class="line"><span class="keyword">package</span> prometheus;</span><br><span class="line"></span><br><span class="line">option go_package = <span class="string">"prompb"</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> <span class="string">"types.proto"</span>;</span><br><span class="line"></span><br><span class="line">message WriteRequest &#123;</span><br><span class="line">  repeated prometheus.TimeSeries timeseries = <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">message ReadRequest &#123;</span><br><span class="line">  repeated Query queries = <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">message ReadResponse &#123;</span><br><span class="line">  <span class="comment">// In same order as the request's queries.</span></span><br><span class="line">  repeated QueryResult results = <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">message Query &#123;</span><br><span class="line">  <span class="keyword">int64</span> start_timestamp_ms = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">int64</span> end_timestamp_ms = <span class="number">2</span>;</span><br><span class="line">  repeated prometheus.LabelMatcher matchers = <span class="number">3</span>;</span><br><span class="line">  prometheus.ReadHints hints = <span class="number">4</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">message QueryResult &#123;</span><br><span class="line">  <span class="comment">// Samples within a time series must be ordered by time.</span></span><br><span class="line">  repeated prometheus.TimeSeries timeseries = <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>由於 Prometheus 的 Remote storage 能夠自行實作資料處理邏輯，因此當接收到 remote_write 的 HTTP 服務時，能夠將內容轉換成 WriteRequests 再由開發者自行處理。舉例下列範例：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">"fmt"</span></span><br><span class="line">	<span class="string">"io/ioutil"</span></span><br><span class="line">	<span class="string">"net/http"</span></span><br><span class="line"></span><br><span class="line">	<span class="string">"github.com/gogo/protobuf/proto"</span></span><br><span class="line">	<span class="string">"github.com/golang/snappy"</span></span><br><span class="line">	<span class="string">"github.com/prometheus/common/model"</span></span><br><span class="line"></span><br><span class="line">	<span class="string">"github.com/prometheus/prometheus/prompb"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	http.HandleFunc(<span class="string">"/receive"</span>, <span class="function"><span class="keyword">func</span><span class="params">(w http.ResponseWriter, r *http.Request)</span></span> &#123;</span><br><span class="line">		compressed, err := ioutil.ReadAll(r.Body)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			http.Error(w, err.Error(), http.StatusInternalServerError)</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		reqBuf, err := snappy.Decode(<span class="literal">nil</span>, compressed)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			http.Error(w, err.Error(), http.StatusBadRequest)</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">var</span> req prompb.WriteRequest</span><br><span class="line">		<span class="keyword">if</span> err := proto.Unmarshal(reqBuf, &amp;req); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			http.Error(w, err.Error(), http.StatusBadRequest)</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">for</span> _, ts := <span class="keyword">range</span> req.Timeseries &#123;</span><br><span class="line">			m := <span class="built_in">make</span>(model.Metric, <span class="built_in">len</span>(ts.Labels))</span><br><span class="line">			<span class="keyword">for</span> _, l := <span class="keyword">range</span> ts.Labels &#123;</span><br><span class="line">				m[model.LabelName(l.Name)] = model.LabelValue(l.Value)</span><br><span class="line">			&#125;</span><br><span class="line">			fmt.Println(m)</span><br><span class="line"></span><br><span class="line">			<span class="keyword">for</span> _, s := <span class="keyword">range</span> ts.Samples &#123;</span><br><span class="line">				fmt.Printf(<span class="string">"  %f %d\n"</span>, s.Value, s.Timestamp)</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;)</span><br><span class="line"></span><br><span class="line">	http.ListenAndServe(<span class="string">":1234"</span>, <span class="literal">nil</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>下面是一個 Remote storage 的設定檔案，可以在<code>prometheus.yml</code> 設定檔加入：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">remote_write:</span></span><br><span class="line"><span class="attr">    url:</span> <span class="string">&lt;string&gt;</span></span><br><span class="line">    <span class="string">[</span> <span class="attr">remote_timeout:</span> <span class="string">&lt;duration&gt;</span> <span class="string">| default = 30s ]</span></span><br><span class="line"><span class="string"></span><span class="attr">    write_relabel_configs:</span></span><br><span class="line">    <span class="string">[</span> <span class="bullet">-</span> <span class="string">&lt;relabel_config&gt;</span> <span class="string">...</span> <span class="string">]</span></span><br><span class="line"><span class="attr">    basic_auth:</span></span><br><span class="line">    <span class="string">[</span> <span class="attr">username:</span> <span class="string">&lt;string&gt;</span> <span class="string">]</span></span><br><span class="line">    <span class="string">[</span> <span class="attr">password:</span> <span class="string">&lt;string&gt;</span> <span class="string">]</span></span><br><span class="line">    <span class="string">[</span> <span class="attr">bearer_token:</span> <span class="string">&lt;string&gt;</span> <span class="string">]</span></span><br><span class="line">    <span class="string">[</span> <span class="attr">bearer_token_file:</span> <span class="string">/path/to/bearer/token/file</span> <span class="string">]</span></span><br><span class="line"><span class="attr">    tls_config:</span></span><br><span class="line">    <span class="string">[</span> <span class="string">&lt;tls_config&gt;</span> <span class="string">]</span></span><br><span class="line">    <span class="string">[</span> <span class="attr">proxy_url:</span> <span class="string">&lt;string&gt;</span> <span class="string">]</span></span><br><span class="line"></span><br><span class="line"><span class="attr">remote_read:</span></span><br><span class="line"><span class="attr">    url:</span> <span class="string">&lt;string&gt;</span></span><br><span class="line"><span class="attr">    required_matchers:</span></span><br><span class="line">    <span class="string">[</span> <span class="string">&lt;labelname&gt;:</span> <span class="string">&lt;labelvalue&gt;</span> <span class="string">...</span> <span class="string">]</span></span><br><span class="line">    <span class="string">[</span> <span class="attr">remote_timeout:</span> <span class="string">&lt;duration&gt;</span> <span class="string">| default = 30s ]</span></span><br><span class="line"><span class="string">    [ read_recent: &lt;boolean&gt; | default = false ]</span></span><br><span class="line"><span class="string"></span><span class="attr">    basic_auth:</span></span><br><span class="line">    <span class="string">[</span> <span class="attr">username:</span> <span class="string">&lt;string&gt;</span> <span class="string">]</span></span><br><span class="line">    <span class="string">[</span> <span class="attr">password:</span> <span class="string">&lt;string&gt;</span> <span class="string">]</span></span><br><span class="line">    <span class="string">[</span> <span class="attr">bearer_token:</span> <span class="string">&lt;string&gt;</span> <span class="string">]</span></span><br><span class="line">    <span class="string">[</span> <span class="attr">bearer_token_file:</span> <span class="string">/path/to/bearer/token/file</span> <span class="string">]</span></span><br><span class="line">    <span class="string">[</span> <span class="string">&lt;tls_config&gt;</span> <span class="string">]</span></span><br><span class="line">    <span class="string">[</span> <span class="attr">proxy_url:</span> <span class="string">&lt;string&gt;</span> <span class="string">]</span></span><br></pre></td></tr></table></figure>
+
+<p>而 Prometheus 官方也列出了目前已整合的第三方儲存服務，可以到 <a href="https://prometheus.io/docs/operating/integrations/#remote-endpoints-and-storage" target="_blank" rel="noopener">Remote Endpoints and Storage</a> 中查看。</p>
+<blockquote class="colorquote warning"><p>需注意不同的儲存服務能提供的 Write 與 Read 實作都不同，有些可能只能進行寫入操作，而有些只能做讀取操作，因此要注意選擇時是否滿足需求。</p>
+</blockquote>
+
+<h2 id="Prometheus-Storage-Flags"><a href="#Prometheus-Storage-Flags" class="headerlink" title="Prometheus Storage Flags"></a>Prometheus Storage Flags</h2><p>Prometheus 支援針對儲存的 Flags：</p>
+<table>
+<thead>
+<tr>
+<th>Flags</th>
+<th>預設值</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>–storage.tsdb.path</td>
+<td>data/</td>
+<td>Metrics 儲存路徑</td>
+</tr>
+<tr>
+<td>–storage.tsdb.retention</td>
+<td>15d</td>
+<td>儲存的資料樣本會保留多長的時間</td>
+</tr>
+<tr>
+<td>–storage.tsdb.min-block-duration</td>
+<td>2h</td>
+<td>一個資料區塊的最小持續時間</td>
+</tr>
+<tr>
+<td>–storage.tsdb.max-block-duration</td>
+<td>36h</td>
+<td>壓縮區塊的最大持續時間(預設為 retention period 的 10% 時間)</td>
+</tr>
+<tr>
+<td>–storage.tsdb.no-lockfile</td>
+<td>false</td>
+<td>設定是否建立 lockfile 在資料目錄下</td>
+</tr>
+<tr>
+<td>–storage.remote.flush-deadline</td>
+<td>1m</td>
+<td>在關機或者組態重新讀取時，清除樣本的等待時間</td>
+</tr>
+</tbody></table>
+<h2 id="References"><a href="#References" class="headerlink" title="References"></a>References</h2><ul>
+<li><a href="http://liubin.org/blog/2016/02/18/tsdb-intro/" target="_blank" rel="noopener">http://liubin.org/blog/2016/02/18/tsdb-intro/</a></li>
+<li><a href="https://www.hi-linux.com/posts/25047.html" target="_blank" rel="noopener">https://www.hi-linux.com/posts/25047.html</a></li>
+<li><a href="https://prometheus.io/docs/prometheus/latest/storage/" target="_blank" rel="noopener">https://prometheus.io/docs/prometheus/latest/storage/</a></li>
+<li><a href="https://caicloud.io/article_detail/5a5db4203255f5063f2bd462" target="_blank" rel="noopener">https://caicloud.io/article_detail/5a5db4203255f5063f2bd462</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">Prometheus 儲存系統解析</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2018-6-27 12:06</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2018/06/29/devops/prometheus/prometheus-federation/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    了解 Prometheus Federation 功能
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2018/06/25/kubernetes/coding/exec-api/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">Kubernetes exec API 串接分析</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2018/06/27/devops/prometheus/prometheus-storage/" data-id="ck3ns7qaz00glwmpfzpuqlwz9" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2018/06/27/devops/prometheus/prometheus-storage/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2018/06/27/devops/prometheus/prometheus-storage/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Time-Series-Database"><span class="toc-number">1.</span> <span class="toc-text">Time Series Database</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Local-Storage"><span class="toc-number">2.</span> <span class="toc-text">Local Storage</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#On-disk-Layout"><span class="toc-number">2.1.</span> <span class="toc-text">On-disk Layout</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Memory-Usage"><span class="toc-number">2.2.</span> <span class="toc-text">Memory Usage</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Remote-Storage"><span class="toc-number">3.</span> <span class="toc-text">Remote Storage</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Prometheus-Storage-Flags"><span class="toc-number">4.</span> <span class="toc-text">Prometheus Storage Flags</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#References"><span class="toc-number">5.</span> <span class="toc-text">References</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2018/06/27/devops/prometheus/prometheus-storage/';
+        
+        this.page.identifier = 'devops/prometheus/prometheus-storage';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

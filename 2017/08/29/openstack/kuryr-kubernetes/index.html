@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>利用 Kuryr 整合 OpenStack 與 Kubernetes 網路 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Kubernetes Kuryr 是 OpenStack Neutron 的子專案，其主要目標是透過該專案來整合 OpenStack 與 Kubernetes 的網路。該專案在 Kubernetes 中實作了原生 Neutron-based 的網路，因此使用 Kuryr-Kubernetes 可以讓你的 OpenStack VM 與 Kubernetes Pods 能夠選擇在同一個子網路上運作，並">
+<meta name="keywords" content="Kubernetes,Docker,OpenStack">
+<meta property="og:type" content="article">
+<meta property="og:title" content="利用 Kuryr 整合 OpenStack 與 Kubernetes 網路">
+<meta property="og:url" content="https://k2r2bai.com/2017/08/29/openstack/kuryr-kubernetes/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Kubernetes Kuryr 是 OpenStack Neutron 的子專案，其主要目標是透過該專案來整合 OpenStack 與 Kubernetes 的網路。該專案在 Kubernetes 中實作了原生 Neutron-based 的網路，因此使用 Kuryr-Kubernetes 可以讓你的 OpenStack VM 與 Kubernetes Pods 能夠選擇在同一個子網路上運作，並">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://i.imgur.com/2XfP3vb.png">
+<meta property="og:image" content="https://i.imgur.com/UYXdKud.png">
+<meta property="og:image" content="https://i.imgur.com/dwoEytW.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.400Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="利用 Kuryr 整合 OpenStack 與 Kubernetes 網路">
+<meta name="twitter:description" content="Kubernetes Kuryr 是 OpenStack Neutron 的子專案，其主要目標是透過該專案來整合 OpenStack 與 Kubernetes 的網路。該專案在 Kubernetes 中實作了原生 Neutron-based 的網路，因此使用 Kuryr-Kubernetes 可以讓你的 OpenStack VM 與 Kubernetes Pods 能夠選擇在同一個子網路上運作，並">
+<meta name="twitter:image" content="https://i.imgur.com/2XfP3vb.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-openstack/kuryr-kubernetes" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            利用 Kuryr 整合 OpenStack 與 Kubernetes 網路
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2017/08/29/openstack/kuryr-kubernetes/">
+            <u><time datetime="2017-08-29T08:23:01.000Z" itemprop="datePublished">2017-08-29</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/OpenStack/">OpenStack</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Docker/">Docker</a>, <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>, <a class="tag-link" href="/tags/OpenStack/">OpenStack</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p><a href="https://github.com/openstack/kuryr-kubernetes" target="_blank" rel="noopener">Kubernetes Kuryr</a> 是 OpenStack Neutron 的子專案，其主要目標是透過該專案來整合 OpenStack 與 Kubernetes 的網路。該專案在 Kubernetes 中實作了原生 Neutron-based 的網路，因此使用 Kuryr-Kubernetes 可以讓你的 OpenStack VM 與 Kubernetes Pods 能夠選擇在同一個子網路上運作，並且能夠使用 Neutron 的 L3 與 Security Group 來對網路進行路由，以及阻擋特定來源 Port。</p>
+<p><img src="https://i.imgur.com/2XfP3vb.png" alt></p>
+<a id="more"></a>
+
+<p>Kuryr-Kubernetes 整合有兩個主要組成部分：</p>
+<ol>
+<li><strong>Kuryr Controller</strong>:
+Controller 主要目的是監控 Kubernetes API 來獲取 Kubernetes 資源的變化，然後依據 Kubernetes 資源的需求來執行子資源的分配和資源管理。</li>
+<li><strong>Kuryr CNI</strong>：主要是依據 Kuryr Controller 分配的資源來綁定網路至 Pods 上。</li>
+</ol>
+<p>本篇我們將說明如何利用<code>DevStack</code>與<code>Kubespray</code>建立一個簡單的測試環境。</p>
+<h2 id="環境資源與事前準備"><a href="#環境資源與事前準備" class="headerlink" title="環境資源與事前準備"></a>環境資源與事前準備</h2><p>準備兩台實體機器，這邊測試的作業系統為<code>CentOS 7.x</code>，該環境將在扁平(flat)的網路下進行。</p>
+<table>
+<thead>
+<tr>
+<th>IP Address 1</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>172.24.0.34</td>
+<td>controller, k8s-master</td>
+</tr>
+<tr>
+<td>172.24.0.80</td>
+<td>compute, k8s-node1</td>
+</tr>
+</tbody></table>
+<p>更新每台節點的 CentOS 7.x packages:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ sudo yum --enablerepo=cr update -y</span><br></pre></td></tr></table></figure>
+
+<p>然後關閉 firewalld 以及 SELinux 來避免實現發生問題：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ sudo setenforce 0</span><br><span class="line">$ sudo systemctl <span class="built_in">disable</span> firewalld &amp;&amp; sudo systemctl stop firewalld</span><br></pre></td></tr></table></figure>
+
+<h2 id="OpenStack-Controller-安裝"><a href="#OpenStack-Controller-安裝" class="headerlink" title="OpenStack Controller 安裝"></a>OpenStack Controller 安裝</h2><p>首先進入<code>172.24.0.34（controller）</code>，並且執行以下指令。</p>
+<p>然後執行以下指令來建立 DevStack 專用使用者：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ sudo useradd -s /bin/bash -d /opt/stack -m stack</span><br><span class="line">$ <span class="built_in">echo</span> <span class="string">"stack ALL=(ALL) NOPASSWD: ALL"</span> | sudo tee /etc/sudoers.d/stack</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>選用 DevStack 是因為現在都是用 Systemd 來管理服務，不用再用 screen 了，雖然都很方便。</p>
+</blockquote>
+<p>接著切換至該使用者環境來建立 OpenStack：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ sudo su - stack</span><br></pre></td></tr></table></figure>
+
+<p>下載 DevStack 安裝套件：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://git.openstack.org/openstack-dev/devstack</span><br><span class="line">$ <span class="built_in">cd</span> devstack</span><br></pre></td></tr></table></figure>
+
+<p>新增<code>local.conf</code>檔案，來描述部署資訊：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[[local|localrc]]</span><br><span class="line">HOST_IP=172.24.0.34</span><br><span class="line">GIT_BASE=https://github.com</span><br><span class="line"></span><br><span class="line">ADMIN_PASSWORD=passwd</span><br><span class="line">DATABASE_PASSWORD=passwd</span><br><span class="line">RABBIT_PASSWORD=passwd</span><br><span class="line">SERVICE_PASSWORD=passwd</span><br><span class="line">SERVICE_TOKEN=passwd</span><br><span class="line">MULTI_HOST=1</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>[color=#fc9fca]Tips:<br>修改 HOST_IP 為自己的 IP 位置。</p>
+</blockquote>
+<p>完成後，執行以下指令開始部署：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ ./stack.sh</span><br></pre></td></tr></table></figure>
+
+<h2 id="Openstack-Compute-安裝"><a href="#Openstack-Compute-安裝" class="headerlink" title="Openstack Compute 安裝"></a>Openstack Compute 安裝</h2><p>進入到<code>172.24.0.80（compute）</code>，並且執行以下指令。</p>
+<p>然後執行以下指令來建立 DevStack 專用使用者：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ sudo useradd -s /bin/bash -d /opt/stack -m stack</span><br><span class="line">$ <span class="built_in">echo</span> <span class="string">"stack ALL=(ALL) NOPASSWD: ALL"</span> | sudo tee /etc/sudoers.d/stack</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>選用 DevStack 是因為現在都是用 Systemd 來管理服務，不用再用 screen 了，雖然都很方便。</p>
+</blockquote>
+<p>接著切換至該使用者環境來建立 OpenStack：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ sudo su - stack</span><br></pre></td></tr></table></figure>
+
+<p>下載 DevStack 安裝套件：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> https://git.openstack.org/openstack-dev/devstack</span><br><span class="line">$ <span class="built_in">cd</span> devstack</span><br></pre></td></tr></table></figure>
+
+<p>新增<code>local.conf</code>檔案，來描述部署資訊：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[[local|localrc]]</span><br><span class="line">HOST_IP=172.24.0.80</span><br><span class="line">GIT_BASE=https://github.com</span><br><span class="line">MULTI_HOST=1</span><br><span class="line">LOGFILE=/opt/stack/logs/stack.sh.log</span><br><span class="line">ADMIN_PASSWORD=passwd</span><br><span class="line">DATABASE_PASSWORD=passwd</span><br><span class="line">RABBIT_PASSWORD=passwd</span><br><span class="line">SERVICE_PASSWORD=passwd</span><br><span class="line">DATABASE_TYPE=mysql</span><br><span class="line"></span><br><span class="line">SERVICE_HOST=172.24.0.34</span><br><span class="line">MYSQL_HOST=$SERVICE_HOST</span><br><span class="line">RABBIT_HOST=$SERVICE_HOST</span><br><span class="line">GLANCE_HOSTPORT=$SERVICE_HOST:9292</span><br><span class="line">ENABLED_SERVICES=n-cpu,q-agt,n-api-meta,c-vol,placement-client</span><br><span class="line">NOVA_VNC_ENABLED=True</span><br><span class="line">NOVNCPROXY_URL=&quot;http://$SERVICE_HOST:6080/vnc_auto.html&quot;</span><br><span class="line">VNCSERVER_LISTEN=$HOST_IP</span><br><span class="line">VNCSERVER_PROXYCLIENT_ADDRESS=$VNCSERVER_LISTEN</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>Tips:<br>修改 HOST_IP 為自己的主機位置。<br>修改 SERVICE_HOST 為 Master 的IP位置。</p>
+</blockquote>
+<p>完成後，執行以下指令開始部署：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ ./stack.sh</span><br></pre></td></tr></table></figure>
+
+<h2 id="建立-Kubernetes-叢集環境"><a href="#建立-Kubernetes-叢集環境" class="headerlink" title="建立 Kubernetes 叢集環境"></a>建立 Kubernetes 叢集環境</h2><p>首先確認所有節點之間不需要 SSH 密碼即可登入，接著進入到<code>172.24.0.34（k8s-master）</code>並且執行以下指令。</p>
+<p>接著安裝所需要的套件：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ sudo yum -y install software-properties-common ansible git gcc python-pip python-devel libffi-devel openssl-devel</span><br><span class="line">$ sudo pip install -U kubespray</span><br></pre></td></tr></table></figure>
+
+<p>完成後，新增 kubespray 設定檔：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ cat &lt;&lt;EOF &gt;  ~/.kubespray.yml</span><br><span class="line">kubespray_git_repo: <span class="string">"https://github.com/kubernetes-incubator/kubespray.git"</span></span><br><span class="line"><span class="comment"># Logging options</span></span><br><span class="line">loglevel: <span class="string">"info"</span></span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<p>然後利用 kubespray-cli 快速產生環境的<code>inventory</code>檔，並修改部分內容：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ sudo -i</span><br><span class="line">$ kubespray prepare --masters master --etcds master --nodes node1</span><br></pre></td></tr></table></figure>
+
+<p>編輯<code>/root/.kubespray/inventory/inventory.cfg</code>，修改以下內容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[all]</span><br><span class="line">master  ansible_host=172.24.0.34 ansible_user=root ip=172.24.0.34</span><br><span class="line">node1    ansible_host=172.24.0.80 ansible_user=root ip=172.24.0.80</span><br><span class="line"></span><br><span class="line">[kube-master]</span><br><span class="line">master</span><br><span class="line"></span><br><span class="line">[kube-node]</span><br><span class="line">master</span><br><span class="line">node1</span><br><span class="line"></span><br><span class="line">[etcd]</span><br><span class="line">master</span><br><span class="line"></span><br><span class="line">[k8s-cluster:children]</span><br><span class="line">kube-node1</span><br><span class="line">kube-master</span><br></pre></td></tr></table></figure>
+
+<p>完成後，即可利用 kubespray-cli 指令來進行部署：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ kubespray deploy --verbose -u root -k .ssh/id_rsa -n calico</span><br></pre></td></tr></table></figure>
+
+<p>經過一段時間後就會部署完成，這時候檢查節點是否正常：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ kubectl get no</span><br><span class="line">NAME      STATUS         AGE       VERSION</span><br><span class="line">master    Ready,master   2m        v1.7.4</span><br><span class="line">node1     Ready          2m        v1.7.4</span><br></pre></td></tr></table></figure>
+
+<p>接著為了方便讓 Kuryr Controller 簡單取得 K8s API Server，這邊修改<code>/etc/kubernetes/manifests/kube-apiserver.yml</code>檔案，加入以下內容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">- &quot;--insecure-bind-address=0.0.0.0&quot;</span><br><span class="line">- &quot;--insecure-port=8080&quot;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>Tips:<br>將 insecure 綁定到 0.0.0.0 之上，以及開啟 8080 Port。</p>
+</blockquote>
+<h2 id="安裝-Openstack-Kuryr"><a href="#安裝-Openstack-Kuryr" class="headerlink" title="安裝 Openstack Kuryr"></a>安裝 Openstack Kuryr</h2><p>進入到<code>172.24.0.34（controller）</code>，並且執行以下指令。</p>
+<p>首先在節點安裝所需要的套件：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ sudo yum -y install  gcc libffi-devel python-devel openssl-devel install python-pip</span><br></pre></td></tr></table></figure>
+
+<p>然後下載 kuryr-kubernetes 並進行安裝：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> http://git.openstack.org/openstack/kuryr-kubernetes</span><br><span class="line">$ pip install -e kuryr-kubernetes</span><br></pre></td></tr></table></figure>
+
+<p>新增<code>kuryr.conf</code>至<code>/etc/kuryr</code>目錄：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> kuryr-kubernetes</span><br><span class="line">$ ./tools/generate_config_file_samples.sh</span><br><span class="line">$ sudo mkdir -p /etc/kuryr/</span><br><span class="line">$ sudo cp etc/kuryr.conf.sample /etc/kuryr/kuryr.conf</span><br></pre></td></tr></table></figure>
+
+<p>接著使用 OpenStack Dashboard 建立相關專案，在瀏覽器輸入<a href="http://172.24.0.34" target="_blank" rel="noopener">Dashboard</a>，並執行以下步驟。</p>
+<ol>
+<li>新增 K8s project。</li>
+<li>修改 K8s project member 加入到 service project。</li>
+<li>在該 Project 中新增 Security Groups，參考 <a href="https://docs.openstack.org/kuryr-kubernetes/latest/installation/manual.html" target="_blank" rel="noopener">kuryr-kubernetes manually</a>。</li>
+<li>在該 Project 中新增 pod_subnet 子網路。</li>
+<li>在該 Project 中新增 service_subnet 子網路。</li>
+</ol>
+<p>完成後，修改<code>/etc/kuryr/kuryr.conf</code>檔案，加入以下內容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[DEFAULT]</span><br><span class="line">use_stderr = true</span><br><span class="line">bindir = /usr/local/libexec/kuryr</span><br><span class="line"></span><br><span class="line">[kubernetes]</span><br><span class="line">api_root = http://172.24.0.34:8080</span><br><span class="line"></span><br><span class="line">[neutron]</span><br><span class="line">auth_url = http://172.24.0.34/identity</span><br><span class="line">username = admin</span><br><span class="line">user_domain_name = Default</span><br><span class="line">password = admin</span><br><span class="line">project_name = service</span><br><span class="line">project_domain_name = Default</span><br><span class="line">auth_type = password</span><br><span class="line"></span><br><span class="line">[neutron_defaults]</span><br><span class="line">ovs_bridge = br-int</span><br><span class="line">pod_security_groups = &#123;id_of_secuirity_group_for_pods&#125;</span><br><span class="line">pod_subnet = &#123;id_of_subnet_for_pods&#125;</span><br><span class="line">project = &#123;id_of_project&#125;</span><br><span class="line">service_subnet = &#123;id_of_subnet_for_k8s_services&#125;</span><br></pre></td></tr></table></figure>
+
+<p>完成後執行 kuryr-k8s-controller：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ kuryr-k8s-controller --config-file /etc/kuryr/kuryr.conf</span><br></pre></td></tr></table></figure>
+
+<h2 id="安裝-Kuryr-CNI"><a href="#安裝-Kuryr-CNI" class="headerlink" title="安裝 Kuryr-CNI"></a>安裝 Kuryr-CNI</h2><p>進入到<code>172.24.0.80（node1）</code>並且執行以下指令。</p>
+<p>首先在節點安裝所需要的套件：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ sudo yum -y install  gcc libffi-devel python-devel openssl-devel python-pip</span><br></pre></td></tr></table></figure>
+
+<p>然後安裝 Kuryr-CNI 來提供給 kubelet 使用：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> http://git.openstack.org/openstack/kuryr-kubernetes</span><br><span class="line">$ sudo pip install -e kuryr-kubernetes</span><br></pre></td></tr></table></figure>
+
+<p>新增<code>kuryr.conf</code>至<code>/etc/kuryr</code>目錄：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> kuryr-kubernetes</span><br><span class="line">$ ./tools/generate_config_file_samples.sh</span><br><span class="line">$ sudo mkdir -p /etc/kuryr/</span><br><span class="line">$ sudo cp etc/kuryr.conf.sample /etc/kuryr/kuryr.conf</span><br></pre></td></tr></table></figure>
+
+<p>修改<code>/etc/kuryr/kuryr.conf</code>檔案，加入以下內容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[DEFAULT]</span><br><span class="line">use_stderr = true</span><br><span class="line">bindir = /usr/local/libexec/kuryr</span><br><span class="line">[kubernetes]</span><br><span class="line">api_root = http://172.24.0.34:8080</span><br></pre></td></tr></table></figure>
+
+<p>建立 CNI bin 與 Conf 目錄：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ sudo mkdir -p /opt/cni/bin</span><br><span class="line">$ sudo ln -s $(<span class="built_in">which</span> kuryr-cni) /opt/cni/bin/</span><br><span class="line">$ sudo mkdir -p /etc/cni/net.d/</span><br></pre></td></tr></table></figure>
+
+<p>新增<code>/etc/cni/net.d/10-kuryr.conf</code> CNI 設定檔：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;cniVersion&quot;: &quot;0.3.0&quot;,</span><br><span class="line">    &quot;name&quot;: &quot;kuryr&quot;,</span><br><span class="line">    &quot;type&quot;: &quot;kuryr-cni&quot;,</span><br><span class="line">    &quot;kuryr_conf&quot;: &quot;/etc/kuryr/kuryr.conf&quot;,</span><br><span class="line">    &quot;debug&quot;: true</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>完成後，更新 oslo 與 vif python 函式庫：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ sudo pip install <span class="string">'oslo.privsep&gt;=1.20.0'</span> <span class="string">'os-vif&gt;=1.5.0'</span></span><br></pre></td></tr></table></figure>
+
+<p>最後重新啟動相關服務：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ sudo systemctl daemon-reload &amp;&amp; systemctl restart kubelet.service</span><br></pre></td></tr></table></figure>
+
+<h2 id="測試結果"><a href="#測試結果" class="headerlink" title="測試結果"></a>測試結果</h2><p>我們這邊開一個 Pod 與 OpenStack VM 來進行溝通：<br><img src="https://i.imgur.com/UYXdKud.png" alt></p>
+<p><img src="https://i.imgur.com/dwoEytW.png" alt></p>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">利用 Kuryr 整合 OpenStack 與 Kubernetes 網路</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2017-8-29 16:08</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2017/11/29/openstack/openstack-helm/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    Deploy OpenStack on Kubernetes using OpenStack-helm
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2017/08/16/openstack/ironic/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">利用 OpenStack Ironic 提供裸機部署服務</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2017/08/29/openstack/kuryr-kubernetes/" data-id="ck3ns7q6z005xwmpf2lzuadow" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2017/08/29/openstack/kuryr-kubernetes/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2017/08/29/openstack/kuryr-kubernetes/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#環境資源與事前準備"><span class="toc-number">1.</span> <span class="toc-text">環境資源與事前準備</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#OpenStack-Controller-安裝"><span class="toc-number">2.</span> <span class="toc-text">OpenStack Controller 安裝</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Openstack-Compute-安裝"><span class="toc-number">3.</span> <span class="toc-text">Openstack Compute 安裝</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#建立-Kubernetes-叢集環境"><span class="toc-number">4.</span> <span class="toc-text">建立 Kubernetes 叢集環境</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安裝-Openstack-Kuryr"><span class="toc-number">5.</span> <span class="toc-text">安裝 Openstack Kuryr</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安裝-Kuryr-CNI"><span class="toc-number">6.</span> <span class="toc-text">安裝 Kuryr-CNI</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#測試結果"><span class="toc-number">7.</span> <span class="toc-text">測試結果</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2017/08/29/openstack/kuryr-kubernetes/';
+        
+        this.page.identifier = 'openstack/kuryr-kubernetes';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

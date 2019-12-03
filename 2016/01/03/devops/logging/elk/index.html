@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>用 ELK 做監控系統 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="ELK 是由三個套件的開頭英文組成的縮寫，其 E 表示Elasticsearch，L 表示Logstash，K 表示Kibana，作為收集資料、資料索引以及資料視覺化的工具集合，以下分別簡單介紹三個套件。">
+<meta name="keywords" content="Monitoring,Logging,DevOps,Visualization">
+<meta property="og:type" content="article">
+<meta property="og:title" content="用 ELK 做監控系統">
+<meta property="og:url" content="https://k2r2bai.com/2016/01/03/devops/logging/elk/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="ELK 是由三個套件的開頭英文組成的縮寫，其 E 表示Elasticsearch，L 表示Logstash，K 表示Kibana，作為收集資料、資料索引以及資料視覺化的工具集合，以下分別簡單介紹三個套件。">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/devops/elk-logo.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.385Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="用 ELK 做監控系統">
+<meta name="twitter:description" content="ELK 是由三個套件的開頭英文組成的縮寫，其 E 表示Elasticsearch，L 表示Logstash，K 表示Kibana，作為收集資料、資料索引以及資料視覺化的工具集合，以下分別簡單介紹三個套件。">
+<meta name="twitter:image" content="https://k2r2bai.com/images/devops/elk-logo.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-devops/logging/elk" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            用 ELK 做監控系統
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2016/01/03/devops/logging/elk/">
+            <u><time datetime="2016-01-03T04:23:01.000Z" itemprop="datePublished">2016-01-03</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/DevOps/">DevOps</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/DevOps/">DevOps</a>, <a class="tag-link" href="/tags/Logging/">Logging</a>, <a class="tag-link" href="/tags/Monitoring/">Monitoring</a>, <a class="tag-link" href="/tags/Visualization/">Visualization</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>ELK 是由三個套件的開頭英文組成的縮寫，其 E 表示<code>Elasticsearch</code>，L 表示<code>Logstash</code>，K 表示<code>Kibana</code>，作為收集資料、資料索引以及資料視覺化的工具集合，以下分別簡單介紹三個套件。</p>
+<p><img src="/images/devops/elk-logo.png" alt></p>
+<a id="more"></a>
+
+<h2 id="Logstash"><a href="#Logstash" class="headerlink" title="Logstash"></a>Logstash</h2><p>Logstash 可以簡單、有效、快速的處理Log資料，不過Logstash的主要功能是處理時間類型的Log，也就是在Log檔中有時間戳記（TimeStamp）的資料，而分析Log資料主要就是分析事件發生的時間和內容</p>
+<h3 id="Logstash-Forwarder"><a href="#Logstash-Forwarder" class="headerlink" title="Logstash Forwarder"></a>Logstash Forwarder</h3><p>可傳送所收集到的 Log 訊息到 Logstash。</p>
+<h2 id="Elasticsearch"><a href="#Elasticsearch" class="headerlink" title="Elasticsearch"></a>Elasticsearch</h2><p>Elasticsearch 是一個開源的資料搜尋分析系統，它可以解決現在 Web 去做資料庫的搜尋的種種問題，嚴格來說也不只是 web，(有可能是為了撈資料的效能，或是 schema free,  real-time 等等)。</p>
+<h2 id="Kibana"><a href="#Kibana" class="headerlink" title="Kibana"></a>Kibana</h2><p>Kibana 是一個開源和免費的工具，他可以幫助您匯總、分析和搜索重要數據日志並提供友好的web界面</p>
+<h2 id="系統與安裝版本"><a href="#系統與安裝版本" class="headerlink" title="系統與安裝版本"></a>系統與安裝版本</h2><ul>
+<li>OS: Ubuntu 14.04</li>
+<li>Elasticsearch 1.4.4</li>
+<li>Logstash 1.5.0</li>
+<li>Kibana 4</li>
+</ul>
+<h2 id="進行安裝"><a href="#進行安裝" class="headerlink" title="進行安裝"></a>進行安裝</h2><h3 id="首先安裝-Java-Oracle"><a href="#首先安裝-Java-Oracle" class="headerlink" title="首先安裝 Java Oracle"></a>首先安裝 Java Oracle</h3><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo apt-get purge openjdk*</span><br><span class="line">sudo apt-get -y autoremove</span><br><span class="line">sudo add-apt-repository -y ppa:webupd8team/java</span><br><span class="line">sudo apt-get update</span><br><span class="line">echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections</span><br><span class="line">echo debconf shared/accepted-oracle-license-v1-1 seen true | sudo debconf-set-selections</span><br><span class="line">sudo apt-get -y install oracle-java7-installer</span><br></pre></td></tr></table></figure>
+
+<h3 id="安裝-Elasticsearch"><a href="#安裝-Elasticsearch" class="headerlink" title="安裝 Elasticsearch"></a>安裝 Elasticsearch</h3><p>匯入 Elasticsearch public GPG key 到 apt</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">wget -O - http://packages.elasticsearch.org/GPG-KEY-elasticsearch | sudo apt-key add -</span><br></pre></td></tr></table></figure>
+
+<p>建立 Elasticsearch source list：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">echo &apos;deb http://packages.elasticsearch.org/elasticsearch/1.4/debian stable main&apos; | sudo tee /etc/apt/sources.list.d/elasticsearch.list</span><br></pre></td></tr></table></figure>
+
+<p>更新套件：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo apt-get update</span><br></pre></td></tr></table></figure>
+
+<p>安裝 elasticsearch 1.4.4：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo apt-get -y install elasticsearch=1.4.4</span><br></pre></td></tr></table></figure>
+
+<p>安裝完成，開啟配置檔：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo vi /etc/elasticsearch/elasticsearch.yml</span><br></pre></td></tr></table></figure>
+
+<p>如果想限制給外界存取 Elasticsearch，可找到  <code>network.host</code> ，將內容取代成”localhost”，如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">network.host: localhost</span><br></pre></td></tr></table></figure>
+
+<p>開啟 Elasticsearch：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo service elasticsearch restart</span><br></pre></td></tr></table></figure>
+
+<p>重開機立即啟動 Elasticsearch ：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo update-rc.d elasticsearch defaults 95 10</span><br></pre></td></tr></table></figure>
+
+<h3 id="安裝-Kibana"><a href="#安裝-Kibana" class="headerlink" title="安裝 Kibana"></a>安裝 Kibana</h3><p>下載 Kibana 4 到 opt 資料夾</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cd /opt</span><br></pre></td></tr></table></figure>
+
+<p>使用<code>wget</code>下載 Kibana 套件壓縮檔：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">wget https://download.elasticsearch.org/kibana/kibana/kibana-4.0.1-linux-x64.tar.gz</span><br></pre></td></tr></table></figure>
+
+<p>解壓縮檔案：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar xvf kibana-*.tar.gz</span><br></pre></td></tr></table></figure>
+
+<p>開啟 Kibana 配置檔：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">vi ~/kibana-4*/config/kibana.yml</span><br></pre></td></tr></table></figure>
+
+<p>配置檔中找到<code>host</code>將 IP address “0.0.0.0” 取代成 “localhost”，此設定讓 Kibana 只能被 localhost 存取，如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">host: &quot;localhost&quot;</span><br></pre></td></tr></table></figure>
+
+<p>將下載完的 kibana 資料夾名稱改成 kibana：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo mv kibana-4.0.1-linux-x64 kibana</span><br></pre></td></tr></table></figure>
+
+<p>Kibana 執行 <code>/opt/kibana/bin/kibana</code> 來開啟，但我們想用 service 的方式開啟。</p>
+<p>下載 Kibana 4 init 腳本:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cd /etc/init.d &amp;&amp; sudo wget https://gist.githubusercontent.com/thisismitch/8b15ac909aed214ad04a/raw/bce61d85643c2dcdfbc2728c55a41dab444dca20/kibana4</span><br></pre></td></tr></table></figure>
+
+<p>開啟 Kibana service：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo chmod +x /etc/init.d/kibana4</span><br><span class="line">sudo update-rc.d kibana4 defaults 96 9</span><br><span class="line">sudo service kibana4 start</span><br></pre></td></tr></table></figure>
+
+<h3 id="安裝-Logstash"><a href="#安裝-Logstash" class="headerlink" title="安裝 Logstash"></a>安裝 Logstash</h3><p>建立 Logstash source list：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">echo &apos;deb http://packages.elasticsearch.org/logstash/1.5/debian stable main&apos; | sudo tee /etc/apt/sources.list.d/logstash.list</span><br></pre></td></tr></table></figure>
+
+<p>更新套件：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo apt-get update</span><br></pre></td></tr></table></figure>
+
+<p>安裝 Logstash：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo apt-get install logstash</span><br></pre></td></tr></table></figure>
+
+<h3 id="產生-SSL-認證"><a href="#產生-SSL-認證" class="headerlink" title="產生 SSL 認證"></a>產生 SSL 認證</h3><p>因為我們將使用 Logstash Forwarder 收集 logs並傳送到 Logstash Server ，所以我們必須建立一對SSL 認證的 key：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo mkdir -p /etc/pki/tls/certs</span><br><span class="line">sudo mkdir /etc/pki/tls/private</span><br></pre></td></tr></table></figure>
+
+<p>設定 openssl 配置：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo vi /etc/ssl/openssl.cnf</span><br></pre></td></tr></table></figure>
+
+<p>配置檔中找到 <code>[ v3_ca ]</code> ，並新增以下內容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">subjectAltName = IP:logstash_server_private_ip</span><br></pre></td></tr></table></figure>
+
+<p>產生 SSL 認證和 private key 到 <code>/etc/pki/tls/</code> ，如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cd /etc/pki/tls</span><br></pre></td></tr></table></figure>
+
+<p>設定 SSL 驗證：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo openssl req -config /etc/ssl/openssl.cnf -x509 -days 3650 -batch -nodes -newkey rsa:2048 -keyout private/logstash-forwarder.key -out certs/logstash-forwarder.crt</span><br></pre></td></tr></table></figure>
+
+<h3 id="配置-Logstash"><a href="#配置-Logstash" class="headerlink" title="配置 Logstash"></a>配置 Logstash</h3><p>新增配置檔 <code>01-lumberjack-input.conf</code>：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo vi /etc/logstash/conf.d/01-lumberjack-input.conf</span><br></pre></td></tr></table></figure>
+
+<p>新增以下配置內容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">input &#123;</span><br><span class="line">  lumberjack &#123;</span><br><span class="line">    port =&gt; 5000</span><br><span class="line">    type =&gt; &quot;logs&quot;</span><br><span class="line">    ssl_certificate =&gt; &quot;/etc/pki/tls/certs/logstash-forwarder.crt&quot;</span><br><span class="line">    ssl_key =&gt; &quot;/etc/pki/tls/private/logstash-forwarder.key&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>新增配置檔 <code>10-syslog.conf</code>：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo vi /etc/logstash/conf.d/10-syslog.conf</span><br></pre></td></tr></table></figure>
+
+<p>新增以下配置內容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">filter &#123;</span><br><span class="line">  if [type] == &quot;syslog&quot; &#123;</span><br><span class="line">    grok &#123;</span><br><span class="line">      match =&gt; &#123; &quot;message&quot; =&gt; &quot;%&#123;SYSLOGTIMESTAMP:syslog_timestamp&#125; %&#123;SYSLOGHOST:syslog_hostname&#125; %&#123;DATA:syslog_program&#125;(?:\[%&#123;POSINT:syslog_pid&#125;\])?: %&#123;GREEDYDATA:syslog_message&#125;&quot; &#125;</span><br><span class="line">      add_field =&gt; [ &quot;received_at&quot;, &quot;%&#123;@timestamp&#125;&quot; ]</span><br><span class="line">      add_field =&gt; [ &quot;received_from&quot;, &quot;%&#123;host&#125;&quot; ]</span><br><span class="line">    &#125;</span><br><span class="line">    syslog_pri &#123; &#125;</span><br><span class="line">    date &#123;</span><br><span class="line">      match =&gt; [ &quot;syslog_timestamp&quot;, &quot;MMM  d HH:mm:ss&quot;, &quot;MMM dd HH:mm:ss&quot; ]</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>新增配置檔 <code>30-lumberjack-output.conf</code>：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo vi /etc/logstash/conf.d/30-lumberjack-output.conf</span><br></pre></td></tr></table></figure>
+
+<p>新增以下配置內容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">output &#123;</span><br><span class="line">  elasticsearch &#123; host =&gt; localhost &#125;</span><br><span class="line">  stdout &#123; codec =&gt; rubydebug &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>重啟 Logstash：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo service logstash restart</span><br></pre></td></tr></table></figure>
+
+<p>完成後就可以設置<code>Logstash Forwarder</code>（簡單說就是加入 Client）。</p>
+<h4 id="複製-SSL-Certificate-與-Logstash-Forwarder-套件-On-Logstash-Server"><a href="#複製-SSL-Certificate-與-Logstash-Forwarder-套件-On-Logstash-Server" class="headerlink" title="複製 SSL Certificate 與 Logstash Forwarder 套件 (On Logstash Server)"></a>複製 SSL Certificate 與 Logstash Forwarder 套件 (On Logstash Server)</h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp /etc/pki/tls/certs/logstash-forwarder.crt user@client_server_private_address:/tmp</span><br></pre></td></tr></table></figure>
+
+<h4 id="安裝-Logstash-Forwarder-套件-On-Client"><a href="#安裝-Logstash-Forwarder-套件-On-Client" class="headerlink" title="安裝 Logstash Forwarder 套件 (On Client)"></a>安裝 Logstash Forwarder 套件 (On Client)</h4><p>Logstash Forwarder source list：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">echo &apos;deb http://packages.elasticsearch.org/logstashforwarder/debian stable main&apos; | sudo tee /etc/apt/sources.list.d/logstashforwarder.list</span><br></pre></td></tr></table></figure>
+
+<p>一樣可使用Elasticsearch的 GPG key 來安裝：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">wget -O - http://packages.elasticsearch.org/GPG-KEY-elasticsearch | sudo apt-key add -</span><br></pre></td></tr></table></figure>
+
+<p>安裝 Logstash Forwarder package：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo apt-get update</span><br><span class="line">sudo apt-get install logstash-forwarder</span><br></pre></td></tr></table></figure>
+
+<p>複製 Logstash server’s SSL認證到 <code>/etc/pki/tls/certs</code>：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo mkdir -p /etc/pki/tls/certs</span><br><span class="line">sudo cp /tmp/logstash-forwarder.crt /etc/pki/tls/certs/</span><br></pre></td></tr></table></figure>
+
+<h4 id="配置-Logstash-Forwarder"><a href="#配置-Logstash-Forwarder" class="headerlink" title="配置 Logstash Forwarder"></a>配置 Logstash Forwarder</h4><p>設定Logstash Forwarder 配置檔(<code>On Client Server</code>)：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo vi /etc/logstash-forwarder.conf</span><br></pre></td></tr></table></figure>
+
+<p>配置檔中找到 <code>network</code> ，底下加入以下內容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&quot;servers&quot;: [ &quot;logstash_server_private_address:5000&quot; ],</span><br><span class="line">    &quot;timeout&quot;: 15,</span><br><span class="line">    ssl ca&quot;: &quot;/etc/pki/tls/certs/logstash-forwarder.crt&quot;</span><br></pre></td></tr></table></figure>
+
+<p>配置檔中找到 <code>files</code> ，底下加入以下內容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">   &quot;paths&quot;: [</span><br><span class="line">     &quot;/var/log/syslog&quot;,</span><br><span class="line">     &quot;/var/log/auth.log&quot;</span><br><span class="line">    ],</span><br><span class="line">   &quot;fields&quot;: &#123; &quot;type&quot;: &quot;syslog&quot; &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+
+<p>重啟 Logstash Forwarder：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo service logstash-forwarder restart</span><br></pre></td></tr></table></figure>
+
+<p>完成後，即可開啟瀏覽器，網址列輸入<a href="locahost:5601" target="_blank" rel="noopener">locahost:5601</a>。</p>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">用 ELK 做監控系統</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2016-1-3 12:01</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2016/01/05/container/docker-network/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    學習 Docker Network 之間的差別
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2016/01/02/container/docker-registry/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">建立自己的 Docker Registry</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2016/01/03/devops/logging/elk/" data-id="ck3ns7qat00g7wmpfx17zaszp" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2016/01/03/devops/logging/elk/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2016/01/03/devops/logging/elk/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Logstash"><span class="toc-number">1.</span> <span class="toc-text">Logstash</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Logstash-Forwarder"><span class="toc-number">1.1.</span> <span class="toc-text">Logstash Forwarder</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Elasticsearch"><span class="toc-number">2.</span> <span class="toc-text">Elasticsearch</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kibana"><span class="toc-number">3.</span> <span class="toc-text">Kibana</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#系統與安裝版本"><span class="toc-number">4.</span> <span class="toc-text">系統與安裝版本</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#進行安裝"><span class="toc-number">5.</span> <span class="toc-text">進行安裝</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#首先安裝-Java-Oracle"><span class="toc-number">5.1.</span> <span class="toc-text">首先安裝 Java Oracle</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#安裝-Elasticsearch"><span class="toc-number">5.2.</span> <span class="toc-text">安裝 Elasticsearch</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#安裝-Kibana"><span class="toc-number">5.3.</span> <span class="toc-text">安裝 Kibana</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#安裝-Logstash"><span class="toc-number">5.4.</span> <span class="toc-text">安裝 Logstash</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#產生-SSL-認證"><span class="toc-number">5.5.</span> <span class="toc-text">產生 SSL 認證</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#配置-Logstash"><span class="toc-number">5.6.</span> <span class="toc-text">配置 Logstash</span></a></li></ol></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2016/01/03/devops/logging/elk/';
+        
+        this.page.identifier = 'devops/logging/elk';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

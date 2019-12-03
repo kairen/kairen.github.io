@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>動手實作 Kubernetes 自定義控制器 Part1 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="前言昨天了解到 Kubernetes 官方的 Sample Controller，是如何讓一個自定義 API 資源被自定義控制器管理。雖然這個範例僅僅只是管理一個 Deployment 資源，但可以讓人認識到一個自定義控制器是如何運作的。而接下來的文章，我將每天撰寫一小部分程式內容，來重頭慢慢實作一個管理自定義資源VirtualMachine的控制器，並隨時間推移新增更多功能(如: LeaseLo">
+<meta name="keywords" content="Kubernetes">
+<meta property="og:type" content="article">
+<meta property="og:title" content="動手實作 Kubernetes 自定義控制器 Part1">
+<meta property="og:url" content="https://k2r2bai.com/2019/10/10/ironman2020/day25/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="前言昨天了解到 Kubernetes 官方的 Sample Controller，是如何讓一個自定義 API 資源被自定義控制器管理。雖然這個範例僅僅只是管理一個 Deployment 資源，但可以讓人認識到一個自定義控制器是如何運作的。而接下來的文章，我將每天撰寫一小部分程式內容，來重頭慢慢實作一個管理自定義資源VirtualMachine的控制器，並隨時間推移新增更多功能(如: LeaseLo">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://i.imgur.com/WD3qr51.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.390Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="動手實作 Kubernetes 自定義控制器 Part1">
+<meta name="twitter:description" content="前言昨天了解到 Kubernetes 官方的 Sample Controller，是如何讓一個自定義 API 資源被自定義控制器管理。雖然這個範例僅僅只是管理一個 Deployment 資源，但可以讓人認識到一個自定義控制器是如何運作的。而接下來的文章，我將每天撰寫一小部分程式內容，來重頭慢慢實作一個管理自定義資源VirtualMachine的控制器，並隨時間推移新增更多功能(如: LeaseLo">
+<meta name="twitter:image" content="https://i.imgur.com/WD3qr51.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-ironman2020/day25" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            動手實作 Kubernetes 自定義控制器 Part1
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2019/10/10/ironman2020/day25/">
+            <u><time datetime="2019-10-09T16:00:00.000Z" itemprop="datePublished">2019-10-10</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>昨天了解到 Kubernetes 官方的 Sample Controller，是如何讓一個自定義 API 資源被自定義控制器管理。雖然這個範例僅僅只是管理一個 Deployment 資源，但可以讓人認識到一個自定義控制器是如何運作的。而接下來的文章，我將每天撰寫一小部分程式內容，來重頭慢慢實作一個管理自定義資源<code>VirtualMachine</code>的控制器，並隨時間推移新增更多功能(如: LeaseLock、Metrics、Fake client 與 Finalizer、Admission Controller 等等)來完善這個控制器範例。</p>
+<a id="more"></a>
+
+<p>本文章的自定義控制器，會實作監聽自定義資源 VirtualMachine 的狀態，並依據 VirtualMachine 的<code>.spec</code>內容來操作私有雲中的虛擬機。另外該控制器也會持續同步私有雲虛擬機的狀態，並更新至子資源<code>.status</code>中。架構如下圖所示。</p>
+<p><img src="https://i.imgur.com/WD3qr51.png" alt></p>
+<p>而今天文章先把重點放在自定義 API 資源的資料結構，以及如何透過 <a href="https://github.com/kubernetes/code-generator" target="_blank" rel="noopener">code-generator</a> 產生控制器所需的程式碼。</p>
+<h2 id="開發環境設置"><a href="#開發環境設置" class="headerlink" title="開發環境設置"></a>開發環境設置</h2><p>由於開發中，會使用到 Kubernetes 與 Go 語言，因此需要安裝這些到開發環境中。</p>
+<ul>
+<li>一座 Kubernetes v1.10+ 叢集。透過 <a href="https://github.com/kubernetes/minikube" target="_blank" rel="noopener">Minikube</a> 建立即可 <code>minikube start --kubernetes-version=v1.15.4</code>。</li>
+<li>安裝 kubectl v1.10+ 工具，安裝請參考 <a href="https://kubernetes.io/docs/tasks/tools/install-kubectl/" target="_blank" rel="noopener">Install and Set Up kubectl</a></li>
+<li>安裝 Go 語言 v1.11+ 開發環境，由於開發中會使用到 Go mod 來管理第三方套件，因此必須符合支援版本。安裝請參考 <a href="https://golang.org/doc/install" target="_blank" rel="noopener">Go Getting Started</a>。</li>
+</ul>
+<h2 id="產生自定義資源程式碼"><a href="#產生自定義資源程式碼" class="headerlink" title="產生自定義資源程式碼"></a>產生自定義資源程式碼</h2><p>在開始定義 API 資源結構與使用 code-generator 前，需要先初始化存放控制器程式的目錄，其結構如下所示:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">controller101</span><br><span class="line">├── LICENSE</span><br><span class="line">├── README.md</span><br><span class="line">├── cmd    <span class="comment"># Controller 主程式 main.go 檔</span></span><br><span class="line">├── deploy <span class="comment"># 部署 Controller 的相關檔案，如 Deployment、CRD、RBAC。</span></span><br><span class="line">├── go.mod <span class="comment"># Go mod package 檔案</span></span><br><span class="line">├── go.sum <span class="comment"># Go mod package 檔案</span></span><br><span class="line">├── hack   <span class="comment"># 存放一些常使用到的腳本</span></span><br><span class="line">└── pkg    <span class="comment"># 控制器相關程式碼</span></span><br></pre></td></tr></table></figure>
+
+<p>目錄結構完成後，就能開始撰寫自定義資源，以及 code-generator 所需的內容。而要達到這個目的，我們必須涉及兩個步驟:</p>
+<ul>
+<li>定義 CRD 內容與資源類型程式結構。</li>
+<li>透過 code-generator 腳本產生自定義資源的 Clientset、Informers、Listers 程式碼。</li>
+</ul>
+<h3 id="Defining-types-and-scripts"><a href="#Defining-types-and-scripts" class="headerlink" title="Defining types and scripts"></a>Defining types and scripts</h3><p>如前言所述，本範例希望透過新增一個自定義 API 資源，用於提供給自定義控制器實現功能。故我們必須在開始撰寫控制器前，先依據 <a href="https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md" target="_blank" rel="noopener">Kubernetes-style API types</a> 的規範，來定義 API 群組(Group)與資源類型(Type)，並透過 CRD API 來建立自定義資源。所以假設控制器是所屬組織<code>Cloud Native Taiwan</code>想開發，那麼 API 群組就能定義為<code>cloudnative.tw</code>，而 API 資源則為<code>VirtualMachine</code>，因此 CRD 就會形成如下所示:</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="comment"># File name: deploy/crd.yml</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">apiextensions.k8s.io/v1beta1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">CustomResourceDefinition</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">virtualmachines.cloudnative.tw</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  group:</span> <span class="string">cloudnative.tw</span></span><br><span class="line"><span class="attr">  version:</span> <span class="string">v1alpha1</span></span><br><span class="line"><span class="attr">  names:</span></span><br><span class="line"><span class="attr">    kind:</span> <span class="string">VirtualMachine</span></span><br><span class="line"><span class="attr">    singular:</span> <span class="string">virtualmachine</span></span><br><span class="line"><span class="attr">    plural:</span> <span class="string">virtualmachines</span></span><br><span class="line"><span class="attr">    shortNames:</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">vm</span></span><br><span class="line"><span class="attr">  scope:</span> <span class="string">Namespaced</span></span><br></pre></td></tr></table></figure>
+
+<p>當 CRD 定義完後，就能透過 CRD API 來新增自定義資源:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl apply -f deploy/crd.yml</span><br><span class="line">customresourcedefinition.apiextensions.k8s.io/virtualmachines.cloudnative.tw created</span><br><span class="line"></span><br><span class="line">$ kubectl get crd</span><br><span class="line">NAME                             CREATED AT</span><br><span class="line">virtualmachines.cloudnative.tw   2019-10-07T14:50:47Z</span><br><span class="line"></span><br><span class="line">$ kubectl get vm</span><br><span class="line">No resources found</span><br></pre></td></tr></table></figure>
+
+<p>到這裡，會發現我們只是新增 API 而已，這個 VirtualMachine 資源完全沒有規範內容，這使我們無法描述一個 VirtualMachine 的預期內容，以提供給控制器處理。基於此，必須依據實作的功能假設自定義資源結構，如本範例想用 VirtualMachine 來管理虛擬機器，那麼就需要定義如下:</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">cloudnative.tw/v1alpha1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">VirtualMachine</span> </span><br><span class="line"><span class="attr">metadata:</span> </span><br><span class="line"><span class="attr">  name:</span> <span class="string">test-vm</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  action:</span> <span class="string">active</span></span><br><span class="line"><span class="attr">  resource:</span></span><br><span class="line"><span class="attr">    cpu:</span> <span class="number">2</span></span><br><span class="line"><span class="attr">    memory:</span> <span class="number">4</span><span class="string">G</span></span><br><span class="line"><span class="attr">    rootDisk:</span> <span class="number">40</span><span class="string">G</span></span><br><span class="line"><span class="attr">status:</span></span><br><span class="line"><span class="attr">  phase:</span> <span class="string">synchronized</span></span><br><span class="line"><span class="attr">  server:</span></span><br><span class="line"><span class="attr">    state:</span> <span class="string">active</span></span><br><span class="line"><span class="attr">    usage:</span></span><br><span class="line"><span class="attr">      cpu:</span> <span class="number">13.3</span> </span><br><span class="line"><span class="attr">      memory:</span> <span class="number">40.1</span></span><br><span class="line"><span class="attr">  lastUpdateTime:</span> <span class="number">2019</span><span class="bullet">-10</span><span class="bullet">-07</span><span class="attr">T14:50:47Z</span></span><br></pre></td></tr></table></figure>
+
+<p>雖然這個 YAML 能夠透過 kubectl 進行各種 API 操作，但如果想在自定義控制器操作的話，那該怎麼辦呢?</p>
+<p>有接觸過 Kubernetes clinet-go 的人，可能會想到用 <a href="https://github.com/kubernetes/client-go/tree/master/dynamic" target="_blank" rel="noopener">Dynamic client</a> 來解決。但這不是好做法，因為以下原因:</p>
+<ol>
+<li>Dynamic client 無法很方便實現 API 資源類型的操作、轉換與驗證等等事情。</li>
+<li>Dynamic client 不像原生 API 資源類型，提供了很方便的 <a href="https://github.com/kubernetes/client-go/tree/master/kubernetes" target="_blank" rel="noopener">Typed client</a> 可以使用。</li>
+</ol>
+<p>因此過去版本(v1.7 或更舊版本)的控制器管理自定義資源較為複雜，但這問題在 v1.8 版中被解決，Kubernetes 官方引入 code-generator 專案，用於產生如同原生 API 資源類型一樣功能的 Typed client 程式碼，這樣當我們在自定義控制器使用時，就如同使用 client-go 一樣。而要達到這樣事情，必須在專案建立產生程式碼所需的所有檔案，其檔案結構如下所示:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">├── hack </span><br><span class="line">│   └── k8s <span class="comment"># Code-generator 腳本</span></span><br><span class="line">│       ├── boilerplate.go.txt</span><br><span class="line">│       ├── tools.go</span><br><span class="line">│       ├── update-generated.sh</span><br><span class="line">│       └── verify-codegen.sh</span><br><span class="line">│   </span><br><span class="line">└── pkg</span><br><span class="line">    └── apis <span class="comment"># APIs 定義</span></span><br><span class="line">        └── cloudnative <span class="comment"># 提供該 Package 的 API Group Name。</span></span><br><span class="line">            ├── register.go</span><br><span class="line">            └── v1alpha1 <span class="comment"># API 各版本結構定義。Kubernetes API 是支援多版本的。</span></span><br><span class="line">                ├── doc.go</span><br><span class="line">                ├── register.go</span><br><span class="line">                └── types.go</span><br></pre></td></tr></table></figure>
+
+<h4 id="v1alpha1-doc-go"><a href="#v1alpha1-doc-go" class="headerlink" title="v1alpha1/doc.go"></a>v1alpha1/doc.go</h4><p>該檔案用於定義 code-generator 的 Global tags。可標示當前版本 Package 中的每個類型，想要透過 code-generator 產生哪些程式碼(如 Deepcopy, Client)。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// +k8s:deepcopy-gen=package</span></span><br><span class="line"><span class="comment">// +groupName=cloudnative.tw</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Package v1alpha1 is the v1alpha1 version of the API.</span></span><br><span class="line"><span class="keyword">package</span> v1alpha1 <span class="comment">// import "github.com/cloud-native-taiwan/controller101/pkg/apis/cloudnative/v1alpha1"</span></span><br></pre></td></tr></table></figure>
+
+<p>如上述內容，透過<code>+k8s:deepcopy-gen=package</code>標示這個 package 要建立 Deepcopy 方法(Method)。另外<code>+groupName=cloudnative.tw</code>定義整個 API Group 名稱，以確保在 code-generator 發生錯誤時，能產生可識別的錯誤代號。</p>
+<h4 id="v1alpha1-types-go"><a href="#v1alpha1-types-go" class="headerlink" title="v1alpha1/types.go"></a>v1alpha1/types.go</h4><p>該檔案用於定義資源類型的資料結構，以及定義 code-generator 的 Local tags。可標示哪些資源類型想透過 code-generator 產生 Client 程式碼。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> v1alpha1</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	corev1 <span class="string">"k8s.io/api/core/v1"</span></span><br><span class="line">	metav1 <span class="string">"k8s.io/apimachinery/pkg/apis/meta/v1"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment">// +genclient</span></span><br><span class="line"><span class="comment">// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> VirtualMachine <span class="keyword">struct</span> &#123;</span><br><span class="line">	metav1.TypeMeta   <span class="string">`json:",inline"`</span></span><br><span class="line">	metav1.ObjectMeta <span class="string">`json:"metadata,omitempty"`</span></span><br><span class="line"></span><br><span class="line">	Spec   VirtualMachineSpec   <span class="string">`json:"spec"`</span></span><br><span class="line">	Status VirtualMachineStatus <span class="string">`json:"status"`</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> VirtualMachineSpec <span class="keyword">struct</span> &#123;</span><br><span class="line">	Resource corev1.ResourceList <span class="string">`json:"resource"`</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> VirtualMachinePhase <span class="keyword">string</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> (</span><br><span class="line">	VirtualMachineNone        VirtualMachinePhase = <span class="string">""</span></span><br><span class="line">	VirtualMachineCreating    VirtualMachinePhase = <span class="string">"Creating"</span></span><br><span class="line">	VirtualMachineActive      VirtualMachinePhase = <span class="string">"Active"</span></span><br><span class="line">	VirtualMachineFailed      VirtualMachinePhase = <span class="string">"Failed"</span></span><br><span class="line">	VirtualMachineTerminating VirtualMachinePhase = <span class="string">"Terminating"</span></span><br><span class="line">	VirtualMachineUnknown     VirtualMachinePhase = <span class="string">"Unknown"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> ResourceUsage <span class="keyword">struct</span> &#123;</span><br><span class="line">	CPU    <span class="keyword">float64</span> <span class="string">`json:"cpu"`</span></span><br><span class="line">	Memory <span class="keyword">float64</span> <span class="string">`json:"memory"`</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> ServerStatus <span class="keyword">struct</span> &#123;</span><br><span class="line">	ID    <span class="keyword">string</span>        <span class="string">`json:"id"`</span></span><br><span class="line">	State <span class="keyword">string</span>        <span class="string">`json:"state"`</span></span><br><span class="line">	Usage ResourceUsage <span class="string">`json:"usage"`</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> VirtualMachineStatus <span class="keyword">struct</span> &#123;</span><br><span class="line">	Phase          VirtualMachinePhase <span class="string">`json:"phase"`</span></span><br><span class="line">	Reason         <span class="keyword">string</span>              <span class="string">`json:"reason,omitempty"`</span></span><br><span class="line">	Server         ServerStatus        <span class="string">`json:"server,omitempty"`</span></span><br><span class="line">	LastUpdateTime metav1.Time         <span class="string">`json:"lastUpdateTime"`</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> VirtualMachineList <span class="keyword">struct</span> &#123;</span><br><span class="line">	metav1.TypeMeta <span class="string">`json:",inline"`</span></span><br><span class="line">	metav1.ListMeta <span class="string">`json:"metadata"`</span></span><br><span class="line"></span><br><span class="line">	Items []VirtualMachine <span class="string">`json:"items"`</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>這邊的<code>+genclient</code> tag 是表示在執行 code-generator 時，會對這個類型建立 Client 程式碼。而<code>+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object</code>則表示產生的 Deepcopy 使用 runtime.Object 介面實現。</p>
+<h4 id="v1alpha1-register-go"><a href="#v1alpha1-register-go" class="headerlink" title="v1alpha1/register.go"></a>v1alpha1/register.go</h4><p>用於將剛建立的新 API 版本與新資源類型註冊到 API Group Schema 中，以便 API Server 能夠識別。</p>
+<blockquote>
+<p>Scheme: 用於 API 資源群組之間的序列化、反序列化與版本轉換。</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> v1alpha1</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	metav1 <span class="string">"k8s.io/apimachinery/pkg/apis/meta/v1"</span></span><br><span class="line">	<span class="string">"k8s.io/apimachinery/pkg/runtime"</span></span><br><span class="line">	<span class="string">"k8s.io/apimachinery/pkg/runtime/schema"</span></span><br><span class="line"></span><br><span class="line">	<span class="string">"github.com/cloud-native-taiwan/controller101/pkg/apis/cloudnative"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> SchemeGroupVersion = schema.GroupVersion&#123;Group: cloudnative.GroupName, Version: <span class="string">"v1alpha1"</span>&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Kind</span><span class="params">(kind <span class="keyword">string</span>)</span> <span class="title">schema</span>.<span class="title">GroupKind</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> SchemeGroupVersion.WithKind(kind).GroupKind()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Resource</span><span class="params">(resource <span class="keyword">string</span>)</span> <span class="title">schema</span>.<span class="title">GroupResource</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> SchemeGroupVersion.WithResource(resource).GroupResource()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> (</span><br><span class="line">	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)</span><br><span class="line">	AddToScheme = SchemeBuilder.AddToScheme</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">addKnownTypes</span><span class="params">(scheme *runtime.Scheme)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	scheme.AddKnownTypes(SchemeGroupVersion,</span><br><span class="line">		&amp;VirtualMachine&#123;&#125;,</span><br><span class="line">		&amp;VirtualMachineList&#123;&#125;,</span><br><span class="line">	)</span><br><span class="line">	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="hack-k8s-boilerplate-go-txt"><a href="#hack-k8s-boilerplate-go-txt" class="headerlink" title="hack/k8s/boilerplate.go.txt"></a>hack/k8s/boilerplate.go.txt</h4><p>code-generator 自動將 boilerplate.go.txt 的文字，新增到產生的程式碼檔案內容的最上層。通常為 License 樣板。如以下範例:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">/*</span><br><span class="line">Copyright © 2019 The controller101 Authors.</span><br><span class="line"></span><br><span class="line">Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span><br><span class="line">you may not use this file except in compliance with the License.</span><br><span class="line">You may obtain a copy of the License at</span><br><span class="line"></span><br><span class="line">   http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line"></span><br><span class="line">Unless required by applicable law or agreed to in writing, software</span><br><span class="line">distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line">WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line">See the License for the specific language governing permissions and</span><br><span class="line">limitations under the License.</span><br><span class="line">*/</span><br></pre></td></tr></table></figure>
+
+<h4 id="hack-k8s-tools-go"><a href="#hack-k8s-tools-go" class="headerlink" title="hack/k8s/tools.go"></a>hack/k8s/tools.go</h4><p>確保<code>go mod</code>能夠 code-generator 視為相依套件。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// +build tools</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// This package imports things required by build scripts, to force `go mod` to see them as dependencies</span></span><br><span class="line"><span class="comment">// See https://github.com/golang/go/issues/25922</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">package</span> tools</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	_ <span class="string">"k8s.io/code-generator"</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h4 id="hack-k8s-update-generated-sh"><a href="#hack-k8s-update-generated-sh" class="headerlink" title="hack/k8s/update-generated.sh"></a>hack/k8s/update-generated.sh</h4><p>用於執行 code-generator 腳本，以產生自定義資源的 Deepcopy、Client、Informer 與 Lister 程式碼。</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/env bash</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">set</span> -o errexit</span><br><span class="line"><span class="built_in">set</span> -o nounset</span><br><span class="line"><span class="built_in">set</span> -o pipefail</span><br><span class="line"></span><br><span class="line">SCRIPT_ROOT=$(dirname <span class="string">"<span class="variable">$&#123;BASH_SOURCE[0]&#125;</span>"</span>)/../..</span><br><span class="line">CODEGEN_PKG=<span class="variable">$&#123;CODEGEN_PKG:-$(cd "$&#123;SCRIPT_ROOT&#125;</span><span class="string">"; ls -d -1 ./vendor/k8s.io/code-generator 2&gt;/dev/null || echo ../code-generator)&#125;</span></span><br><span class="line"><span class="string">bash "</span><span class="variable">$&#123;CODEGEN_PKG&#125;</span><span class="string">"/generate-groups.sh "</span>deepcopy,client,informer,lister<span class="string">" \</span></span><br><span class="line"><span class="string">  github.com/cloud-native-taiwan/controller101/pkg/generated \</span></span><br><span class="line"><span class="string">  github.com/cloud-native-taiwan/controller101/pkg/apis \</span></span><br><span class="line"><span class="string">  "</span>cloudnative:v1alpha1<span class="string">" \</span></span><br><span class="line"><span class="string">  --output-base "</span>$(dirname <span class="variable">$&#123;BASH_SOURCE&#125;</span>)/../../../../../<span class="string">" \</span></span><br><span class="line"><span class="string">  --go-header-file <span class="variable">$&#123;SCRIPT_ROOT&#125;</span>/hack/k8s/boilerplate.go.txt</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="hack-verify-codegen-sh"><a href="#hack-verify-codegen-sh" class="headerlink" title="hack/verify-codegen.sh"></a>hack/verify-codegen.sh</h4><p>透過 diff 檢查當前的程式碼是否已經依據 apis 定義的內容產生。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/env bash</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">set</span> -o errexit</span><br><span class="line"><span class="built_in">set</span> -o nounset</span><br><span class="line"><span class="built_in">set</span> -o pipefail</span><br><span class="line"></span><br><span class="line">SCRIPT_ROOT=$(dirname <span class="string">"<span class="variable">$&#123;BASH_SOURCE[0]&#125;</span>"</span>)/../..</span><br><span class="line"></span><br><span class="line">DIFFROOT=<span class="string">"<span class="variable">$&#123;SCRIPT_ROOT&#125;</span>/pkg"</span></span><br><span class="line">TMP_DIFFROOT=<span class="string">"<span class="variable">$&#123;SCRIPT_ROOT&#125;</span>/_tmp/pkg"</span></span><br><span class="line">_tmp=<span class="string">"<span class="variable">$&#123;SCRIPT_ROOT&#125;</span>/_tmp"</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="title">cleanup</span></span>() &#123;</span><br><span class="line">  rm -rf <span class="string">"<span class="variable">$&#123;_tmp&#125;</span>"</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="built_in">trap</span> <span class="string">"cleanup"</span> EXIT SIGINT</span><br><span class="line"></span><br><span class="line">cleanup</span><br><span class="line"></span><br><span class="line">mkdir -p <span class="string">"<span class="variable">$&#123;TMP_DIFFROOT&#125;</span>"</span></span><br><span class="line">cp -a <span class="string">"<span class="variable">$&#123;DIFFROOT&#125;</span>"</span>/* <span class="string">"<span class="variable">$&#123;TMP_DIFFROOT&#125;</span>"</span></span><br><span class="line"></span><br><span class="line"><span class="string">"<span class="variable">$&#123;SCRIPT_ROOT&#125;</span>/hack/k8s/update-generated.sh"</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">"diffing <span class="variable">$&#123;DIFFROOT&#125;</span> against freshly generated codegen"</span></span><br><span class="line">ret=0</span><br><span class="line">diff -Naupr <span class="string">"<span class="variable">$&#123;DIFFROOT&#125;</span>"</span> <span class="string">"<span class="variable">$&#123;TMP_DIFFROOT&#125;</span>"</span> || ret=$?</span><br><span class="line">cp -a <span class="string">"<span class="variable">$&#123;TMP_DIFFROOT&#125;</span>"</span>/* <span class="string">"<span class="variable">$&#123;DIFFROOT&#125;</span>"</span></span><br><span class="line"><span class="keyword">if</span> [[ <span class="variable">$ret</span> -eq 0 ]]</span><br><span class="line"><span class="keyword">then</span></span><br><span class="line">  <span class="built_in">echo</span> <span class="string">"<span class="variable">$&#123;DIFFROOT&#125;</span> up to date."</span></span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">  <span class="built_in">echo</span> <span class="string">"<span class="variable">$&#123;DIFFROOT&#125;</span> is out of date. Please run hack/k8s/update-generated.sh"</span></span><br><span class="line">  <span class="built_in">exit</span> 1</span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Generate-codes"><a href="#Generate-codes" class="headerlink" title="Generate codes"></a>Generate codes</h3><p>當所有用於產生程式碼的檔案都建立後，就能透過 code-generator 依據定義的內容，來產生相關程式碼。由於開發使用 Go mod 管理套件，因此需要執行以下指令來完成程式碼產生:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ go mod vendor</span><br><span class="line">$ ./hack/k8s/update-generated.sh</span><br><span class="line">Generating deepcopy funcs</span><br><span class="line">Generating clientset <span class="keyword">for</span> cloudnative:v1alpha1 at github.com/cloud-native-taiwan/controller101/pkg/generated/clientset</span><br><span class="line">Generating listers <span class="keyword">for</span> cloudnative:v1alpha1 at github.com/cloud-native-taiwan/controller101/pkg/generated/listers</span><br><span class="line">Generating informers <span class="keyword">for</span> cloudnative:v1alpha1 at github.com/cloud-native-taiwan/controller101/pkg/generated/informers</span><br></pre></td></tr></table></figure>
+
+<p>完成後，即可看到以下檔案:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">pkg/generated</span><br><span class="line">├── clientset</span><br><span class="line">│   └── versioned</span><br><span class="line">│       ├── fake</span><br><span class="line">│       ├── scheme</span><br><span class="line">│       └── typed</span><br><span class="line">│           └── cloudnative</span><br><span class="line">│               └── v1alpha1</span><br><span class="line">│                   └── fake</span><br><span class="line">├── informers</span><br><span class="line">│   └── externalversions</span><br><span class="line">│       ├── cloudnative</span><br><span class="line">│       │   └── v1alpha1</span><br><span class="line">│       └── internalinterfaces</span><br><span class="line">└── listers</span><br><span class="line">    └── cloudnative</span><br><span class="line">        └── v1alpha1</span><br></pre></td></tr></table></figure>
+
+<p>這樣就能夠在自定義控制器中，透過 Client 程式碼直接操作 VirtualMachine API 了。</p>
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>今天主要了解如何自己定義 API 資源類型，並利用 code-generator 產生相關程式碼，以利我們在自定義控制器中使用。明天將透過這些定義與建立的程式碼，實際進行操作自定義 API 資源，並撰寫控制器程式。</p>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li><a href="https://github.com/kubernetes/sample-controller" target="_blank" rel="noopener">https://github.com/kubernetes/sample-controller</a></li>
+<li><a href="https://github.com/kubernetes/code-generator" target="_blank" rel="noopener">https://github.com/kubernetes/code-generator</a></li>
+<li><a href="https://itnext.io/how-to-generate-client-codes-for-kubernetes-custom-resource-definitions-crd-b4b9907769ba" target="_blank" rel="noopener">https://itnext.io/how-to-generate-client-codes-for-kubernetes-custom-resource-definitions-crd-b4b9907769ba</a></li>
+<li><a href="https://blog.openshift.com/kubernetes-deep-dive-code-generation-customresources/" target="_blank" rel="noopener">https://blog.openshift.com/kubernetes-deep-dive-code-generation-customresources/</a></li>
+<li><a href="http://blog.xbblfz.site/2018/09/19/k8s%E4%BB%A3%E7%A0%81%E8%87%AA%E5%8A%A8%E7%94%9F%E6%88%90%E8%BF%87%E7%A8%8B%E7%9A%84%E8%A7%A3%E6%9E%90/" target="_blank" rel="noopener">http://blog.xbblfz.site/2018/09/19/k8s%E4%BB%A3%E7%A0%81%E8%87%AA%E5%8A%A8%E7%94%9F%E6%88%90%E8%BF%87%E7%A8%8B%E7%9A%84%E8%A7%A3%E6%9E%90/</a></li>
+<li><a href="https://rancher.com/blog/2018/2018-07-09-rancher-management-plane-architecture/" target="_blank" rel="noopener">https://rancher.com/blog/2018/2018-07-09-rancher-management-plane-architecture/</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">動手實作 Kubernetes 自定義控制器 Part1</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2019-10-10 00:10</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2019/10/11/ironman2020/day26/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    動手實作 Kubernetes 自定義控制器 Part2
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2019/10/09/ironman2020/day24/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">探討 Kubernetes 自定義控制器是如何運作 Part2</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2019/10/10/ironman2020/day25/" data-id="ck3ns7q6f004bwmpfdutrydq4" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2019/10/10/ironman2020/day25/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/10/10/ironman2020/day25/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#開發環境設置"><span class="toc-number">2.</span> <span class="toc-text">開發環境設置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#產生自定義資源程式碼"><span class="toc-number">3.</span> <span class="toc-text">產生自定義資源程式碼</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Defining-types-and-scripts"><span class="toc-number">3.1.</span> <span class="toc-text">Defining types and scripts</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Generate-codes"><span class="toc-number">3.2.</span> <span class="toc-text">Generate codes</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#結語"><span class="toc-number">4.</span> <span class="toc-text">結語</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Reference"><span class="toc-number">5.</span> <span class="toc-text">Reference</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2019/10/10/ironman2020/day25/';
+        
+        this.page.identifier = 'ironman2020/day25';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

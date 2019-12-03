@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>動手實作 Kubernetes 自定義控制器 Part6 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="前言在動手實作 Kubernetes 自定義控制器 Part5 文章結束後，基本上已經完成了這個自定義控制器範例的功能，這時若我們想要部署這個控制器的話，該怎麼辦呢?因為過去文章中，我們都是以 Go 語言指令直接建構程式進行測試，且使用 client-go 與 API Server 溝通時，都是以cluster-admin使用者來達成，這種作法如果是正式上線環境，必然會有很多疑慮，比如說控制器環境">
+<meta name="keywords" content="Kubernetes">
+<meta property="og:type" content="article">
+<meta property="og:title" content="動手實作 Kubernetes 自定義控制器 Part6">
+<meta property="og:url" content="https://k2r2bai.com/2019/10/15/ironman2020/day30/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="前言在動手實作 Kubernetes 自定義控制器 Part5 文章結束後，基本上已經完成了這個自定義控制器範例的功能，這時若我們想要部署這個控制器的話，該怎麼辦呢?因為過去文章中，我們都是以 Go 語言指令直接建構程式進行測試，且使用 client-go 與 API Server 溝通時，都是以cluster-admin使用者來達成，這種作法如果是正式上線環境，必然會有很多疑慮，比如說控制器環境">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.391Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="動手實作 Kubernetes 自定義控制器 Part6">
+<meta name="twitter:description" content="前言在動手實作 Kubernetes 自定義控制器 Part5 文章結束後，基本上已經完成了這個自定義控制器範例的功能，這時若我們想要部署這個控制器的話，該怎麼辦呢?因為過去文章中，我們都是以 Go 語言指令直接建構程式進行測試，且使用 client-go 與 API Server 溝通時，都是以cluster-admin使用者來達成，這種作法如果是正式上線環境，必然會有很多疑慮，比如說控制器環境">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-ironman2020/day30" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            動手實作 Kubernetes 自定義控制器 Part6
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2019/10/15/ironman2020/day30/">
+            <u><time datetime="2019-10-14T16:00:00.000Z" itemprop="datePublished">2019-10-15</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在<a href="https://k2r2bai.com/2019/10/14/ironman2020/day29/">動手實作 Kubernetes 自定義控制器 Part5</a> 文章結束後，基本上已經完成了這個自定義控制器範例的功能，這時若我們想要部署這個控制器的話，該怎麼辦呢?因為過去文章中，我們都是以 Go 語言指令直接建構程式進行測試，且使用 client-go 與 API Server 溝通時，都是以<code>cluster-admin</code>使用者來達成，這種作法如果是正式上線環境，必然會有很多疑慮，比如說控制器環境有安全問題，如果這些狀況被取得 Kubernetes cluster-admin 權限的話，就可能會危害到整個 Kubernetes 環境，因為 cluster-admin 可以操作任何 Kubernetes API 資源。基於這些問題，今天就是要來說明如何讓控制器正確的部署到 Kubernetes 叢集中執行。</p>
+<a id="more"></a>
+
+<h2 id="Deploy-in-the-cluster"><a href="#Deploy-in-the-cluster" class="headerlink" title="Deploy in the cluster"></a>Deploy in the cluster</h2><p>由於自定義控制器部署到 Kubernetes 叢集時，需要擁有特定使用者與權限操作 Kubernetes APIs，才能正常的執行控制器功能，因此必須利用 <a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/" target="_blank" rel="noopener">Service Account</a> 與 <a href="https://kubernetes.io/docs/reference/access-authn-authz/rbac/" target="_blank" rel="noopener">RBAC</a> 來讓控制器能在 Pod 中與 API Server 溝通。</p>
+<blockquote>
+<p>雖然 Kubernetes 在建立 Namespace 時，預設也會自動建立一個名稱為<code>default</code>的 Service Account，但這個 Service Account 通常會被用於該 Namespace 下的所有 Pod，因此不建議將 RBAC 權限賦予給這個 Service Account。</p>
+</blockquote>
+<p>而要提供部署到 Kubernetes 叢集中，通常需要準備以下幾個檔案:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">├── Dockerfile <span class="comment"># 將控制器建構成容器映像檔</span></span><br><span class="line">└── deploy <span class="comment"># 提供部署控制器的目錄</span></span><br><span class="line">    ├── crd.yml <span class="comment"># 自定義控制器的 CRDs</span></span><br><span class="line">    ├── deployment.yml <span class="comment"># 用於部署自定義控制器程式本身</span></span><br><span class="line">    ├── rbac.yml <span class="comment"># 自定義控制器的 API 存取權限</span></span><br><span class="line">    └── sa.yml <span class="comment"># 自定義控制器的服務帳戶，會與 RBAC 結合以限制 Pod 存取 API 的權限</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="環境準備"><a href="#環境準備" class="headerlink" title="環境準備"></a>環境準備</h3><p>由於今天的實作內容需要用到 Kubernetes 與 Docker，因此須完成以下需求與條件:</p>
+<ul>
+<li>一座 Kubernetes v1.10+ 叢集。透過 <a href="https://github.com/kubernetes/minikube" target="_blank" rel="noopener">Minikube</a> 建立即可 <code>minikube start --kubernetes-version=v1.15.4</code>。</li>
+<li>一個 Docker 環境，可以直接 Minikube 執行<code>eval $(minikube docker-env)</code>來取的 Docker 參數，並遠端操作。</li>
+</ul>
+<h3 id="Implementation"><a href="#Implementation" class="headerlink" title="Implementation"></a>Implementation</h3><p>本部分將建立這些檔案，並執行所需的操作。首先由於要將控制器部署到 Kubernetes 中，因此必須將控制器程式建構成容器映像檔，這樣才能透過 Pod 的形式來部署。而建構映像檔可以透過 Dockerfile 來達到，如以下內容:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">FROM kairen/golang-dep:1.12-alpine AS build</span><br><span class="line"></span><br><span class="line">ENV GOPATH <span class="string">"/go"</span></span><br><span class="line">ENV PROJECT_PATH <span class="string">"<span class="variable">$GOPATH</span>/src/github.com/cloud-native-taiwan/controller101"</span></span><br><span class="line">ENV GO111MODULE <span class="string">"on"</span></span><br><span class="line"></span><br><span class="line">COPY . <span class="variable">$PROJECT_PATH</span></span><br><span class="line">RUN <span class="built_in">cd</span> <span class="variable">$PROJECT_PATH</span> &amp;&amp; \</span><br><span class="line">  make &amp;&amp; mv out/controller /tmp/controller</span><br><span class="line"></span><br><span class="line">FROM alpine:3.7</span><br><span class="line">COPY --from=build /tmp/controller /bin/controller</span><br><span class="line">ENTRYPOINT [<span class="string">"controller"</span>]</span><br></pre></td></tr></table></figure>
+
+<p>完成後，即可透過 Docker 指令來建構與推送到公有的 Container registry 上以便後續部署使用:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">eval</span> $(minikube docker-env)</span><br><span class="line">$ docker build -t &lt;owner&gt;/controller101:v0.1.0 .</span><br><span class="line">$ docker push &lt;owner&gt;/controller101:v0.1.0</span><br></pre></td></tr></table></figure>
+
+<p>接著我們將新增以下檔案用於部署控制器到 Kubernetes 上執行。</p>
+<h4 id="deploy-crd-yml"><a href="#deploy-crd-yml" class="headerlink" title="deploy/crd.yml"></a>deploy/crd.yml</h4><p>用於以 CRD API 來新增自定義資源的檔案。在這檔案中，通常會定義一個或多個自定義資源內容。</p>
+<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">apiextensions.k8s.io/v1beta1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">CustomResourceDefinition</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">virtualmachines.cloudnative.tw</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  group:</span> <span class="string">cloudnative.tw</span></span><br><span class="line"><span class="attr">  version:</span> <span class="string">v1alpha1</span></span><br><span class="line"><span class="attr">  names:</span></span><br><span class="line"><span class="attr">    kind:</span> <span class="string">VirtualMachine</span></span><br><span class="line"><span class="attr">    singular:</span> <span class="string">virtualmachine</span></span><br><span class="line"><span class="attr">    plural:</span> <span class="string">virtualmachines</span></span><br><span class="line"><span class="attr">    shortNames:</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">vm</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">vms</span></span><br><span class="line"><span class="attr">  scope:</span> <span class="string">Namespaced</span></span><br><span class="line"><span class="attr">  additionalPrinterColumns:</span></span><br><span class="line"><span class="attr">  - name:</span> <span class="string">Status</span></span><br><span class="line"><span class="attr">    type:</span> <span class="string">string</span></span><br><span class="line"><span class="attr">    JSONPath:</span> <span class="string">.status.phase</span></span><br><span class="line"><span class="attr">  - name:</span> <span class="string">CPU</span></span><br><span class="line"><span class="attr">    type:</span> <span class="string">number</span></span><br><span class="line"><span class="attr">    JSONPath:</span> <span class="string">.status.server.usage.cpu</span></span><br><span class="line"><span class="attr">  - name:</span> <span class="string">Memory</span></span><br><span class="line"><span class="attr">    type:</span> <span class="string">number</span></span><br><span class="line"><span class="attr">    JSONPath:</span> <span class="string">.status.server.usage.memory</span></span><br><span class="line"><span class="attr">  - name:</span> <span class="string">Age</span></span><br><span class="line"><span class="attr">    type:</span> <span class="string">date</span></span><br><span class="line"><span class="attr">    JSONPath:</span> <span class="string">.metadata.creationTimestamp</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>有些自定義控制器會直接透過 <a href="https://github.com/kubernetes/apiextensions-apiserver" target="_blank" rel="noopener">apiextensions-apiserver</a> 在程式啟動時，將自定義資源自動新增到當前 Kubernetes 叢集中。</p>
+</blockquote>
+<h4 id="deploy-sa-yml"><a href="#deploy-sa-yml" class="headerlink" title="deploy/sa.yml"></a>deploy/sa.yml</h4><p>該檔案會定義一個 Service Account 用於提供給控制器程式在 Pod 中與 API Server 溝通的帳戶，這個帳戶會透過 RBAC 賦予特定的權限，以便控制器程式獲取操作所需 API 資源的權限。</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">ServiceAccount</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">controller101</span></span><br><span class="line"><span class="attr">  namespace:</span> <span class="string">kube-system</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="deploy-rbac-yml"><a href="#deploy-rbac-yml" class="headerlink" title="deploy/rbac.yml"></a>deploy/rbac.yml</h4><p>該檔案會賦予指定 Service Account 相對應的 API 權限，由於這個自定義控制器需要對 VirtualMachines 資源做各種操作(如 Create、Update、Delete、Get 與 Watch 等等)，因此需要設定相對應的 API Group 與 Resources 來確保控制器程式能獲取權限。</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">kind:</span> <span class="string">ClusterRole</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">rbac.authorization.k8s.io/v1beta1</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">controller101-role</span></span><br><span class="line"><span class="attr">rules:</span></span><br><span class="line"><span class="attr">- apiGroups:</span></span><br><span class="line"><span class="bullet">  -</span> <span class="string">cloudnative.tw</span></span><br><span class="line"><span class="attr">  resources:</span></span><br><span class="line"><span class="bullet">  -</span> <span class="string">"virtualmachines"</span></span><br><span class="line"><span class="attr">  verbs:</span></span><br><span class="line"><span class="bullet">  -</span> <span class="string">"*"</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">ClusterRoleBinding</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">rbac.authorization.k8s.io/v1beta1</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">controller101-rolebinding</span></span><br><span class="line"><span class="attr">roleRef:</span></span><br><span class="line"><span class="attr">  apiGroup:</span> <span class="string">rbac.authorization.k8s.io</span></span><br><span class="line"><span class="attr">  kind:</span> <span class="string">ClusterRole</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">controller101-role</span></span><br><span class="line"><span class="attr">subjects:</span></span><br><span class="line"><span class="attr">- kind:</span> <span class="string">ServiceAccount</span></span><br><span class="line"><span class="attr">  namespace:</span> <span class="string">kube-system</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">controller101</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>如果控制器需要存取其他 API 時，就必須在<code>rules</code>欄位額外新增。請務必確保給予最小可運作的權限。</p>
+</blockquote>
+<h4 id="deploy-deployment-yml"><a href="#deploy-deployment-yml" class="headerlink" title="deploy/deployment.yml"></a>deploy/deployment.yml</h4><p>該檔案定義自定義控制器的容器如何在 Kubernetes 部署，我們會在以 Deployment 方式進行部署，因為能利用 Deployment 機制來確保控制器在叢集中的可靠性。</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">apps/v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Deployment</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">controller101</span></span><br><span class="line"><span class="attr">  namespace:</span> <span class="string">kube-system</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  replicas:</span> <span class="number">1</span></span><br><span class="line"><span class="attr">  selector:</span></span><br><span class="line"><span class="attr">    matchLabels:</span></span><br><span class="line"><span class="attr">      k8s-app:</span> <span class="string">controller101</span></span><br><span class="line"><span class="attr">  strategy:</span></span><br><span class="line"><span class="attr">    type:</span> <span class="string">Recreate</span></span><br><span class="line"><span class="attr">  template:</span></span><br><span class="line"><span class="attr">    metadata:</span></span><br><span class="line"><span class="attr">      labels:</span></span><br><span class="line"><span class="attr">        k8s-app:</span> <span class="string">controller101</span></span><br><span class="line"><span class="attr">    spec:</span></span><br><span class="line"><span class="attr">      priorityClassName:</span> <span class="string">system-cluster-critical</span> <span class="comment"># 由於控制器有可能是重要元件，因此要確保節點資源不足時，不會優先被驅逐</span></span><br><span class="line"><span class="attr">      tolerations:</span></span><br><span class="line"><span class="attr">      - key:</span> <span class="string">CriticalAddonsOnly</span></span><br><span class="line"><span class="attr">        operator:</span> <span class="string">Exists</span></span><br><span class="line"><span class="attr">      - effect:</span> <span class="string">NoSchedule</span></span><br><span class="line"><span class="attr">        key:</span> <span class="string">node-role.kubernetes.io/master</span></span><br><span class="line"><span class="attr">      serviceAccountName:</span> <span class="string">controller101</span></span><br><span class="line"><span class="attr">      containers:</span></span><br><span class="line"><span class="attr">      - name:</span> <span class="string">controller</span></span><br><span class="line"><span class="attr">        image:</span> <span class="string">kairen/controller101:v0.1.0</span></span><br><span class="line"><span class="attr">        env:</span></span><br><span class="line"><span class="attr">        - name:</span> <span class="string">DOCKER_HOST</span></span><br><span class="line"><span class="attr">          value:</span> <span class="string">"tcp://192.168.99.159:2376"</span></span><br><span class="line"><span class="attr">        - name:</span> <span class="string">DOCKER_TLS_VERIFY</span></span><br><span class="line"><span class="attr">          value:</span> <span class="string">"1"</span></span><br><span class="line"><span class="attr">        - name:</span> <span class="string">DOCKER_CERT_PATH</span></span><br><span class="line"><span class="attr">          value:</span> <span class="string">"/etc/docker-certs"</span></span><br><span class="line"><span class="attr">        args:</span></span><br><span class="line"><span class="bullet">        -</span> <span class="bullet">--v=2</span></span><br><span class="line"><span class="bullet">        -</span> <span class="bullet">--logtostderr=true</span></span><br><span class="line"><span class="bullet">        -</span> <span class="bullet">--vm-driver=docker</span></span><br><span class="line"><span class="bullet">        -</span> <span class="bullet">--leader-elect=false</span></span><br><span class="line"><span class="attr">        volumeMounts:</span></span><br><span class="line"><span class="attr">        - name:</span> <span class="string">docker-certs</span></span><br><span class="line"><span class="attr">          mountPath:</span> <span class="string">"/etc/docker-certs"</span></span><br><span class="line"><span class="attr">          readOnly:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">      volumes:</span></span><br><span class="line"><span class="attr">      - name:</span> <span class="string">docker-certs</span></span><br><span class="line"><span class="attr">        secret:</span></span><br><span class="line"><span class="attr">          secretName:</span> <span class="string">docker-certs</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li>其中<code>env</code>部分，需要依據環境差異來改變。</li>
+<li>若有多個副本時，需要透過<code>--leader-elect</code>來啟用 Leader Election 機制。</li>
+</ul>
+</blockquote>
+<h3 id="Deployment"><a href="#Deployment" class="headerlink" title="Deployment"></a>Deployment</h3><p>當檔案都建立好後，就可以透過 kubectl 來部署到 Kubernetes 叢集。首先由於範例使用 Docker Driver 來測試，因此需要在控制器程式啟動時載入 Docker Certs，故這邊要先將這些檔案以 Secrets 方式存到 Kubernetes 中，之後再提供給 Deployment 掛載使用。</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ minikube docker-env</span><br><span class="line"><span class="built_in">export</span> DOCKER_TLS_VERIFY=<span class="string">"1"</span></span><br><span class="line"><span class="built_in">export</span> DOCKER_HOST=<span class="string">"tcp://192.168.99.159:2376"</span></span><br><span class="line"><span class="built_in">export</span> DOCKER_CERT_PATH=<span class="string">"/Users/test/.minikube/certs"</span></span><br><span class="line"></span><br><span class="line">$ kubectl -n kube-system create secret generic docker-certs \</span><br><span class="line">    --from-file=<span class="variable">$HOME</span>/.minikube/certs/ca.pem \</span><br><span class="line">    --from-file=<span class="variable">$HOME</span>/.minikube/certs/cert.pem \</span><br><span class="line">    --from-file=<span class="variable">$HOME</span>/.minikube/certs/key.pem</span><br></pre></td></tr></table></figure>
+
+<p>建立好 Docker certs 後，就可以執行以下指令進行部署:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ kubectl apply -f deploy/</span><br><span class="line">customresourcedefinition.apiextensions.k8s.io/virtualmachines.cloudnative.tw created</span><br><span class="line">deployment.apps/controller101 created</span><br><span class="line">clusterrole.rbac.authorization.k8s.io/controller101-role created</span><br><span class="line">clusterrolebinding.rbac.authorization.k8s.io/controller101-rolebinding created</span><br><span class="line">serviceaccount/controller101 created</span><br><span class="line"></span><br><span class="line">$ kubectl -n kube-system logs -f controller101-7858db7484-5bjvf</span><br><span class="line">I1015 11:14:45.159556       1 controller.go:77] Starting the controller</span><br><span class="line">I1015 11:14:45.159640       1 controller.go:78] Waiting <span class="keyword">for</span> the informer caches to sync</span><br><span class="line">I1015 11:14:45.262042       1 controller.go:86] Started workers</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若 Minikube 的 Docker envs 資訊不同時，需要修改<code>deploy/deployment.yml</code>裡面 envs。</p>
+</blockquote>
+<p>接著嘗試建立一個 VirtualMachine 資源實例，並用 kubectl get 與 docker ps 查看狀態:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cat &lt;&lt;EOF | kubectl apply -f -</span><br><span class="line">apiVersion: cloudnative.tw/v1alpha1</span><br><span class="line">kind: VirtualMachine</span><br><span class="line">metadata:</span><br><span class="line">  name: <span class="built_in">test</span>-vm</span><br><span class="line">spec:</span><br><span class="line">  resource:</span><br><span class="line">    cpu: 2</span><br><span class="line">    memory: 4G</span><br><span class="line">EOF</span><br><span class="line">virtualmachine.cloudnative.tw/<span class="built_in">test</span>-vm created</span><br><span class="line"></span><br><span class="line">$ kubectl get vms</span><br><span class="line">NAME      STATUS   CPU   MEMORY                AGE</span><br><span class="line"><span class="built_in">test</span>-vm   Active   0     0.11359797976548552   22s</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">$ docker ps --filter <span class="string">"name=test-vm"</span></span><br><span class="line">CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES</span><br><span class="line">5ac009171998        nginx:1.17.4        <span class="string">"nginx -g 'daemon of…"</span>   46 seconds ago      Up 45 seconds       80/tcp              <span class="built_in">test</span>-vm</span><br></pre></td></tr></table></figure>
+
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>從今天實作中，可以了解到部署自定義控制器到 Kubernetes 叢集並非難事，一但控制器容器化後，並以 Kubernetes API 資源形式部署時，就能夠增加控制器的可攜帶性與維護性，往後有版本更新時，也可以利用 Kubernetes 的一些機制(如 Rolling Upgrade)來安全地更新控制器程式。</p>
+<p>最後由於鐵人賽文章不夠用，因此關於 CKA/CKAD 認證、 Admission Controller 等文章，都會在 <a href="http://k2r2bai.com">KaiRen’s Blog</a> 上持續新增。</p>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/rbac/" target="_blank" rel="noopener">https://kubernetes.io/docs/reference/access-authn-authz/rbac/</a></li>
+<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/" target="_blank" rel="noopener">https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/</a></li>
+<li><a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/" target="_blank" rel="noopener">https://kubernetes.io/docs/concepts/workloads/controllers/deployment/</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">動手實作 Kubernetes 自定義控制器 Part6</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2019-10-15 00:10</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2019/12/01/linedevday/part1/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    2019 LINE Dev Day 議程心得 Part1
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2019/10/14/ironman2020/day29/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">動手實作 Kubernetes 自定義控制器 Part5</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2019/10/15/ironman2020/day30/" data-id="ck3ns7q6k004pwmpfzilouqbi" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2019/10/15/ironman2020/day30/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/10/15/ironman2020/day30/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Deploy-in-the-cluster"><span class="toc-number">2.</span> <span class="toc-text">Deploy in the cluster</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#環境準備"><span class="toc-number">2.1.</span> <span class="toc-text">環境準備</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementation"><span class="toc-number">2.2.</span> <span class="toc-text">Implementation</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Deployment"><span class="toc-number">2.3.</span> <span class="toc-text">Deployment</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#結語"><span class="toc-number">3.</span> <span class="toc-text">結語</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Reference"><span class="toc-number">4.</span> <span class="toc-text">Reference</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2019/10/15/ironman2020/day30/';
+        
+        this.page.identifier = 'ironman2020/day30';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

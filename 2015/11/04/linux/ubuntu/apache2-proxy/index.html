@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>簡單設定 Apache2 Proxy 與 VirtualHost | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Apache2 是一套經過測試與用於生產環境的 HTTP 伺服器，在許多網頁伺服器中被廣泛的採用，Apache2 除了本身能力強大外，其也整合了許多的額外模組來提供更多的擴展功能。">
+<meta name="keywords" content="Linux,HTTP Server">
+<meta property="og:type" content="article">
+<meta property="og:title" content="簡單設定 Apache2 Proxy 與 VirtualHost">
+<meta property="og:url" content="https://k2r2bai.com/2015/11/04/linux/ubuntu/apache2-proxy/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Apache2 是一套經過測試與用於生產環境的 HTTP 伺服器，在許多網頁伺服器中被廣泛的採用，Apache2 除了本身能力強大外，其也整合了許多的額外模組來提供更多的擴展功能。">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.397Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="簡單設定 Apache2 Proxy 與 VirtualHost">
+<meta name="twitter:description" content="Apache2 是一套經過測試與用於生產環境的 HTTP 伺服器，在許多網頁伺服器中被廣泛的採用，Apache2 除了本身能力強大外，其也整合了許多的額外模組來提供更多的擴展功能。">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-linux/ubuntu/apache2-proxy" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            簡單設定 Apache2 Proxy 與 VirtualHost
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2015/11/04/linux/ubuntu/apache2-proxy/">
+            <u><time datetime="2015-11-04T09:08:54.000Z" itemprop="datePublished">2015-11-04</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Linux/">Linux</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/HTTP-Server/">HTTP Server</a>, <a class="tag-link" href="/tags/Linux/">Linux</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>Apache2 是一套經過測試與用於生產環境的 HTTP 伺服器，在許多網頁伺服器中被廣泛的採用，Apache2 除了本身能力強大外，其也整合了許多的額外模組來提供更多的擴展功能。</p>
+<a id="more"></a>
+
+<h2 id="Apache2-安裝與設定"><a href="#Apache2-安裝與設定" class="headerlink" title="Apache2 安裝與設定"></a>Apache2 安裝與設定</h2><p>要安裝 Apache 伺服器很簡單，只需要透過 APT 進行安裝即可：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get update</span><br><span class="line">$ sudo apt-get install -y libapache2-mod-proxy-html libxml2-dev apache2 build-essential</span><br></pre></td></tr></table></figure>
+
+<h3 id="啟用-Proxy-Modules"><a href="#啟用-Proxy-Modules" class="headerlink" title="啟用 Proxy Modules"></a>啟用 Proxy Modules</h3><p>這邊可以透過以下指令來逐一啟動模組：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">a2enmod proxy</span><br><span class="line">a2enmod proxy_http</span><br><span class="line">a2enmod proxy_ajp</span><br><span class="line">a2enmod rewrite</span><br><span class="line">a2enmod deflate</span><br><span class="line">a2enmod headers</span><br><span class="line">a2enmod proxy_balancer</span><br><span class="line">a2enmod proxy_connect</span><br><span class="line">a2enmod proxy_html</span><br></pre></td></tr></table></figure>
+
+<h3 id="設定-Default-conf-來啟用"><a href="#設定-Default-conf-來啟用" class="headerlink" title="設定 Default conf 來啟用"></a>設定 Default conf 來啟用</h3><p>編輯<code>/etc/apache2/sites-available/000-default.conf</code>設定檔，加入 Proxy 與 VirtualHost 資訊：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 簡單 Proxypass 範例</span></span><br><span class="line">&lt;VirtualHost *:80&gt;</span><br><span class="line">        ErrorLog <span class="variable">$&#123;APACHE_LOG_DIR&#125;</span>/laravel-error.log</span><br><span class="line">        CustomLog <span class="variable">$&#123;APACHE_LOG_DIR&#125;</span>/laravel-access.log combined</span><br><span class="line">        ProxyPass / http://192.168.20.10/</span><br><span class="line">        ProxyPassReverse / http://192.168.20.10/</span><br><span class="line">        ProxyPreserveHost On</span><br><span class="line">        ServerName laravel.kairen.com</span><br><span class="line">        ServerAlias laravel.kairen.com</span><br><span class="line">        ServerAlias *.laravel.kairen.com</span><br><span class="line">&lt;/VirtualHost&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 簡單 Load balancer 範例</span></span><br><span class="line">&lt;Proxy balancer://api-gateways&gt;</span><br><span class="line">    <span class="comment"># Server 1</span></span><br><span class="line">    BalancerMember http://192.168.20.11:8080/</span><br><span class="line">    <span class="comment"># Server 2</span></span><br><span class="line">    BalancerMember http://192.168.20.12:8080/</span><br><span class="line">&lt;/Proxy&gt;</span><br><span class="line"></span><br><span class="line">&lt;VirtualHost *:*&gt;</span><br><span class="line">    ProxyPass / balancer://api-gateways</span><br><span class="line">&lt;/VirtualHost&gt;</span><br></pre></td></tr></table></figure>
+
+<p>完成後重新啟動服務即可：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo service apache2 restart</span><br></pre></td></tr></table></figure>
+
+<h3 id="使用-SSL-Reverse-Proxy"><a href="#使用-SSL-Reverse-Proxy" class="headerlink" title="使用 SSL Reverse-Proxy"></a>使用 SSL Reverse-Proxy</h3><p>如果需要設定 SSL 連線與認證的話，可以透過以下設定方式來提供：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Listen 443</span><br><span class="line">NameVirtualHost *:443</span><br><span class="line">&lt;VirtualHost *:443&gt;</span><br><span class="line">    SSLEngine On</span><br><span class="line">    SSLCertificateFile /etc/apache2/ssl/file.pem</span><br><span class="line">    ProxyPass / http://192.168.20.11:8080/</span><br><span class="line">    ProxyPassReverse / http://192.168.20.11:8080/</span><br><span class="line">&lt;/VirtualHost&gt;</span><br></pre></td></tr></table></figure>
+
+<p>完成後重新啟動服務即可：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo service apache2 restart</span><br></pre></td></tr></table></figure>
+
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">簡單設定 Apache2 Proxy 與 VirtualHost</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2015-11-4 17:11</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2015/11/09/container/docker-introduction/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    Docker 基礎介紹
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2015/11/04/linux/ubuntu/ubuntu-maas-install/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">Ubuntu Metal as a Service 安裝</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2015/11/04/linux/ubuntu/apache2-proxy/" data-id="ck3ns7qbs00iiwmpfh9tr0opp" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2015/11/04/linux/ubuntu/apache2-proxy/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2015/11/04/linux/ubuntu/apache2-proxy/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Apache2-安裝與設定"><span class="toc-number">1.</span> <span class="toc-text">Apache2 安裝與設定</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#啟用-Proxy-Modules"><span class="toc-number">1.1.</span> <span class="toc-text">啟用 Proxy Modules</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#設定-Default-conf-來啟用"><span class="toc-number">1.2.</span> <span class="toc-text">設定 Default conf 來啟用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#使用-SSL-Reverse-Proxy"><span class="toc-number">1.3.</span> <span class="toc-text">使用 SSL Reverse-Proxy</span></a></li></ol></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2015/11/04/linux/ubuntu/apache2-proxy/';
+        
+        this.page.identifier = 'linux/ubuntu/apache2-proxy';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

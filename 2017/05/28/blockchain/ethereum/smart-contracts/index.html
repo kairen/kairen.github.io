@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>智能合約(Smart contracts) | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="智能合約(Smart Contracts) 是在 Ethereum 區塊鏈中所屬的物件。它們包含程式碼函式以及能夠與其他合約進行互動、做出決策、儲存資料與傳送乙太幣給其他人。合約是由創建者所定義，但是它們的執行與他們所提供的服務，都是由 Ethereum 網路本身提供。它們將存在且可被執行，只要整個網路存在，並且只會因程式中有撰寫自我銷毀的功能才會消失。 我可以用合約做什麼呢？只要想像力夠豐富，要">
+<meta name="keywords" content="Blockchain,Ethereum,Solidity,Smart Contract">
+<meta property="og:type" content="article">
+<meta property="og:title" content="智能合約(Smart contracts)">
+<meta property="og:url" content="https://k2r2bai.com/2017/05/28/blockchain/ethereum/smart-contracts/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="智能合約(Smart Contracts) 是在 Ethereum 區塊鏈中所屬的物件。它們包含程式碼函式以及能夠與其他合約進行互動、做出決策、儲存資料與傳送乙太幣給其他人。合約是由創建者所定義，但是它們的執行與他們所提供的服務，都是由 Ethereum 網路本身提供。它們將存在且可被執行，只要整個網路存在，並且只會因程式中有撰寫自我銷毀的功能才會消失。 我可以用合約做什麼呢？只要想像力夠豐富，要">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/blockchain/smartSponsor-1.png">
+<meta property="og:image" content="https://k2r2bai.com/images/blockchain/smartSponsor-2.png">
+<meta property="og:image" content="https://k2r2bai.com/images/blockchain/smartSponsor-3.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.377Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="智能合約(Smart contracts)">
+<meta name="twitter:description" content="智能合約(Smart Contracts) 是在 Ethereum 區塊鏈中所屬的物件。它們包含程式碼函式以及能夠與其他合約進行互動、做出決策、儲存資料與傳送乙太幣給其他人。合約是由創建者所定義，但是它們的執行與他們所提供的服務，都是由 Ethereum 網路本身提供。它們將存在且可被執行，只要整個網路存在，並且只會因程式中有撰寫自我銷毀的功能才會消失。 我可以用合約做什麼呢？只要想像力夠豐富，要">
+<meta name="twitter:image" content="https://k2r2bai.com/images/blockchain/smartSponsor-1.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-blockchain/ethereum/smart-contracts" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            智能合約(Smart contracts)
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2017/05/28/blockchain/ethereum/smart-contracts/">
+            <u><time datetime="2017-05-28T09:08:54.000Z" itemprop="datePublished">2017-05-28</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Blockchain/">Blockchain</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Blockchain/">Blockchain</a>, <a class="tag-link" href="/tags/Ethereum/">Ethereum</a>, <a class="tag-link" href="/tags/Smart-Contract/">Smart Contract</a>, <a class="tag-link" href="/tags/Solidity/">Solidity</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p><code>智能合約(Smart Contracts)</code> 是在 Ethereum 區塊鏈中所屬的物件。它們包含程式碼函式以及能夠與其他合約進行互動、做出決策、儲存資料與傳送乙太幣給其他人。合約是由創建者所定義，但是它們的執行與他們所提供的服務，都是由 Ethereum 網路本身提供。它們將存在且可被執行，只要整個網路存在，並且只會因程式中有撰寫自我銷毀的功能才會消失。</p>
+<p>我可以用合約做什麼呢？只要想像力夠豐富，要做什麼幾乎都沒問題，但以下指南只會是入門，讓我們去實現一些簡單的事情。</p>
+<a id="more"></a>
+
+<h2 id="Smart-Sponsor"><a href="#Smart-Sponsor" class="headerlink" title="Smart Sponsor"></a>Smart Sponsor</h2><p>本節將說明一智能合約範例，透過建構一個合約來允許以下賬戶持有人進行互動。</p>
+<ul>
+<li>一個慈善機構舉行籌款活動，我們稱之為 <strong>thebenefactor</strong>。</li>
+<li>一個受贊助的 runner 想為慈善機構募款，我們稱之為 <strong>therunner</strong>。</li>
+<li>其他的人想要贊助 runner，我們稱之為 <strong>thesponsor</strong>。</li>
+<li>一個 Ethereum 節點，用來開採區塊鏈以驗證交易，我們稱之為 <strong>theminer</strong>。</li>
+</ul>
+<p>我們的合約(smartSponsor)：</p>
+<ul>
+<li>是由一位 <strong>runner</strong> 透過贊助的執行來為慈善機構募款。</li>
+<li>當建立合約時，<strong>runner</strong> 會任命為募集錢的捐助者。</li>
+<li><strong>runner</strong> 則邀情其他人去進行贊助。用戶透過呼叫一個在智能合約上的函式，將乙太幣從 <strong>贊助商的帳戶</strong> 轉移到 <strong>合約</strong>，並保持乙太幣於合約，直到有進一步的通知。</li>
+<li>在合約的時限期間的所有人都能看到誰是 <strong>捐助者</strong>，有多少的乙太幣被從誰捐(雖然贊助者可以匿名，當然:p)。</li>
+</ul>
+<p><img src="/images/blockchain/smartSponsor-1.png" alt="flow-1"></p>
+<p>那麼有兩件事情可能發生：</p>
+<ul>
+<li>執行都按計劃進行，以及 <strong>runner</strong> 指示合約轉移到所有資金的捐助者。</li>
+</ul>
+<p><img src="/images/blockchain/smartSponsor-2.png" alt="flow-2"></p>
+<ul>
+<li>執行由於謀些原因無法承擔，而 runner 指示合約將退還贊助商的抵押。</li>
+</ul>
+<p><img src="/images/blockchain/smartSponsor-3.png" alt="flow-3"></p>
+<p>Ethereum 允許智能合約由撰寫 Solidity 語言來定義。Solidity 的合約是類似於 Java 的類別定義。成員變數的儲存採用區塊鍊交易與合約的方法，來詢問合約或改變的其狀態。作為區塊鏈的副本會分散到網路中的所有節點，任何人都可以詢問合約，以從中搜尋公開的訊息。</p>
+<p>合約有以下幾種方法：</p>
+<ul>
+<li><strong><code>smartSponsor</code></strong>：合約的建構子。它初始化合約的狀態。合約的建立者傳入賬戶的位址，有利於合約的 drawdown。</li>
+<li><strong><code>pledge</code></strong>：任何人都可以呼叫捐贈乙太幣贊助基金。贊助商提供支援的選擇性訊息</li>
+<li><strong><code>getPot</code></strong>：回傳當前儲存在合約的總乙太幣。</li>
+<li><strong><code>refund</code></strong>：把贊助商的錢退回給贊助商。只有合約的擁有者才能呼叫這個函式。</li>
+<li><strong><code>drawdown</code></strong>：傳送合約的總價值給捐助者賬戶。只有合約的擁有者才能呼叫這個函式。</li>
+</ul>
+<p>這個想法是使一個合約擁有約束力。他們不能拿回任何資金，除非整個合約被退還。在這種情況下，所有資料都是被公開存取的，這意味著任何人都有存取 Ethereum 區塊鏈，來查看誰建立了合約，誰是捐助者，以及誰透過存取合約程式碼本身保證了每一筆資金。</p>
+<p>要注意很重要的一點，任何改變合約的狀態(建立、承若、退還或 drawing down)都需要在區塊鏈上建立交易，這意味著這些交易不會被儲存，要直到這些交易的區塊被開採。操作只能讀取到一個現有合約狀態(getPot 或讀取公有成員變數)都不需要進行挖礦。這是一個很重要且微妙的點：寫入操作是很慢的(因為我們要等到採礦完成)。由於這情況合約可能永遠不會被建立到區塊鍊中，因此呼叫方需要提供一些獎勵，來促進礦工去工作。這是被稱為 gas 的 Ethereum 術語，所有的寫入操作都是需要 gas 的支出來改變區塊鍊的狀態。</p>
+<p>幸運的是我們不需要購買真正的乙太幣，以及參與 Ethereum 網路。我們可以使用相同的軟體，但要配置它運行一個本地測試區塊鏈，以及產生自己的假乙太幣。</p>
+<p>以下為一個 Solidity 語言的智能合約範例：</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">contract smartSponsor &#123;</span><br><span class="line">  address public owner;</span><br><span class="line">  address public benefactor;</span><br><span class="line">  bool public refunded;</span><br><span class="line">  bool public complete;</span><br><span class="line">  uint public numPledges;</span><br><span class="line">  struct Pledge &#123;</span><br><span class="line">    uint amount;</span><br><span class="line">    address eth_address;</span><br><span class="line">    bytes32 message;</span><br><span class="line">  &#125;</span><br><span class="line">  mapping(<span class="function"><span class="params">uint</span> =&gt;</span> Pledge) public pledges;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// constructor</span></span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">smartSponsor</span>(<span class="params">address _benefactor</span>) </span>&#123;</span><br><span class="line">    owner = msg.sender;</span><br><span class="line">    numPledges = <span class="number">0</span>;</span><br><span class="line">    refunded = <span class="literal">false</span>;</span><br><span class="line">    complete = <span class="literal">false</span>;</span><br><span class="line">    benefactor = _benefactor;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// add a new pledge</span></span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">pledge</span>(<span class="params">bytes32 _message</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (msg.value == <span class="number">0</span> || complete || refunded) <span class="keyword">throw</span>;</span><br><span class="line">    pledges[numPledges] = Pledge(msg.value, msg.sender, _message);</span><br><span class="line">    numPledges++;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">getPot</span>(<span class="params"></span>) <span class="title">constant</span> <span class="title">returns</span> (<span class="params">uint</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>.balance;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// refund the backers</span></span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">refund</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (msg.sender != owner || complete || refunded) <span class="keyword">throw</span>;</span><br><span class="line">    <span class="keyword">for</span> (uint i = <span class="number">0</span>; i &lt; numPledges; ++i) &#123;</span><br><span class="line">      pledges[i].eth_address.send(pledges[i].amount);</span><br><span class="line">    &#125;</span><br><span class="line">    refunded = <span class="literal">true</span>;</span><br><span class="line">    complete = <span class="literal">true</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// send funds to the contract benefactor</span></span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">drawdown</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (msg.sender != owner || complete || refunded) <span class="keyword">throw</span>;</span><br><span class="line">    benefactor.send(<span class="keyword">this</span>.balance);</span><br><span class="line">    complete = <span class="literal">true</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li>一個<code>Pledge</code>結構模型的捐贈，儲存著贊助商的帳戶 ID、承若押金，以及一些訊息字串。</li>
+<li>這個<code>pledges</code>陣列儲存了一個承若方的列表。</li>
+<li>合約中的所有成員變數都是公開的，所以<code>getters</code>將自動被建立。</li>
+<li><code>throw</code>被稱為某些函式(functions)，用以防止資料被寫入錯誤的資料到該區塊鏈中。</li>
+</ul>
+</blockquote>
+<h2 id="參考連結"><a href="#參考連結" class="headerlink" title="參考連結"></a>參考連結</h2><ul>
+<li><a href="https://medium.com/@kpcb_edge/our-thoughts-on-ethereum-31520b164e00#.2q1i88278" target="_blank" rel="noopener">Our thoughts on Ethereum</a></li>
+<li><a href="https://www.ethereum.org/greeter" target="_blank" rel="noopener">Building a smart contract using the command line</a></li>
+<li><a href="https://developer.ibm.com/clouddataservices/2016/05/19/block-chain-technology-smart-contracts-and-ethereum/" target="_blank" rel="noopener">Block chain technology, smart contracts and Ethereum</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">智能合約(Smart contracts)</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2017-5-28 17:05</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2017/07/22/kubernetes/deploy/linuxkit/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    利用 LinuxKit 建立 Kubernetes 叢集
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2017/05/27/blockchain/ethereum/browser-solidity/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">利用 Browser Solidity 部署智能合約</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2017/05/28/blockchain/ethereum/smart-contracts/" data-id="ck3ns7qa600erwmpf1i5htawh" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2017/05/28/blockchain/ethereum/smart-contracts/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2017/05/28/blockchain/ethereum/smart-contracts/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Smart-Sponsor"><span class="toc-number">1.</span> <span class="toc-text">Smart Sponsor</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#參考連結"><span class="toc-number">2.</span> <span class="toc-text">參考連結</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2017/05/28/blockchain/ethereum/smart-contracts/';
+        
+        this.page.identifier = 'blockchain/ethereum/smart-contracts';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

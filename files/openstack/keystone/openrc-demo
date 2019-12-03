@@ -1,0 +1,8 @@
+export OS_AUTH_URL="http://KEYSTONE_HOST/identity/v3"
+export OS_PROJECT_NAME="demo"
+export OS_TENANT_NAME="demo"
+export OS_USERNAME="demo"
+export OS_PASSWORD="USER_PASSWORD"
+export OS_REGION_NAME="RegionOne"
+export OS_DOMAIN_NAME="default"
+export OS_IDENTITY_API_VERSION="3"

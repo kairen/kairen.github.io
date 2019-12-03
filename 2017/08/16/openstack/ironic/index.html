@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>利用 OpenStack Ironic 提供裸機部署服務 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="Ironic 是 OpenStack 專案之一，主要目的是提供裸機機器部署服務(Bare-metal service)。它能夠單獨或整合 OpenStack 其他服務被使用，而可整合服務包含 Keystone、Nova、Neutron、Glance 與 Swift 等核心服務。當使用 Compute 與 Network 服務對 Bare-metal 進行適當的配置時，OpenStack 可以透過">
+<meta name="keywords" content="OpenStack,DevStack,Bare-metal">
+<meta property="og:type" content="article">
+<meta property="og:title" content="利用 OpenStack Ironic 提供裸機部署服務">
+<meta property="og:url" content="https://k2r2bai.com/2017/08/16/openstack/ironic/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="Ironic 是 OpenStack 專案之一，主要目的是提供裸機機器部署服務(Bare-metal service)。它能夠單獨或整合 OpenStack 其他服務被使用，而可整合服務包含 Keystone、Nova、Neutron、Glance 與 Swift 等核心服務。當使用 Compute 與 Network 服務對 Bare-metal 進行適當的配置時，OpenStack 可以透過">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/openstack/openstack-ironic.png">
+<meta property="og:image" content="https://k2r2bai.com/images/openstack/ironic-clean.png">
+<meta property="og:image" content="https://k2r2bai.com/images/openstack/ironic-ui.png">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.400Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="利用 OpenStack Ironic 提供裸機部署服務">
+<meta name="twitter:description" content="Ironic 是 OpenStack 專案之一，主要目的是提供裸機機器部署服務(Bare-metal service)。它能夠單獨或整合 OpenStack 其他服務被使用，而可整合服務包含 Keystone、Nova、Neutron、Glance 與 Swift 等核心服務。當使用 Compute 與 Network 服務對 Bare-metal 進行適當的配置時，OpenStack 可以透過">
+<meta name="twitter:image" content="https://k2r2bai.com/images/openstack/openstack-ironic.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-openstack/ironic" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            利用 OpenStack Ironic 提供裸機部署服務
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2017/08/16/openstack/ironic/">
+            <u><time datetime="2017-08-16T08:23:01.000Z" itemprop="datePublished">2017-08-16</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/OpenStack/">OpenStack</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Bare-metal/">Bare-metal</a>, <a class="tag-link" href="/tags/DevStack/">DevStack</a>, <a class="tag-link" href="/tags/OpenStack/">OpenStack</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p><a href="https://docs.openstack.org/ironic/latest/user/index.html" target="_blank" rel="noopener">Ironic</a> 是 OpenStack 專案之一，主要目的是提供裸機機器部署服務(Bare-metal service)。它能夠單獨或整合 OpenStack 其他服務被使用，而可整合服務包含 Keystone、Nova、Neutron、Glance 與 Swift 等核心服務。當使用 Compute 與 Network 服務對 Bare-metal 進行適當的配置時，OpenStack 可以透過 Compute API 同時部署虛擬機(Virtual machines)與裸機(Bare machines)。</p>
+<p>本篇為了精簡安裝過程，故這邊不採用手動安裝教學(會在 Gitbook 書上更新)，因此採用 <a href="https://docs.openstack.org/devstack/latest/" target="_blank" rel="noopener">DevStack</a> 來部署服務，再手動設定一些步驟。</p>
+<p>本環境安裝資訊：</p>
+<ul>
+<li>OpenStack Pike</li>
+<li>DevStack Pike</li>
+<li>Pike Pike Pike ….</li>
+</ul>
+<a id="more"></a>
+
+<p><img src="/images/openstack/openstack-ironic.png" alt></p>
+<blockquote>
+<p>P.S. 這邊因為我的 Manage net 已經有 MAAS 的服務，所以才用其他張網卡進行部署。</p>
+</blockquote>
+<h2 id="節點資訊"><a href="#節點資訊" class="headerlink" title="節點資訊"></a>節點資訊</h2><p>本次安裝作業系統採用<code>Ubuntu 16.04 Server</code>，測試環境為實體主機：</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>CPU</th>
+<th>Memory</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>controller</td>
+<td>4</td>
+<td>16G</td>
+</tr>
+<tr>
+<td>bare-node1</td>
+<td>4</td>
+<td>16G</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>這邊 controller 為主要控制節點，將安裝大部分 OpenStack 服務。而 bare-node 為被用來做裸機部署的機器。</p>
+</blockquote>
+<p>網卡若是實體主機，請設定為固定 IP，如以下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">auto eth0</span><br><span class="line">iface eth0 inet static</span><br><span class="line">       	address 172.20.3.93/24</span><br><span class="line">       	gateway	172.20.3.1</span><br><span class="line">       	dns-nameservers 8.8.8.8</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若想修改主機的網卡名稱，可以編輯<code>/etc/udev/rules.d/70-persistent-net.rules</code>。</p>
+</blockquote>
+<p>其中<code>controller</code>的<code>eth2</code>需設定為以下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">auto &lt;ethx&gt;</span><br><span class="line">iface &lt;ethx&gt; inet manual</span><br><span class="line">        up ip link set dev $IFACE up</span><br><span class="line">        down ip link set dev $IFACE down</span><br></pre></td></tr></table></figure>
+
+<h2 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h2><p>安裝前需要確認叢集滿足以下幾點：</p>
+<ul>
+<li>確認所有節點網路可以溝通。</li>
+<li>Bare-node IPMI 設定完成。包含 Address、User 與 Password。</li>
+<li>修改 Controller 的 <code>/etc/apt/sources.list</code>，使用<code>tw.archive.ubuntu.com</code>。</li>
+</ul>
+<h2 id="安裝-OpenStack-服務"><a href="#安裝-OpenStack-服務" class="headerlink" title="安裝 OpenStack 服務"></a>安裝 OpenStack 服務</h2><p>這邊採用 DevStack 來部署測試環境，首先透過以下指令取得 DevStack：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo useradd -s /bin/bash -d /opt/stack -m stack</span><br><span class="line">$ <span class="built_in">echo</span> <span class="string">"stack ALL=(ALL) NOPASSWD: ALL"</span> | sudo tee /etc/sudoers.d/stack</span><br><span class="line">$ sudo su - stack</span><br><span class="line">$ git <span class="built_in">clone</span> https://git.openstack.org/openstack-dev/devstack</span><br><span class="line">$ <span class="built_in">cd</span> devstack</span><br></pre></td></tr></table></figure>
+
+<p>接著撰寫 local.conf 來描述部署過程所需的服務：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ wget https://kairen.github.io/files/devstack/ironic-local.conf -O local.conf</span><br><span class="line">$ sed -i <span class="string">'s/HOST_IP=.*/HOST_IP=172.22.132.93/g'</span> local.conf</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>HOST_IP</code>請更換為自己環境 IP。有其他 Driver 請記得加入。</p>
+</blockquote>
+<p>完成後執行部署腳本進行建置：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ./stack.sh</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>大約經過 15 min 就可以完成整個環境安裝。</p>
+</blockquote>
+<p>測試 OpenStack 環境：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">source</span> openrc admin</span><br><span class="line">$ openstack user list</span><br><span class="line">+----------------------------------+----------------+</span><br><span class="line">| ID                               | Name           |</span><br><span class="line">+----------------------------------+----------------+</span><br><span class="line">| 3ba4e813270e4e98ad781f4103284e0d | demo           |</span><br><span class="line">| 40c6014bc18f407fbfbc22aadedb1ca0 | placement      |</span><br><span class="line">| 567156ad1c7b4ccdbcd4ea02e7c44ce3 | alt_demo       |</span><br><span class="line">| 7a22ce5036614993a707dd976c505ccd | swift          |</span><br><span class="line">| 8d392f051afe45008289abca4dadf3ca | swiftusertest1 |</span><br><span class="line">| a6e616af3bf04611bc23625e71a22e64 | swiftusertest4 |</span><br><span class="line">| a835f1674648427396a7c6ac7e5eef06 | neutron        |</span><br><span class="line">| b2bf73ef2eaa425c93e4f552e9266056 | swiftusertest2 |</span><br><span class="line">| b7de1af8522b495c8a9fb743eb6e7f59 | nova           |</span><br><span class="line">| cada5913a03e4f2794066902144264d3 | admin          |</span><br><span class="line">| f03e39680b234474b139d00c3fbca989 | swiftusertest3 |</span><br><span class="line">| f0a4033463f64c00858ff05525545b6d | glance-swift   |</span><br><span class="line">| f2a1b186e7e84b10ae7e8f810e5c2412 | glance         |</span><br><span class="line">| ff31787d136f4fba96c19af419b8559c | ironic         |</span><br><span class="line">+----------------------------------+----------------+</span><br></pre></td></tr></table></figure>
+
+<p>測試 ironic 是否正常運行：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ironic driver-list</span><br><span class="line">+---------------------+----------------+</span><br><span class="line">| Supported driver(s) | Active host(s) |</span><br><span class="line">+---------------------+----------------+</span><br><span class="line">| agent_ipmitool      | ironic-dev     |</span><br><span class="line">| fake                | ironic-dev     |</span><br><span class="line">| ipmi                | ironic-dev     |</span><br><span class="line">| pxe_ipmitool        | ironic-dev     |</span><br><span class="line">+---------------------+----------------+</span><br></pre></td></tr></table></figure>
+
+<h3 id="建立-Bare-metal-網路"><a href="#建立-Bare-metal-網路" class="headerlink" title="建立 Bare metal 網路"></a>建立 Bare metal 網路</h3><p>首先我們需要設定一個網路來提供 DHCP, PXE 與其他需求使用，這部分會說明如何建立一個 Flat network 來提供裸機配置用。詳細可參考 <a href="https://docs.openstack.org/ironic/latest/install/configure-networking.html" target="_blank" rel="noopener">Configure the Networking service for bare metal provisioning</a>。</p>
+<p>首先編輯<code>/etc/neutron/plugins/ml2/ml2_conf.ini</code>修改以下內容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[ml2_type_flat]</span><br><span class="line">flat_networks = public, physnet1</span><br><span class="line"></span><br><span class="line">[ovs]</span><br><span class="line">datapath_type = system</span><br><span class="line">bridge_mappings = public:br-ex, physnet1:br-eth2</span><br><span class="line">tunnel_bridge = br-tun</span><br><span class="line">local_ip = 172.22.132.93</span><br></pre></td></tr></table></figure>
+
+<p>接著建立 bridge 來處理實體網路與 OpenStack 之間的溝通：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo ovs-vsctl add-br br-eth2</span><br><span class="line">$ sudo ovs-vsctl add-port br-eth2 eth2</span><br></pre></td></tr></table></figure>
+
+<p>完成後重新啟動 Neutron server 與 agent：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo systemctl restart devstack@q-svc.service</span><br><span class="line">$ sudo systemctl restart devstack@q-agt.service</span><br></pre></td></tr></table></figure>
+
+<p>建立完成後，OVS bridges 會類似如下：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo ovs-vsctl show</span><br><span class="line"></span><br><span class="line">    Bridge br-int</span><br><span class="line">        fail_mode: secure</span><br><span class="line">        Port <span class="string">"int-br-eth2"</span></span><br><span class="line">            Interface <span class="string">"int-br-eth2"</span></span><br><span class="line">                <span class="built_in">type</span>: patch</span><br><span class="line">                options: &#123;peer=<span class="string">"phy-br-eth2"</span>&#125;</span><br><span class="line">        Port br-int</span><br><span class="line">            Interface br-int</span><br><span class="line">                <span class="built_in">type</span>: internal</span><br><span class="line">    Bridge <span class="string">"br-eth2"</span></span><br><span class="line">        Port <span class="string">"phy-br-eth2"</span></span><br><span class="line">            Interface <span class="string">"phy-br-eth2"</span></span><br><span class="line">                <span class="built_in">type</span>: patch</span><br><span class="line">                options: &#123;peer=<span class="string">"int-br-eth2"</span>&#125;</span><br><span class="line">        Port <span class="string">"eth2"</span></span><br><span class="line">            Interface <span class="string">"eth2"</span></span><br><span class="line">        Port <span class="string">"br-eth2"</span></span><br><span class="line">            Interface <span class="string">"br-eth2"</span></span><br><span class="line">                <span class="built_in">type</span>: internal</span><br></pre></td></tr></table></figure>
+
+<p>接著建立 Neutron flat 網路來提供使用：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ neutron net-create sharednet1 \</span><br><span class="line">                     --shared \</span><br><span class="line">                     --provider:network_type flat \</span><br><span class="line">                     --provider:physical_network physnet1</span><br><span class="line"></span><br><span class="line">$ neutron subnet-create sharednet1 172.22.132.0/24 \</span><br><span class="line">                        --name sharedsubnet1 \</span><br><span class="line">                        --ip-version=4 --gateway=172.22.132.254 \</span><br><span class="line">                        --allocation-pool start=172.22.132.180,end=172.22.132.200 \</span><br><span class="line">                        --<span class="built_in">enable</span>-dhcp</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>P.S. neutron-client 在未來會被移除，故請轉用 <a href="https://docs.openstack.org/install-guide/launch-instance-networks-provider.html" target="_blank" rel="noopener">Provider network</a>。</p>
+</blockquote>
+<h3 id="設定-Ironic-cleaning-network"><a href="#設定-Ironic-cleaning-network" class="headerlink" title="設定 Ironic cleaning network"></a>設定 Ironic cleaning network</h3><p>當使用到 <a href="http://docs.openstack.org/ironic/latest/admin/cleaning.html#node-cleaning" target="_blank" rel="noopener">Node cleaning</a> 時，我們必須設定<code>cleaning_network</code>選項來提供使用。首先取得 Network 資訊，透過以下指令：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ openstack network list</span><br><span class="line">+--------------------------------------+------------+----------------------------------------------------------------------------+</span><br><span class="line">| ID                                   | Name       | Subnets                                                                    |</span><br><span class="line">+--------------------------------------+------------+----------------------------------------------------------------------------+</span><br><span class="line">| 03de10a0-d4d2-43ce-83db-806a5277dd29 | private    | 2a651bfb-776d-47f4-a958-f8a418f7fcd5, 99bdbd78-7a20-41b7-afa3-7cf7bf25b95b |</span><br><span class="line">| 349a6a5b-1e26-4e36-8444-f6a6bbbdd227 | public     | 032a516e-3d55-4623-995d-06ee033eaee4, daf733a9-492e-4ea6-8a45-6364b88a8f6f |</span><br><span class="line">| ade096bd-6a86-4d90-9cf4-bce9921f7257 | sharednet1 | 3f9f2a47-fdd9-472b-a6a2-ce6570e490ff                                       |</span><br><span class="line">+--------------------------------------+------------+----------------------------------------------------------------------------+</span><br></pre></td></tr></table></figure>
+
+<p>編輯<code>/etc/ironic/ironic.conf</code>修改一下內容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[neutron]</span><br><span class="line">cleaning_network = sharednet1</span><br></pre></td></tr></table></figure>
+
+<p>完成後，重新啟動 Ironic 服務：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo systemctl restart devstack@ir-api.service</span><br><span class="line">$ sudo systemctl restart devstack@ir-cond.service</span><br></pre></td></tr></table></figure>
+
+<h3 id="建立-Deploy-與-User-映像檔"><a href="#建立-Deploy-與-User-映像檔" class="headerlink" title="建立 Deploy 與 User 映像檔"></a>建立 Deploy 與 User 映像檔</h3><p>裸機服務在配置時需要兩組映像檔，分別為 <code>Deploy</code> 與 <code>User</code> 映像檔，其功能如下：</p>
+<ul>
+<li><code>Deploy images</code>: 用來準備裸機服務機器以進行實際的作業系統部署，在 Cleaning 等階段會使用到。</li>
+<li><code>User images</code>:最後安裝至裸機服務提供給使用者使用的作業系統映像檔。</li>
+</ul>
+<p>由於 DevStack 預設會建立一組 Deploy 映像檔，這邊只針對 User 映像檔做手動建構說明，若要建構 Deploy 映像檔可以參考 <a href="https://docs.openstack.org/ironic/latest/install/deploy-ramdisk.html#deploy-ramdisk" target="_blank" rel="noopener">Building or downloading a deploy ramdisk image</a>。</p>
+<p>首先我們必須先安裝<code>disk-image-builder</code>工具來提供建構映像檔：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ virtualenv dib</span><br><span class="line">$ <span class="built_in">source</span> dib/bin/activate</span><br><span class="line">(dib) $ pip install diskimage-builder</span><br></pre></td></tr></table></figure>
+
+<p>接著執行以下指令來進行建構映像檔：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cat &lt;&lt;EOF &gt; k8s.repo</span><br><span class="line">[kubernetes]</span><br><span class="line">name=Kubernetes</span><br><span class="line">baseurl=http://yum.kubernetes.io/repos/kubernetes-el7-x86_64</span><br><span class="line">enabled=1</span><br><span class="line">gpgcheck=0</span><br><span class="line">repo_gpgcheck=0</span><br><span class="line">gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg</span><br><span class="line">       https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line">$ DIB_YUM_REPO_CONF=k8s.repo \</span><br><span class="line">  DIB_DEV_USER_USERNAME=kyle \</span><br><span class="line">  DIB_DEV_USER_PWDLESS_SUDO=yes \</span><br><span class="line">  DIB_DEV_USER_PASSWORD=r00tme \</span><br><span class="line">  disk-image-create \</span><br><span class="line">        centos7 \</span><br><span class="line">        dhcp-all-interfaces \</span><br><span class="line">        devuser \</span><br><span class="line">        yum \</span><br><span class="line">        epel \</span><br><span class="line">        baremetal \</span><br><span class="line">        -o k8s.qcow2 \</span><br><span class="line">        -p vim,docker,kubelet,kubeadm,kubectl,kubernetes-cni</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line">Converting image using qemu-img convert</span><br><span class="line">Image file k8s.qcow2 created...</span><br></pre></td></tr></table></figure>
+
+<p>完成後會看到以下檔案：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ls</span><br><span class="line">dib  k8s.d  k8s.initrd  k8s.qcow2  k8s.repo  k8s.vmlinuz</span><br></pre></td></tr></table></figure>
+
+<p>上傳至 Glance 以提供使用：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 上傳 Kernel</span></span><br><span class="line">$ openstack image create k8s.kernel \</span><br><span class="line">                      --public \</span><br><span class="line">                      --disk-format aki \</span><br><span class="line">                      --container-format aki &lt; k8s.vmlinuz</span><br><span class="line"><span class="comment"># 上傳 Initrd</span></span><br><span class="line">$ openstack image create k8s.initrd \</span><br><span class="line">                      --public \</span><br><span class="line">                      --disk-format ari \</span><br><span class="line">                      --container-format ari &lt; k8s.initrd</span><br><span class="line"><span class="comment"># 上傳 Qcow2</span></span><br><span class="line">$ <span class="built_in">export</span> MY_VMLINUZ_UUID=$(openstack image list | awk <span class="string">'/k8s.kernel/ &#123; print $2 &#125;'</span>)</span><br><span class="line">$ <span class="built_in">export</span> MY_INITRD_UUID=$(openstack image list | awk <span class="string">'/k8s.initrd/ &#123; print $2 &#125;'</span>)</span><br><span class="line">$ openstack image create k8s \</span><br><span class="line">                      --public \</span><br><span class="line">                      --disk-format qcow2 \</span><br><span class="line">                      --container-format bare \</span><br><span class="line">                      --property kernel_id=<span class="variable">$MY_VMLINUZ_UUID</span> \</span><br><span class="line">                      --property ramdisk_id=<span class="variable">$MY_INITRD_UUID</span> &lt; k8s.qcow2</span><br></pre></td></tr></table></figure>
+
+<h2 id="建立-Ironic-節點"><a href="#建立-Ironic-節點" class="headerlink" title="建立 Ironic 節點"></a>建立 Ironic 節點</h2><p>在所有服務配置都完成後，這時候要註冊實體機器資訊，來提供給 Compute 服務部署時使用。首先確認 Ironic 的 Driver 是否有資源機器的 Power driver：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ironic driver-list</span><br><span class="line">+---------------------+----------------+</span><br><span class="line">| Supported driver(s) | Active host(s) |</span><br><span class="line">+---------------------+----------------+</span><br><span class="line">| agent_ipmitool      | ironic-dev     |</span><br><span class="line">| fake                | ironic-dev     |</span><br><span class="line">| ipmi                | ironic-dev     |</span><br><span class="line">| pxe_ipmitool        | ironic-dev     |</span><br><span class="line">+---------------------+----------------+</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若有缺少的話，請參考 <a href="https://docs.openstack.org/ironic/latest/install/setup-drivers.html" target="_blank" rel="noopener">Set up the drivers for the Bare Metal service</a>。</p>
+</blockquote>
+<p>確認有支援後，透過以下指令來建立 Node，並進行註冊：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">export</span> DEPLOY_VMLINUZ_UUID=$(openstack image list | awk <span class="string">'/ipmitool.kernel/ &#123; print $2 &#125;'</span>)</span><br><span class="line">$ <span class="built_in">export</span> DEPLOY_INITRD_UUID=$(openstack image list | awk <span class="string">'/ipmitool.initramfs/ &#123; print $2 &#125;'</span>)</span><br><span class="line">$ ironic node-create -d agent_ipmitool \</span><br><span class="line">                     -n bare-node-1 \</span><br><span class="line">                     -i ipmi_address=172.20.3.194 \</span><br><span class="line">                     -i ipmi_username=maas \</span><br><span class="line">                     -i ipmi_password=passwd \</span><br><span class="line">                     -i ipmi_port=623 \</span><br><span class="line">                     -i deploy_kernel=<span class="variable">$DEPLOY_VMLINUZ_UUID</span> \</span><br><span class="line">                     -i deploy_ramdisk=<span class="variable">$DEPLOY_INITRD_UUID</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若使用 Console 的話，要加入<code>-i ipmi_terminal_port=9000</code>，可參考 <a href="https://docs.openstack.org/ironic/latest/admin/console.html" target="_blank" rel="noopener">Configuring Web or Serial Console</a>。</p>
+</blockquote>
+<p>接著更新機器資訊，這邊透過手動方式來更新資訊：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">export</span> NODE_UUID=$(ironic node-list | awk <span class="string">'/bare-node-1/ &#123; print $2 &#125;'</span>)</span><br><span class="line">$ ironic node-update <span class="variable">$NODE_UUID</span> add \</span><br><span class="line">                     properties/cpus=4 \</span><br><span class="line">                     properties/memory_mb=8192 \</span><br><span class="line">                     properties/local_gb=100 \</span><br><span class="line">                     properties/root_gb=100 \</span><br><span class="line">                     properties/cpu_arch=x86_64</span><br></pre></td></tr></table></figure>
+
+<p>(option)也可以使用 inspector 來識別裸機機器的硬體資訊，但需要修改<code>/etc/ironic-inspector/dnsmasq.conf</code>修改一下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">no-daemon</span><br><span class="line">port=0</span><br><span class="line">interface=eth1</span><br><span class="line">bind-interfaces</span><br><span class="line">dhcp-range=172.22.132.200,172.22.132.210</span><br><span class="line">dhcp-match=ipxe,175</span><br><span class="line">dhcp-boot=tag:!ipxe,undionly.kpxe</span><br><span class="line">dhcp-boot=tag:ipxe,http://172.22.132.93:3928/ironic-inspector.ipxe</span><br><span class="line">dhcp-sequential-ip</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>完成後，透過 systemctl 重新啟動背景服務<code>devstack@ironic-inspector-dhcp.service</code>與<code>devstack@ironic-inspector.service</code>。</p>
+</blockquote>
+<p>透過 port create 來把 Node 的所有網路資訊進行註冊：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ironic port-create -n <span class="variable">$NODE_UUID</span> -a NODE_MAC_ADDRESS</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊<code>NODE_MAC_ADDRESS</code>是指<code>bare-node-1</code>節點的 PXE(eth1)網卡 Mac Address，如 54:a0:50:85:d5:fa。</p>
+</blockquote>
+<p>完成後透過 validate 指令來檢查：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ironic node-validate <span class="variable">$NODE_UUID</span></span><br><span class="line">+------------+--------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+</span><br><span class="line">| Interface  | Result | Reason                                                                                                                                                                                                |</span><br><span class="line">+------------+--------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+</span><br><span class="line">| boot       | False  | Cannot validate image information <span class="keyword">for</span> node 8e6fd86a-8eed-4e24-a510-3f5ebb0a336a because one or more parameters are missing from its instance_info. Missing are: [<span class="string">'ramdisk'</span>, <span class="string">'kernel'</span>, <span class="string">'image_source'</span>] |</span><br><span class="line">| console    | False  | Missing <span class="string">'ipmi_terminal_port'</span> parameter <span class="keyword">in</span> node\<span class="string">'s driver_info.                                                                                                                                         |</span></span><br><span class="line"><span class="string">| deploy     | False  | Cannot validate image information for node 8e6fd86a-8eed-4e24-a510-3f5ebb0a336a because one or more parameters are missing from its instance_info. Missing are: ['</span>ramdisk<span class="string">', '</span>kernel<span class="string">', '</span>image_source<span class="string">'] |</span></span><br><span class="line"><span class="string">| inspect    | True   |                                                                                                                                                                                                       |</span></span><br><span class="line"><span class="string">| management | True   |                                                                                                                                                                                                       |</span></span><br><span class="line"><span class="string">| network    | True   |                                                                                                                                                                                                       |</span></span><br><span class="line"><span class="string">| power      | True   |                                                                                                                                                                                                       |</span></span><br><span class="line"><span class="string">| raid       | True   |                                                                                                                                                                                                       |</span></span><br><span class="line"><span class="string">| storage    | True   |                                                                                                                                                                                                       |</span></span><br><span class="line"><span class="string">+------------+--------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>P.S. 這邊<code>boot</code>與<code>deploy</code>的錯誤若是如上所示的話，可以直接忽略，這是因為使用 Nova 來管理 baremetal 會出現的問題。</p>
+</blockquote>
+<p>最後利用 provision 指令來測試節點是否能夠提供服務：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ironic --ironic-api-version 1.34 node-set-provision-state <span class="variable">$NODE_UUID</span> manage</span><br><span class="line">$ ironic --ironic-api-version 1.34 node-set-provision-state <span class="variable">$NODE_UUID</span> provide</span><br><span class="line">$ ironic node-list</span><br><span class="line">+--------------------------------------+--------+---------------+-------------+--------------------+-------------+</span><br><span class="line">| UUID                                 | Name   | Instance UUID | Power State | Provisioning State | Maintenance |</span><br><span class="line">+--------------------------------------+--------+---------------+-------------+--------------------+-------------+</span><br><span class="line">| 0c20cf7d-0a36-46f4-ac38-721ff8bfb646 | bare-0 | None          | power off   | cleaning           | False       |</span><br><span class="line">+--------------------------------------+--------+---------------+-------------+--------------------+-------------+</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這時候機器會進行 clean 過程，經過一點時間就會完成，若順利完成則該節點就可以進行部署了。若要了解細節狀態，可以參考 <a href="https://docs.openstack.org/ironic/latest/contributor/states.html" target="_blank" rel="noopener">Ironic’s State Machine</a>。</p>
+</blockquote>
+<p><img src="/images/openstack/ironic-clean.png" alt></p>
+<h2 id="透過-Nova-部署-baremetal-機器"><a href="#透過-Nova-部署-baremetal-機器" class="headerlink" title="透過 Nova 部署 baremetal 機器"></a>透過 Nova 部署 baremetal 機器</h2><p>最後我們要透過 Nova API 來部署裸機，在開始前要建立一個 flavor 跟上傳 keypair 來提供使用：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ssh-keygen -t rsa</span><br><span class="line">$ openstack keypair create --public-key ~/.ssh/id_rsa.pub default</span><br><span class="line">$ openstack flavor create --vcpus 4 --ram 8192 --disk 100 baremetal.large</span><br></pre></td></tr></table></figure>
+
+<p>完成後，即可透過以下指令進行部署：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ NET_ID=$(openstack network list | awk <span class="string">'/sharednet1/ &#123; print $2 &#125;'</span>)</span><br><span class="line">$ openstack server create --flavor baremetal.large \</span><br><span class="line">                          --nic net-id=<span class="variable">$NET_ID</span> \</span><br><span class="line">                          --image k8s \</span><br><span class="line">                          --key-name default k8s-01</span><br></pre></td></tr></table></figure>
+
+<p>經過一段時間後，就會看到部署完成，這時候可以透過以下指令來確認部署結果：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ openstack server list</span><br><span class="line">+--------------------------------------+--------+--------+---------------------------+-------+-----------------+</span><br><span class="line">| ID                                   | Name   | Status | Networks                  | Image | Flavor          |</span><br><span class="line">+--------------------------------------+--------+--------+---------------------------+-------+-----------------+</span><br><span class="line">| a40e5cb1-dfc6-44d5-b638-648e8c0975fb | k8s-01 | ACTIVE | sharednet1=172.22.132.187 | k8s   | baremetal.large |</span><br><span class="line">+--------------------------------------+--------+--------+---------------------------+-------+-----------------+</span><br><span class="line"></span><br><span class="line">$ openstack baremetal list</span><br><span class="line">+--------------------------------------+--------+--------------------------------------+-------------+--------------------+-------------+</span><br><span class="line">| UUID                                 | Name   | Instance UUID                        | Power State | Provisioning State | Maintenance |</span><br><span class="line">+--------------------------------------+--------+--------------------------------------+-------------+--------------------+-------------+</span><br><span class="line">| 0c20cf7d-0a36-46f4-ac38-721ff8bfb646 | bare-0 | a40e5cb1-dfc6-44d5-b638-648e8c0975fb | power on    | active             | False       |</span><br><span class="line">+--------------------------------------+--------+--------------------------------------+-------------+--------------------+-------------+</span><br></pre></td></tr></table></figure>
+
+<p>最後透過 ssh 來進入部署機器來建立應用：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ssh kyle@172.22.132.187</span><br><span class="line">[kyle@host-172-22-132-187 ~]$ sudo systemctl start kubelet.service</span><br><span class="line">[kyle@host-172-22-132-187 ~]$ sudo systemctl start docker.service</span><br><span class="line">[kyle@host-172-22-132-187 ~]$ sudo kubeadm init --service-cidr 10.96.0.0/12 \</span><br><span class="line">                                                --kubernetes-version v1.7.4 \</span><br><span class="line">                                                --pod-network-cidr 10.244.0.0/16 \</span><br><span class="line">                                                --apiserver-advertise-address 172.22.132.187 \</span><br><span class="line">                                                --token b0f7b8.8d1767876297d85c</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>整合<code>Magnum</code>有空再寫，先簡單玩玩吧。</p>
+</blockquote>
+<p>若是懶人可以用 Dashboard 來部署，另外本教學的 DevStack 有使用 Ironic UI，因此可以在以下頁面看到 node 資訊。<br><img src="/images/openstack/ironic-ui.png" alt></p>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">利用 OpenStack Ironic 提供裸機部署服務</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2017-8-16 16:08</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2017/08/29/openstack/kuryr-kubernetes/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    利用 Kuryr 整合 OpenStack 與 Kubernetes 網路
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2017/07/22/kubernetes/deploy/linuxkit/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">利用 LinuxKit 建立 Kubernetes 叢集</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2017/08/16/openstack/ironic/" data-id="ck3ns7q6w005pwmpfou170s7n" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2017/08/16/openstack/ironic/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2017/08/16/openstack/ironic/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#節點資訊"><span class="toc-number">1.</span> <span class="toc-text">節點資訊</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#事前準備"><span class="toc-number">2.</span> <span class="toc-text">事前準備</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安裝-OpenStack-服務"><span class="toc-number">3.</span> <span class="toc-text">安裝 OpenStack 服務</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#建立-Bare-metal-網路"><span class="toc-number">3.1.</span> <span class="toc-text">建立 Bare metal 網路</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#設定-Ironic-cleaning-network"><span class="toc-number">3.2.</span> <span class="toc-text">設定 Ironic cleaning network</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#建立-Deploy-與-User-映像檔"><span class="toc-number">3.3.</span> <span class="toc-text">建立 Deploy 與 User 映像檔</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#建立-Ironic-節點"><span class="toc-number">4.</span> <span class="toc-text">建立 Ironic 節點</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#透過-Nova-部署-baremetal-機器"><span class="toc-number">5.</span> <span class="toc-text">透過 Nova 部署 baremetal 機器</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2017/08/16/openstack/ironic/';
+        
+        this.page.identifier = 'openstack/ironic';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

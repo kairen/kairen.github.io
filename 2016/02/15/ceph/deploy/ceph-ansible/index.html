@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>透過 Ansible 部署 Ceph 叢集 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="本節將介紹如何透過 ceph-ansible 工具安裝一個測試的 Ceph 環境，一個最簡單的 Ceph 儲存叢集至少要一台 Monitor與三台 OSD。而 MDS 則是當使用到 CephFS 的時候才需要部署。">
+<meta name="keywords" content="Ceph,Storage,Ansible">
+<meta property="og:type" content="article">
+<meta property="og:title" content="透過 Ansible 部署 Ceph 叢集">
+<meta property="og:url" content="https://k2r2bai.com/2016/02/15/ceph/deploy/ceph-ansible/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="本節將介紹如何透過 ceph-ansible 工具安裝一個測試的 Ceph 環境，一個最簡單的 Ceph 儲存叢集至少要一台 Monitor與三台 OSD。而 MDS 則是當使用到 CephFS 的時候才需要部署。">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-12-02T01:49:42.377Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="透過 Ansible 部署 Ceph 叢集">
+<meta name="twitter:description" content="本節將介紹如何透過 ceph-ansible 工具安裝一個測試的 Ceph 環境，一個最簡單的 Ceph 儲存叢集至少要一台 Monitor與三台 OSD。而 MDS 則是當使用到 CephFS 的時候才需要部署。">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                126
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-ceph/deploy/ceph-ansible" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            透過 Ansible 部署 Ceph 叢集
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2016/02/15/ceph/deploy/ceph-ansible/">
+            <u><time datetime="2016-02-15T09:08:54.000Z" itemprop="datePublished">2016-02-15</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Ceph/">Ceph</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Ansible/">Ansible</a>, <a class="tag-link" href="/tags/Ceph/">Ceph</a>, <a class="tag-link" href="/tags/Storage/">Storage</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p>本節將介紹如何透過 <a href="https://github.com/ceph/ceph-ansible" target="_blank" rel="noopener">ceph-ansible</a> 工具安裝一個測試的 Ceph 環境，一個最簡單的 Ceph 儲存叢集至少要<code>一台 Monitor</code>與<code>三台 OSD</code>。而 MDS 則是當使用到 CephFS 的時候才需要部署。</p>
+<a id="more"></a>
+
+<h2 id="節點資訊"><a href="#節點資訊" class="headerlink" title="節點資訊"></a>節點資訊</h2><p>本安裝將使用四台虛擬機器作為部署主機，虛擬機器採用 OpenStack，其規格為以下：</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>RAM</th>
+<th>CPUs</th>
+<th>Disk</th>
+<th>IP Address</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>mon</td>
+<td>2 GB</td>
+<td>1vCPU</td>
+<td>20 GB</td>
+<td>172.16.1.200</td>
+</tr>
+<tr>
+<td>osd1</td>
+<td>2 GB</td>
+<td>1vCPU</td>
+<td>20 GB</td>
+<td>172.16.1.201</td>
+</tr>
+<tr>
+<td>osd2</td>
+<td>2 GB</td>
+<td>1vCPU</td>
+<td>20 GB</td>
+<td>172.16.1.202</td>
+</tr>
+<tr>
+<td>osd3</td>
+<td>2 GB</td>
+<td>1vCPU</td>
+<td>20 GB</td>
+<td>172.16.1.203</td>
+</tr>
+</tbody></table>
+<p>其中若是虛擬機，要額外建立 3 顆虛擬硬碟來作為 OSD 使用，如以下：</p>
+<table>
+<thead>
+<tr>
+<th>Dev path</th>
+<th>Disk Size</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>/dev/vdb</td>
+<td>25 GB</td>
+<td>osd1 掛載</td>
+</tr>
+<tr>
+<td>/dev/vdb</td>
+<td>25 GB</td>
+<td>osd2 掛載</td>
+</tr>
+<tr>
+<td>/dev/vdb</td>
+<td>25 GB</td>
+<td>osd3 掛載</td>
+</tr>
+</tbody></table>
+<h2 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h2><p>首先在<code>mon</code>節點設定 SSH 到其他節點不需要密碼，請依照以下執行：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ssh-keygen -t rsa</span><br><span class="line">$ ssh-copy-id osd1</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若虛擬機的話，建立金鑰後可以直接上傳<code>公有金鑰</code>提供給其他節點。</p>
+</blockquote>
+<p>接著在每一個節點設定 sudo 不需要密碼：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">echo</span> <span class="string">"ubuntu ALL = (root) NOPASSWD:ALL"</span> | sudo tee /etc/sudoers.d/ubuntu &amp;&amp; sudo chmod 440 /etc/sudoers.d/ubuntu</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>一般虛擬機映像檔預設就有設定。</p>
+</blockquote>
+<p>然後在每一台節點新增以下內容到<code>/etc/hosts</code>：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">127.0.0.1 localhost</span><br><span class="line"></span><br><span class="line">10.21.20.99 ceph-deploy</span><br><span class="line">172.16.1.200 mon</span><br><span class="line">172.16.1.201 osd1</span><br><span class="line">172.16.1.202 osd2</span><br><span class="line">172.16.1.203 osd3</span><br></pre></td></tr></table></figure>
+
+<p>回到<code>mon</code>節點安裝部署將使用到的 ansible 工具：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get install -y software-properties-common git cowsay</span><br><span class="line">$ sudo apt-add-repository -y ppa:ansible/ansible</span><br><span class="line">$ sudo apt-get update &amp;&amp; sudo apt-get install -y ansible</span><br></pre></td></tr></table></figure>
+
+<p>在<code>mon</code>節點編輯<code>/etc/ansible/hosts</code>，加入以下內容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[mons]</span><br><span class="line">mon</span><br><span class="line"></span><br><span class="line">[osds]</span><br><span class="line">osd[1:3]</span><br></pre></td></tr></table></figure>
+
+<p>(option)若要安裝 rgw 與 mds 的話，可再添加以下：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">[rgws]</span><br><span class="line">mon</span><br><span class="line">[mdss]</span><br><span class="line">mon</span><br></pre></td></tr></table></figure>
+
+<p>完成後透過以下指令檢查節點是否可以溝通：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible all -m ping</span><br><span class="line">172.16.1.200 | success &gt;&gt; &#123;</span><br><span class="line">    <span class="string">"changed"</span>: <span class="literal">false</span>,</span><br><span class="line">    <span class="string">"ping"</span>: <span class="string">"pong"</span></span><br><span class="line">&#125;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<h2 id="部署-Ansible-Ceph-叢集"><a href="#部署-Ansible-Ceph-叢集" class="headerlink" title="部署 Ansible Ceph 叢集"></a>部署 Ansible Ceph 叢集</h2><p>首先在<code>mon</code>節點透過 git 來下載 ceph-ansible 專案：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> <span class="string">"https://github.com/ceph/ceph-ansible.git"</span></span><br><span class="line">$ <span class="built_in">cd</span> ceph-ansible</span><br><span class="line">$ cp site.yml.sample site.yml</span><br><span class="line">$ cp group_vars/all.sample group_vars/all</span><br><span class="line">$ cp group_vars/mons.sample group_vars/mons</span><br><span class="line">$ cp group_vars/osds.sample group_vars/osds</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若要部署 rgw 與 mds 的話，需再執行以下指令：</p>
+</blockquote>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ cp group_vars/mdss.sample group_vars/mdss</span><br><span class="line">$ cp group_vars/rgws.sample group_vars/rgws</span><br></pre></td></tr></table></figure>
+
+<p>接著編輯<code>group_vars/all</code>檔案，修改以下內容：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">ceph_origin:</span> <span class="string">'upstream'</span></span><br><span class="line"><span class="attr">ceph_stable:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">monitor_interface:</span> <span class="string">eth0</span></span><br><span class="line"><span class="attr">journal_size:</span> <span class="number">5000</span></span><br><span class="line"><span class="attr">public_network:</span> <span class="number">172.16</span><span class="number">.1</span><span class="number">.0</span><span class="string">/24</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>其他版本可以參考官方的說明 <a href="https://github.com/ceph/ceph-ansible" target="_blank" rel="noopener">ceph-ansible</a>。</p>
+</blockquote>
+<p>完成後再編輯<code>group_vars/osds</code>檔案，修改以下內容：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">journal_collocation:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">devices:</span></span><br><span class="line"><span class="bullet">  -</span> <span class="string">/dev/vdb</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>這邊使用 journal，也可以選擇其他使用。若有多顆 OSD則修改<code>devices</code>。</p>
+</blockquote>
+<p>上述都確認無誤後，編輯<code>site.yml</code>檔案，並修改一下內容：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">- hosts:</span> <span class="string">mons</span></span><br><span class="line"><span class="attr">  become:</span> <span class="literal">True</span></span><br><span class="line"><span class="attr">  roles:</span></span><br><span class="line"><span class="bullet">  -</span> <span class="string">ceph-mon</span></span><br><span class="line"></span><br><span class="line"><span class="attr">- hosts:</span> <span class="string">osds</span></span><br><span class="line"><span class="attr">  become:</span> <span class="literal">True</span></span><br><span class="line"><span class="attr">  roles:</span></span><br><span class="line"><span class="bullet">  -</span> <span class="string">ceph-osd</span></span><br></pre></td></tr></table></figure>
+
+<p>(option)若要部署 rgw 與 mds 的話，需再加入以下內容：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">- hosts:</span> <span class="string">mdss</span></span><br><span class="line"><span class="attr">  become:</span> <span class="literal">True</span></span><br><span class="line"><span class="attr">  roles:</span></span><br><span class="line"><span class="bullet">  -</span> <span class="string">ceph-mds</span></span><br><span class="line"></span><br><span class="line"><span class="attr">- hosts:</span> <span class="string">rgws</span></span><br><span class="line"><span class="attr">  become:</span> <span class="literal">True</span></span><br><span class="line"><span class="attr">  roles:</span></span><br><span class="line"><span class="bullet">  -</span> <span class="string">ceph-rgw</span></span><br></pre></td></tr></table></figure>
+
+<p>完成後就可以透過以下指令來進行部署：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">$ ansible-playbook site.yml</span><br></pre></td></tr></table></figure>
+
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">透過 Ansible 部署 Ceph 叢集</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2016-2-15 17:02</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+        <a href="/2016/02/16/devops/cm/ansible-basic/" id="article-nav-newer" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Newer</strong>
+            <div class="article-nav-title">
+                
+                    Ansible 介紹與使用
+                
+            </div>
+        </a>
+    
+    
+        <a href="/2016/02/14/devops/cm/puppet-foreman/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">透過 Foreman 管理 Puppet</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2016/02/15/ceph/deploy/ceph-ansible/" data-id="ck3ns7qaf00f5wmpfadozng0v" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2016/02/15/ceph/deploy/ceph-ansible/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2016/02/15/ceph/deploy/ceph-ansible/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#節點資訊"><span class="toc-number">1.</span> <span class="toc-text">節點資訊</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#事前準備"><span class="toc-number">2.</span> <span class="toc-text">事前準備</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#部署-Ansible-Ceph-叢集"><span class="toc-number">3.</span> <span class="toc-text">部署 Ansible Ceph 叢集</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2016/02/15/ceph/deploy/ceph-ansible/';
+        
+        this.page.identifier = 'ceph/deploy/ceph-ansible';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>
