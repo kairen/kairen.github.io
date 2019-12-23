@@ -156,7 +156,7 @@
         </div>
         <div class="article-info profile-block">
             <div class="article-info-block">
-                126
+                128
                 <span>posts</span>
             </div>
             <div class="article-info-block">
@@ -209,6 +209,311 @@
 
             
             <section id="main">
+    <article id="post-blockchain/hyperledger/quick-start" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+            
+	
+		<a href="/2017/05/16/blockchain/hyperledger/quick-start/" itemprop="url">
+            <img src="/images/blockchain/hyperledger/logo.png" class="article-banner" />
+        </a>
+	
+
+
+
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 itemprop="name">
+            <a class="article-title" href="/2017/05/16/blockchain/hyperledger/quick-start/">透過 Docker 體驗 Hyperledger</a>
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2017/05/16/blockchain/hyperledger/quick-start/">
+            <u><time datetime="2017-05-16T09:08:54.000Z" itemprop="datePublished">2017-05-16</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Blockchain/">Blockchain</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Blockchain/">Blockchain</a>, <a class="tag-link" href="/tags/Hyperledger/">Hyperledger</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p><p>Hyperledger 專案是 IBM 與 Linux 基金會於 2015 年底共同推動的區塊鏈基礎專案，該專案吸引來自多行業巨頭的參與，並且該專案也很有可能成為未來企業級的區塊鏈技術底層架構基礎，因此該專案被受到高度關注。</p>
+<p>以 Hyperledger 作為企業對企業(B2B)、企業對消費者(B2C)的一種交易協定，既符合規章制度，又能夠支援各種類型需求的實現。其設計的核心元素是<code>智能合約(Smart Contracts)</code>、數位資產、記錄儲存庫、一致性對等網路、安全的加密與分散式總賬本等。此外，區塊鍊主要還涉及行業效能要求、身份認證與私下機密交易等。Hyperledger 基於以上建立一個對等網路的分散式總帳技術交易應用程式，透過建立信任、問責制與透明度，並同時簡化業務流程，把它看成是一個作業系統來互動，因此大大的化簡了成本與複雜性。</p></p>
+            <p class="article-more-link">
+                <a href="/2017/05/16/blockchain/hyperledger/quick-start/">Read More</a>
+            </p>
+        
+        </div>
+        
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2017/05/16/blockchain/hyperledger/quick-start/" data-id="ck3s6ih7h00f595pfnqzcn7oe" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2017/05/16/blockchain/hyperledger/quick-start/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2017/05/16/blockchain/hyperledger/quick-start/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+
+
+    <article id="post-cncf/harbor" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+            
+	
+		<a href="/2017/05/10/cncf/harbor/" itemprop="url">
+            <img src="/images/cncf/harbor-logo.png" class="article-banner" />
+        </a>
+	
+
+
+
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 itemprop="name">
+            <a class="article-title" href="/2017/05/10/cncf/harbor/">Harbor: 開源 Container Registry</a>
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2017/05/10/cncf/harbor/">
+            <u><time datetime="2017-05-10T09:08:54.000Z" itemprop="datePublished">2017-05-10</time></u>
+        </a>
+    </div>
+
+
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-check-o"></i>
+        Edited on
+        <a href="/2017/05/10/cncf/harbor/">
+             <u><time datetime="2019-04-02T12:18:54.000Z" itemprop="datePublished">2019-04-02</time></u>
+        </a>
+    </div>
+
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/CNCF/">CNCF</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/CNCF/">CNCF</a>, <a class="tag-link" href="/tags/Container/">Container</a>, <a class="tag-link" href="/tags/Container-Registry/">Container Registry</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p><p><a href="https://github.com/goharbor/harbor" target="_blank" rel="noopener">Harbor</a> 是基於 <a href="https://github.com/docker/distribution" target="_blank" rel="noopener">Docker Distribution</a> 進行擴展的 Container Registry 專案，其針對一些企業常用的功能做了許多整合，例如: LDAP、容器映像檔安全掃描的 <a href="https://github.com/coreos/clair" target="_blank" rel="noopener">Clair</a>、容器映像檔簽署的 <a href="https://github.com/theupdateframework/notary" target="_blank" rel="noopener">Notary</a>、儲存後端(S3、Cloud Storage 等)、映像檔副本機制。除此之外，Harbor 亦提供了進階的安全性功能，如使用者管理(User managment)，存取控制(Access control)和活動稽核(Activity auditing)。</p>
+<blockquote class="colorquote info"><p>Harbor 早期是 VMware 開源作為企業級私有 Container Registry 的專案，但在 2018 年時貢獻給 CNCF 作為 Sandbox 專案進行維護。</p>
+</blockquote></p>
+            <p class="article-more-link">
+                <a href="/2017/05/10/cncf/harbor/">Read More</a>
+            </p>
+        
+        </div>
+        
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2017/05/10/cncf/harbor/" data-id="ck3s6ih27000e95pf3gpdxjwi" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2017/05/10/cncf/harbor/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2017/05/10/cncf/harbor/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+
+
     <article id="post-container/moby-linuxkit" class="article article-type-post" itemscope itemprop="blogPost">
     <div class="article-inner">
         
@@ -278,7 +583,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2017/04/23/container/moby-linuxkit/" data-id="ck3q029wy0025d9pf7ix45u8v" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2017/04/23/container/moby-linuxkit/" data-id="ck3s6ih2n001495pfqzvnczsu" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -425,7 +730,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2017/04/10/tensorflow/introduction/" data-id="ck3q029yk005rd9pfjz1m6zfg" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2017/04/10/tensorflow/introduction/" data-id="ck3s6ih4p006f95pfxwsxfe94" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -569,7 +874,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2017/03/25/kubernetes/helm/quick-start/" data-id="ck3q02a2v00i6d9pfx36177vq" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2017/03/25/kubernetes/helm/quick-start/" data-id="ck3s6ih8r00ib95pfqmfdktg7" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -719,7 +1024,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2017/03/17/kubernetes/deploy/kubespray/" data-id="ck3q02a2j00hbd9pfrx0oxwjt" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2017/03/17/kubernetes/deploy/kubespray/" data-id="ck3s6ih8d00hc95pfiilrk5t6" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -856,7 +1161,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2017/03/12/tensorflow/install-from-source/" data-id="ck3q029yi005pd9pfby4jwv5m" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2017/03/12/tensorflow/install-from-source/" data-id="ck3s6ih4n006995pflnrtf5kn" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -993,7 +1298,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2017/03/10/tensorflow/run-on-docker/" data-id="ck3q029yl005vd9pf2vtiktuf" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2017/03/10/tensorflow/run-on-docker/" data-id="ck3s6ih4s006j95pfax734rov" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -1130,7 +1435,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2016/12/03/ceph/ceph-spdk/" data-id="ck3q029vu0005d9pfbi19t2ks" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2016/12/03/ceph/ceph-spdk/" data-id="ck3s6ih1v000595pfaeoowkrv" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -1267,7 +1572,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2016/11/28/ceph/deploy/ceph-deploy-bluestore/" data-id="ck3q02a1t00f4d9pfx4cfybsf" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2016/11/28/ceph/deploy/ceph-deploy-bluestore/" data-id="ck3s6ih7k00f995pfsfgmjpuk" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -1345,296 +1650,6 @@
 
 
 
-    <article id="post-container/docker-swarm" class="article article-type-post" itemscope itemprop="blogPost">
-    <div class="article-inner">
-        
-        
-            <header class="article-header">
-                
-    
-        <h1 itemprop="name">
-            <a class="article-title" href="/2016/11/16/container/docker-swarm/">簡單部署 Docker Swarm 測試叢集</a>
-        </h1>
-    
-
-                
-                    <div class="article-meta">
-                        
-    <div class="article-date">
-        <i class="fa fa-calendar-o"></i>
-        Posted on 
-        <a href="/2016/11/16/container/docker-swarm/">
-            <u><time datetime="2016-11-16T09:08:54.000Z" itemprop="datePublished">2016-11-16</time></u>
-        </a>
-    </div>
-
-
-                        
-
-                        
-    <div class="article-category">
-    	<i class="fa fa-folder"></i>
-        <a class="article-category-link" href="/categories/Container/">Container</a>
-    </div>
-
-                        
-    <div class="article-tag">
-        <i class="fa fa-tag"></i>
-        <a class="tag-link" href="/tags/Container/">Container</a>, <a class="tag-link" href="/tags/Container-Orchestration/">Container Orchestration</a>, <a class="tag-link" href="/tags/Docker/">Docker</a>
-    </div>
-
-                    </div>
-                
-            </header>
-        
-        
-        <div class="article-entry" itemprop="articleBody">
-        
-            <p><p>Docker Swarm 是 Docker 公司的 Docker 編配引擎，最早是在 2014 年 12 月發佈。Docker Swarm 目的即管理多台節點的 Docker 上應用程式與節點資源的排程等，並提供標準的 Docker API 介面當作前端存取入口，因此可以跟現有 Docker 工具與函式庫進行整合，本篇將介紹簡單的建立 Swarm cluster。</p>
-<p>Docker Swarm 具備了以下幾個特性：</p>
-<ul>
-<li>Docker engine 原生支援。(Docker 1.12+)。</li>
-<li>去中心化設計。</li>
-<li>宣告式服務模型(Declarative Service Model)。</li>
-<li>服務可擴展與容錯。</li>
-<li>可協調預期狀態與實際狀態的一致性。</li>
-<li>多種網路支援。</li>
-<li>提供服務發現、負載平衡與安全策略。</li>
-<li>支援滾動升級(Rolling Update)。</li>
-</ul></p>
-            <p class="article-more-link">
-                <a href="/2016/11/16/container/docker-swarm/">Read More</a>
-            </p>
-        
-        </div>
-        
-        <footer class="article-footer">
-            <div class="share-container">
-
-
-
-</div>
-
-    <a data-url="https://k2r2bai.com/2016/11/16/container/docker-swarm/" data-id="ck3q029ww0022d9pfak0r69pu" class="article-share-link"><i class="fa fa-share"></i>Share</a>
-<script>
-    (function ($) {
-        // Prevent duplicate binding
-        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
-            __SHARE_BUTTON_BINDED__ = true;
-        } else {
-            return;
-        }
-        $('body').on('click', function() {
-            $('.article-share-box.on').removeClass('on');
-        }).on('click', '.article-share-link', function(e) {
-            e.stopPropagation();
-
-            var $this = $(this),
-                url = $this.attr('data-url'),
-                encodedUrl = encodeURIComponent(url),
-                id = 'article-share-box-' + $this.attr('data-id'),
-                offset = $this.offset(),
-                box;
-
-            if ($('#' + id).length) {
-                box = $('#' + id);
-
-                if (box.hasClass('on')){
-                    box.removeClass('on');
-                    return;
-                }
-            } else {
-                var html = [
-                    '<div id="' + id + '" class="article-share-box">',
-                        '<input class="article-share-input" value="' + url + '">',
-                        '<div class="article-share-links">',
-                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
-                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
-                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
-                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
-                        '</div>',
-                    '</div>'
-                ].join('');
-
-              box = $(html);
-
-              $('body').append(box);
-            }
-
-            $('.article-share-box.on').hide();
-
-            box.css({
-                top: offset.top + 25,
-                left: offset.left
-            }).addClass('on');
-
-        }).on('click', '.article-share-box', function (e) {
-            e.stopPropagation();
-        }).on('click', '.article-share-box-input', function () {
-            $(this).select();
-        }).on('click', '.article-share-box-link', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
-        });
-    })(jQuery);
-</script>
-
-            
-    
-        <a href="https://k2r2bai.com/2016/11/16/container/docker-swarm/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2016/11/16/container/docker-swarm/">Comments</a>
-    
-
-        </footer>
-    </div>
-</article>
-
-
-
-
-    <article id="post-kubernetes/deploy/minikube" class="article article-type-post" itemscope itemprop="blogPost">
-    <div class="article-inner">
-        
-        
-            <header class="article-header">
-                
-    
-        <h1 itemprop="name">
-            <a class="article-title" href="/2016/10/23/kubernetes/deploy/minikube/">Minikube 部署 Local 測試環境</a>
-        </h1>
-    
-
-                
-                    <div class="article-meta">
-                        
-    <div class="article-date">
-        <i class="fa fa-calendar-o"></i>
-        Posted on 
-        <a href="/2016/10/23/kubernetes/deploy/minikube/">
-            <u><time datetime="2016-10-23T09:08:54.000Z" itemprop="datePublished">2016-10-23</time></u>
-        </a>
-    </div>
-
-
-                        
-
-                        
-    <div class="article-category">
-    	<i class="fa fa-folder"></i>
-        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a>
-    </div>
-
-                        
-    <div class="article-tag">
-        <i class="fa fa-tag"></i>
-        <a class="tag-link" href="/tags/Docker/">Docker</a>, <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
-    </div>
-
-                    </div>
-                
-            </header>
-        
-        
-        <div class="article-entry" itemprop="articleBody">
-        
-            <p><p><a href="https://github.com/kubernetes/minikube" target="_blank" rel="noopener">Minikube</a> 是提供簡單與快速部署本地 Kubernetes 環境的工具，透過執行虛擬機來執行單節點 Kubernetes 叢集，以便開發者使用 Kubernetes 與開發用。</p>
-<p>本環境安裝資訊：</p>
-<ul>
-<li>Minikube v0.22.3</li>
-<li>Kubernetes v1.7.5</li>
-</ul></p>
-            <p class="article-more-link">
-                <a href="/2016/10/23/kubernetes/deploy/minikube/">Read More</a>
-            </p>
-        
-        </div>
-        
-        <footer class="article-footer">
-            <div class="share-container">
-
-
-
-</div>
-
-    <a data-url="https://k2r2bai.com/2016/10/23/kubernetes/deploy/minikube/" data-id="ck3q02a2s00hzd9pfghvrvxsr" class="article-share-link"><i class="fa fa-share"></i>Share</a>
-<script>
-    (function ($) {
-        // Prevent duplicate binding
-        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
-            __SHARE_BUTTON_BINDED__ = true;
-        } else {
-            return;
-        }
-        $('body').on('click', function() {
-            $('.article-share-box.on').removeClass('on');
-        }).on('click', '.article-share-link', function(e) {
-            e.stopPropagation();
-
-            var $this = $(this),
-                url = $this.attr('data-url'),
-                encodedUrl = encodeURIComponent(url),
-                id = 'article-share-box-' + $this.attr('data-id'),
-                offset = $this.offset(),
-                box;
-
-            if ($('#' + id).length) {
-                box = $('#' + id);
-
-                if (box.hasClass('on')){
-                    box.removeClass('on');
-                    return;
-                }
-            } else {
-                var html = [
-                    '<div id="' + id + '" class="article-share-box">',
-                        '<input class="article-share-input" value="' + url + '">',
-                        '<div class="article-share-links">',
-                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
-                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
-                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
-                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
-                        '</div>',
-                    '</div>'
-                ].join('');
-
-              box = $(html);
-
-              $('body').append(box);
-            }
-
-            $('.article-share-box.on').hide();
-
-            box.css({
-                top: offset.top + 25,
-                left: offset.left
-            }).addClass('on');
-
-        }).on('click', '.article-share-box', function (e) {
-            e.stopPropagation();
-        }).on('click', '.article-share-box-input', function () {
-            $(this).select();
-        }).on('click', '.article-share-box-link', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
-        });
-    })(jQuery);
-</script>
-
-            
-    
-        <a href="https://k2r2bai.com/2016/10/23/kubernetes/deploy/minikube/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2016/10/23/kubernetes/deploy/minikube/">Comments</a>
-    
-
-        </footer>
-    </div>
-</article>
-
-
-
-
     <nav id="page-nav">
         <a class="extend prev" rel="prev" href="/archives/6/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/archives/5/">5</a><a class="page-number" href="/archives/6/">6</a><span class="page-number current">7</span><a class="page-number" href="/archives/8/">8</a><a class="page-number" href="/archives/9/">9</a><span class="space">&hellip;</span><a class="page-number" href="/archives/13/">13</a><a class="extend next" rel="next" href="/archives/8/">Next &raquo;</a>
     </nav>
@@ -1651,6 +1666,22 @@
         <h3 class="widget-title">recent</h3>
         <div class="widget">
             <ul id="recent-post" class="">
+                
+                    <li>
+                        <div class="item-inner">
+                            <p class="item-category"><a class="article-category-link" href="/categories/LINE-Dev-Day/">LINE Dev Day</a></p>
+                            <p class="item-title"><a href="/2019/12/03/linedevday/part3/" class="title">2019 LINE Dev Day 議程心得 Part3</a></p>
+                            <p class="item-date"><time datetime="2019-12-02T16:00:00.000Z" itemprop="datePublished">2019-12-03</time></p>
+                        </div>
+                    </li>
+                
+                    <li>
+                        <div class="item-inner">
+                            <p class="item-category"><a class="article-category-link" href="/categories/LINE-Dev-Day/">LINE Dev Day</a></p>
+                            <p class="item-title"><a href="/2019/12/02/linedevday/part2/" class="title">2019 LINE Dev Day 議程心得 Part2</a></p>
+                            <p class="item-date"><time datetime="2019-12-01T16:00:00.000Z" itemprop="datePublished">2019-12-02</time></p>
+                        </div>
+                    </li>
                 
                     <li>
                         <div class="item-inner">
@@ -1673,22 +1704,6 @@
                             <p class="item-category"><a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a></p>
                             <p class="item-title"><a href="/2019/10/14/ironman2020/day29/" class="title">動手實作 Kubernetes 自定義控制器 Part5</a></p>
                             <p class="item-date"><time datetime="2019-10-13T16:00:00.000Z" itemprop="datePublished">2019-10-14</time></p>
-                        </div>
-                    </li>
-                
-                    <li>
-                        <div class="item-inner">
-                            <p class="item-category"><a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a></p>
-                            <p class="item-title"><a href="/2019/10/13/ironman2020/day28/" class="title">動手實作 Kubernetes 自定義控制器 Part4</a></p>
-                            <p class="item-date"><time datetime="2019-10-12T16:00:00.000Z" itemprop="datePublished">2019-10-13</time></p>
-                        </div>
-                    </li>
-                
-                    <li>
-                        <div class="item-inner">
-                            <p class="item-category"><a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a></p>
-                            <p class="item-title"><a href="/2019/10/12/ironman2020/day27/" class="title">動手實作 Kubernetes 自定義控制器 Part3</a></p>
-                            <p class="item-date"><time datetime="2019-10-11T16:00:00.000Z" itemprop="datePublished">2019-10-12</time></p>
                         </div>
                     </li>
                 

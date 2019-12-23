@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    
+    <title>2019 LINE Dev Day 議程心得 Part3 | KaiRen&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="description" content="前言昨天分享了 LINE Infrastructure 團隊為何導入 Cloud Native 的原因，從中可以看出 LINE 面臨服務開發的資源需求快速增長問題，因此必須更加有效的利用資料中心的資源，而 Cloud Native 的導入對他們來說是個關鍵點，利用容器、服務網格(Service Mesh)、微服務、不可變基礎建設、宣告式 API 等等技術與概念來提升交付時間，並更加有效的利用與控管">
+<meta name="keywords" content="LINE Dev Day">
+<meta property="og:type" content="article">
+<meta property="og:title" content="2019 LINE Dev Day 議程心得 Part3">
+<meta property="og:url" content="https://k2r2bai.com/2019/12/03/linedevday/part3/index.html">
+<meta property="og:site_name" content="KaiRen&#39;s Blog">
+<meta property="og:description" content="前言昨天分享了 LINE Infrastructure 團隊為何導入 Cloud Native 的原因，從中可以看出 LINE 面臨服務開發的資源需求快速增長問題，因此必須更加有效的利用資料中心的資源，而 Cloud Native 的導入對他們來說是個關鍵點，利用容器、服務網格(Service Mesh)、微服務、不可變基礎建設、宣告式 API 等等技術與概念來提升交付時間，並更加有效的利用與控管">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://k2r2bai.com/images/line/logo.png">
+<meta property="og:updated_time" content="2019-12-05T10:36:39.997Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="2019 LINE Dev Day 議程心得 Part3">
+<meta name="twitter:description" content="前言昨天分享了 LINE Infrastructure 團隊為何導入 Cloud Native 的原因，從中可以看出 LINE 面臨服務開發的資源需求快速增長問題，因此必須更加有效的利用資料中心的資源，而 Cloud Native 的導入對他們來說是個關鍵點，利用容器、服務網格(Service Mesh)、微服務、不可變基礎建設、宣告式 API 等等技術與概念來提升交付時間，並更加有效的利用與控管">
+<meta name="twitter:image" content="https://k2r2bai.com/images/line/logo.png">
+    
+
+    
+        <link rel="alternate" href="/atom.xml" title="KaiRen&#39;s Blog" type="application/atom+xml">
+    
+
+    
+        <link rel="icon" href="/images/favicon.png">
+    
+
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/libs/open-sans/styles.css">
+    <link rel="stylesheet" href="/libs/source-code-pro/styles.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script src="/libs/jquery/2.1.3/jquery.min.js"></script>
+    
+    
+        <link rel="stylesheet" href="/libs/lightgallery/css/lightgallery.min.css">
+    
+    
+        <link rel="stylesheet" href="/libs/justified-gallery/justifiedGallery.min.css">
+    
+    
+    
+    
+
+
+</head>
+</html>
+<body>
+    <div id="container">
+        <header id="header">
+    <div id="header-main" class="header-inner">
+        <div class="outer">
+            <a href="/" id="logo">
+                <i class="logo"></i>
+                <span class="site-title">KaiRen&#39;s Blog</span>
+            </a>
+            <nav id="main-nav">
+                
+                    <a class="main-nav-link" href="/.">Home</a>
+                
+                    <a class="main-nav-link" href="/archives">Archives</a>
+                
+                    <a class="main-nav-link" href="/categories">Categories</a>
+                
+                    <a class="main-nav-link" href="/tags">Tags</a>
+                
+                    <a class="main-nav-link" href="/about">About</a>
+                
+            </nav>
+            
+                
+                <nav id="sub-nav">
+                    <div class="profile" id="profile-nav">
+                        <a id="profile-anchor" href="javascript:;">
+                            <img class="avatar" src="/images/profile.png" />
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    </div>
+                </nav>
+            
+            <div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div>
+        </div>
+    </div>
+    <div id="main-nav-mobile" class="header-sub header-inner">
+        <table class="menu outer">
+            <tr>
+                
+                    <td><a class="main-nav-link" href="/.">Home</a></td>
+                
+                    <td><a class="main-nav-link" href="/archives">Archives</a></td>
+                
+                    <td><a class="main-nav-link" href="/categories">Categories</a></td>
+                
+                    <td><a class="main-nav-link" href="/tags">Tags</a></td>
+                
+                    <td><a class="main-nav-link" href="/about">About</a></td>
+                
+                <td>
+                    
+    <div class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="Search" />
+    </div>
+
+                </td>
+            </tr>
+        </table>
+    </div>
+</header>
+
+        <div class="outer">
+            
+                
+
+<aside id="profile">
+    <div class="inner profile-inner">
+        <div class="base-info profile-block">
+            <img id="avatar" src="/images/profile.png" />
+            <h2 id="name">Kyle Bai</h2>
+            <h3 id="title">Senior Software Engineer</h3>
+            <span id="location"><i class="fa fa-map-marker"></i>New Taipei, Taiwan</span>
+            <a id="follow" target="_blank" href="https://github.com/kairen/">FOLLOW</a>
+        </div>
+        <div class="article-info profile-block">
+            <div class="article-info-block">
+                128
+                <span>posts</span>
+            </div>
+            <div class="article-info-block">
+                78
+                <span>tags</span>
+            </div>
+        </div>
+        
+        <div class="profile-block social-links">
+            <table>
+                <tr>
+                    
+                    
+                    <td>
+                        <a href="https://github.com/kairen" target="_blank" title="github" class=tooltip>
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.facebook.com/k2r2bai" target="_blank" title="facebook" class=tooltip>
+                            <i class="fa fa-facebook"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://twitter.com/k2r2bai" target="_blank" title="twitter" class=tooltip>
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="https://www.linkedin.com/in/k2r2bai/" target="_blank" title="linkedin" class=tooltip>
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="/atom.xml" target="_blank" title="rss" class=tooltip>
+                            <i class="fa fa-rss"></i>
+                        </a>
+                    </td>
+                    
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</aside>
+
+            
+            <section id="main"><article id="post-linedevday/part3" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+            
+	
+		<img src="/images/line/logo.png" class="article-banner" />
+	
+
+
+
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 class="article-title" itemprop="name">
+            2019 LINE Dev Day 議程心得 Part3
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2019/12/03/linedevday/part3/">
+            <u><time datetime="2019-12-02T16:00:00.000Z" itemprop="datePublished">2019-12-03</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/LINE-Dev-Day/">LINE Dev Day</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/LINE-Dev-Day/">LINE Dev Day</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>昨天分享了 LINE Infrastructure 團隊為何導入 Cloud Native 的原因，從中可以看出 LINE 面臨服務開發的資源需求快速增長問題，因此必須更加有效的利用資料中心的資源，而 Cloud Native 的導入對他們來說是個關鍵點，利用容器、服務網格(Service Mesh)、微服務、不可變基礎建設、宣告式 API 等等技術與概念來提升交付時間，並更加有效的利用與控管資源。然而 LINE Infrastructure 團隊不僅僅只是導入 Cloud Native 技術來解決面臨問題，在不同層面上也有非常多的著墨，如網路與儲存這種基礎建設最關鍵的部分也考慮的很多，且服務團隊也會基於應用選用 Cloud Native 專案來達到需求。</p>
+<a id="more"></a>
+
+<p>今天就是要針對 <a href="https://speakerdeck.com/line_devday2019/grpc-service-development-in-private-kubernetes-cluster" target="_blank" rel="noopener">gRPC service development in private Kubernetes cluster</a> 這個議程來分享心得，該議程講者是 LINE Live 成員，他們為了服務能支撐直播高峰值的問題，因此導入了 Kubernetes 與 Envoy。</p>
+<h2 id="議程心得"><a href="#議程心得" class="headerlink" title="議程心得"></a>議程心得</h2><p>這個議程主要分享 LINE Live 團隊為何使用 Kubernetes 的原因，大體上 LINE Live 團隊需要一個辦法，來因應直播服務的流量峰值變化，因此需要擁有能快速 Scale In/Out 的能力，然而過去他們都服務都執行於 VM 之上，並且採用手動方式來進行擴展，比如說開個 VM 實例，然後用 Ansible 跑腳本來部署等等流程，而這樣過程無法應付瞬間爆量的狀況，因為 VM 交付與應用部署時間過久，因此導致無法快速達到需求。有鑒於上述問題，LIEN Live 團隊才選擇使用 Kubernetes 作為服務運行的平台。</p>
+<p><img src="https://i.imgur.com/vy9PMdZ.png" alt></p>
+<p>從當天聽到的內容，可以了解 LINE Verda 團隊會提供自研的 VKS(Verda Kubernetes Service) 平台，來讓 Service 團隊自助部署基於 OpenStack 之上的 Kubernetes 叢集，當 Service 團隊需要更多資源時，就可以以 VKS 來快速增減節點，或是利用 Kubernetes Deployment 特性來建立多個副本以支撐流量等等。</p>
+<p><img src="https://i.imgur.com/XWTqJid.png" alt></p>
+<p>接著講者介紹到團隊的服務架構，他們為了確保溝通的請求率，而以 gRPC 作為服務溝通的協定，更利用 Envoy 來協助轉換不同協定成 gRPC。</p>
+<p><img src="https://i.imgur.com/BT2QpNk.png" alt></p>
+<p>這邊有趣的是他們在 Mobile App 與服務交互時，採用了非常多層的 Load Balancer，像是 Mobile App 經由網際網路跟 LB 溝通時，會接著經由 Kubernetes NodePort 方式轉發到各節點上(這邊可能是 Envoy 的 Kubernetes Service)，然後再透過 Envoy 以 DNS 輪詢方式(利用 Headless service 來發現所有 Pod IP)轉發到 Spring 服務上。</p>
+<blockquote>
+<p>其實我覺得 NodePort 那一段怪怪的…。</p>
+</blockquote>
+<p><img src="https://i.imgur.com/dtXFNkl.png" alt></p>
+<p>而由於他們內部服務有很多是 gRPC 協定在溝通，但如果以 Kubernetes Service(kube-proxy) 作為彼此路由的話，將會因為其是 TCP/IP(L4) LB 的關析，而無法達到 gPRC/HTTP2 協定的好處。因為這樣只能讓 gRPC 在每次建立連線時，有負載平衡效果，而之後每次 RPC 請求都保持原本連線，並跑到同一個 Pod 上。所以 LINE Live 團隊才會選擇 Envoy 來達到每次 RPC 請求都根據我們策略路由到合適 Pod 上。</p>
+<p>而另外他們提到不使用 Istio 是因為 Spring 已經擁有一些相同功能，因此不需要用到整個 Istio 方案，只需要 Envoy 來處理 gPRC 轉發與轉換。至於效能問題，是他們無法容忍使用 Istio 帶來的延遲增加問題，因為他們是直播類型，所以延遲過高會影響服務品質。</p>
+<p><img src="https://i.imgur.com/giJ92Ey.png" alt></p>
+<blockquote>
+<p>關於 Istio 效能可以參考這篇 <a href="https://istio.io/docs/ops/deployment/performance-and-scalability/" target="_blank" rel="noopener">Performance and Scalability</a></p>
+</blockquote>
+<p>接著講者提到 Kubernetes Pod 存取 MySQL 的 ACL 問題，因為過去無法應付 Cluster autoscaler 長出來的新節點，因此導致該節點上的 Pod 都會被阻擋存取，所以 LINE 團隊開發了一個 ACL Manager 來動態更新。基本上 ACL Manager 就是去觀察連接 DB 的 Pod 座落在哪些節點上，然後在動態調整 MySQL ACL</p>
+<p><img src="https://i.imgur.com/3xAO3zw.png" alt></p>
+<p>而在 Monitoring 部分，他們採用 Verda Team 提供的 Add-ons Manager 來部署 Prometheus，該 Prometheus 以 StatefulSet 形式運行在當前 Kubernetes 叢集中(這是目前典型的做法)，而不是透過外部 Prometheus 方式來拉取 Metrics，增加了叢集的安全性。當然這樣做法還是要依據應用來進行，並且要很好的規劃叢集節點的角色，若沒定義好相對的 Affinity 的話，就可能影響到正式服務的容器。</p>
+<p><img src="https://i.imgur.com/S7SYYMW.png" alt></p>
+<p>另外他們覺得用 Kubernetes 的 Persistent Volume 來儲存 Prometheus TSDB 很難使用，因此透過 <a href="https://prometheus.io/docs/prometheus/latest/storage/#remote-storage-integrations" target="_blank" rel="noopener">Remote storage</a> 來跟自家開發的 <a href="https://speakerdeck.com/line_devday2019/deep-dive-into-lines-time-series-database-flash" target="_blank" rel="noopener">TSDB - Flash</a> 整合。至於在視覺化部分，就是採用 Grafana 來處理 Prometheus 資料。</p>
+<p><img src="https://i.imgur.com/UEql1JP.png" alt></p>
+<p>在 Spring 應用部分，Metrics 會透過 Spring Boot Actuator 與 OpenCensus 來提取，其中 OpenCensus 還能用於對 Metrics 進行分散式追蹤(Distributed tracing)，以確保團隊在遇到問題時，能更快的解決，甚至是提前預防問題發生。</p>
+<p><img src="https://i.imgur.com/wPEIvNS.png" alt></p>
+<p>最後部分講者分享了該團隊的 Logging 系統，可以看出類似 Monitoring 一樣直接採用 Verda Team 提供的 Add-ons 形式部署 EFK(Fluentd, Elasticsearch and Kibana) stack 架構在 Kubernetes 叢集上來收集 Logs，另外透過 IMON 來實現 Log 的告警。</p>
+<p><img src="https://i.imgur.com/1FIiaky.png" alt></p>
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>從這個議程可以看出來 LINE 在技術採納並不是隨便就使用，完全是對症下藥。另外 LINE 團隊在 Monitoring 跟 Logging 的軟體選擇都是目前 Kubernetes 社區典型部署方案，雖然在一些細節可能有額外開發東西，但是不難看出公司採納的架構比較偏向社區方案，或許是希望藉由社區的力量來加快平台的迭代，一方面也利用社區貢獻者力量來解決遇到問題吧。</p>
+<p>總之 LINE 團隊正在全面導入 Cloud Native 技術，利用這些技術來解決各種問題!!</p>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li><a href="https://www.techbang.com/posts/73284-lines-first-expansion-will-be-held-on-november-20th-and-21st-for-two-day-line-developer-day-2019" target="_blank" rel="noopener">https://www.techbang.com/posts/73284-lines-first-expansion-will-be-held-on-november-20th-and-21st-for-two-day-line-developer-day-2019</a></li>
+<li><a href="https://www.inside.com.tw/article/18162-line-dev-day" target="_blank" rel="noopener">https://www.inside.com.tw/article/18162-line-dev-day</a></li>
+</ul>
+
+        
+        </div>
+        
+            <div>
+                <ul class="post-copyright">
+                  <li class="post-copyright-author">
+                      <b><strong>本文作者：</strong></b>KaiRen Bai
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>本文連結：</strong></b>
+                  <a href="" title="{{ page.title }}">2019 LINE Dev Day 議程心得 Part3</a>
+                  </li>
+                  <li class="post-copyright-link">
+                      <b><strong>發佈時間：</strong></b>
+                  <a href="" title="{{ page.title }}">2019-12-3 00:12</a>
+                  </li>
+                  <li class="post-copyright-license">
+                      <b><strong>版權聲明：</strong></b>
+                  All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.
+                  </li>
+                </ul>
+            </div>
+              
+<nav id="article-nav">
+    
+    
+        <a href="/2019/12/02/linedevday/part2/" id="article-nav-older" class="article-nav-link-wrap">
+            <strong class="article-nav-caption">Older</strong>
+            <div class="article-nav-title">2019 LINE Dev Day 議程心得 Part2</div>
+        </a>
+    
+</nav>
+
+
+          
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2019/12/03/linedevday/part3/" data-id="ck3s6ime400o195pfz37q26tt" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2019/12/03/linedevday/part3/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/12/03/linedevday/part3/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+    
+    
+        <section id="comments">
+    <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+</section>
+    
+
+
+
+</section>
+            
+                
+<aside id="sidebar">
+    
+        
+    <div id="toc" class="toc-article">
+        <strong class="toc-title">Catalogue</strong>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#議程心得"><span class="toc-number">2.</span> <span class="toc-text">議程心得</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#結語"><span class="toc-number">3.</span> <span class="toc-text">結語</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Reference"><span class="toc-number">4.</span> <span class="toc-text">Reference</span></a></li></ol>
+    </div>
+
+
+    
+    
+    <a id="toTop" href="#top" class=""></a>
+</aside>
+
+ 
+            
+        </div>
+        <footer id="footer">
+    <div class="outer">
+        <div id="footer-info" class="inner">
+            &copy; 2019 Kyle Bai<br>
+            Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>. Theme by <a href="http://github.com/ppoffice">PPOffice</a>
+        </div>
+    </div>
+</footer>
+        
+    
+    <script>
+    var disqus_config = function () {
+        
+            this.page.url = 'https://k2r2bai.com/2019/12/03/linedevday/part3/';
+        
+        this.page.identifier = 'linedevday/part3';
+    };
+    (function() { 
+        var d = document, s = d.createElement('script');  
+        s.src = '//' + 'k2r2bai' + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+
+
+
+    
+        <script src="/libs/lightgallery/js/lightgallery.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-thumbnail.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-pager.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-autoplay.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-fullscreen.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-zoom.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-hash.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-share.min.js"></script>
+        <script src="/libs/lightgallery/js/lg-video.min.js"></script>
+    
+    
+        <script src="/libs/justified-gallery/jquery.justifiedGallery.min.js"></script>
+    
+    
+
+
+
+<!-- Custom Scripts -->
+<script src="/js/main.js"></script>
+
+    </div>
+</body>
+</html>

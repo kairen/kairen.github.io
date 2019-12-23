@@ -156,7 +156,7 @@
         </div>
         <div class="article-info profile-block">
             <div class="article-info-block">
-                126
+                128
                 <span>posts</span>
             </div>
             <div class="article-info-block">
@@ -209,6 +209,281 @@
 
             
             <section id="main">
+    <article id="post-linux/ubuntu/nfs" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 itemprop="name">
+            <a class="article-title" href="/2015/11/24/linux/ubuntu/nfs/">NFS 簡單安裝與使用</a>
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2015/11/24/linux/ubuntu/nfs/">
+            <u><time datetime="2015-11-24T04:23:01.000Z" itemprop="datePublished">2015-11-24</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Linux/">Linux</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/File-System/">File System</a>, <a class="tag-link" href="/tags/Linux/">Linux</a>, <a class="tag-link" href="/tags/OpenStack/">OpenStack</a>, <a class="tag-link" href="/tags/Storage/">Storage</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p><p>網路檔案系統(Network FileSystem，NFS)是早期由 SUN 公司所開發出來的<code>分散式檔案系統</code>協定。主要透過 RPC Service 使檔案能夠共享於網路中，NFS 的好處是它支援了不同系統與機器的溝通能力，使資料能夠很輕易透過網路共享給別人。</p></p>
+            <p class="article-more-link">
+                <a href="/2015/11/24/linux/ubuntu/nfs/">Read More</a>
+            </p>
+        
+        </div>
+        
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2015/11/24/linux/ubuntu/nfs/" data-id="ck3s6ih9d00jk95pfu2dz6p8z" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2015/11/24/linux/ubuntu/nfs/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2015/11/24/linux/ubuntu/nfs/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+
+
+    <article id="post-ceph/cephfs" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 itemprop="name">
+            <a class="article-title" href="/2015/11/21/ceph/cephfs/">Ceph FS 基本操作</a>
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2015/11/21/ceph/cephfs/">
+            <u><time datetime="2015-11-21T09:08:54.000Z" itemprop="datePublished">2015-11-21</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Ceph/">Ceph</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Ceph/">Ceph</a>, <a class="tag-link" href="/tags/File-System/">File System</a>, <a class="tag-link" href="/tags/Storage/">Storage</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p><p>Ceph FS 底層的部分同樣是由 RADOS(OSDs + Monitors + MDSs) 提供，在上一層同樣與 librados 溝通，最上層則是有不同的 library 將其轉換成標準的 POSIX 檔案系統供使用。</p>
+<p><img src="/images/ceph/cephfs.png" alt></p></p>
+            <p class="article-more-link">
+                <a href="/2015/11/21/ceph/cephfs/">Read More</a>
+            </p>
+        
+        </div>
+        
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2015/11/21/ceph/cephfs/" data-id="ck3s6ih1y000695pf2e1dl8k3" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2015/11/21/ceph/cephfs/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2015/11/21/ceph/cephfs/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+
+
     <article id="post-ceph/deploy/ceph-deploy" class="article article-type-post" itemscope itemprop="blogPost">
     <div class="article-inner">
         
@@ -268,7 +543,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2015/11/20/ceph/deploy/ceph-deploy/" data-id="ck3q02a1s00f2d9pf1x6z8hc8" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2015/11/20/ceph/deploy/ceph-deploy/" data-id="ck3s6ih7l00fe95pfib8ij1ph" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -406,7 +681,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2015/11/19/ceph/introduction/" data-id="ck3q029vx0006d9pf1cf4nf2i" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2015/11/19/ceph/introduction/" data-id="ck3s6ih23000a95pfzd3vaxt7" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -556,7 +831,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2015/11/17/data-engineer/apache-cassandra/" data-id="ck3q029we000rd9pfgu24vnxi" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2015/11/17/data-engineer/apache-cassandra/" data-id="ck3s6ih2r001g95pfw54x4t4w" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -695,7 +970,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2015/11/10/cncf/kubernetes/" data-id="ck3q029w8000fd9pfie014mbb" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2015/11/10/cncf/kubernetes/" data-id="ck3s6ih28000f95pfl8x7ag1d" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -836,7 +1111,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2015/11/09/container/docker-introduction/" data-id="ck3q029ws001od9pf5nhx9zu6" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2015/11/09/container/docker-introduction/" data-id="ck3s6ih2c000l95pf4fuskjvo" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -973,7 +1248,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2015/11/04/linux/ubuntu/apache2-proxy/" data-id="ck3q02a2w00iad9pf4zq8br8n" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2015/11/04/linux/ubuntu/apache2-proxy/" data-id="ck3s6ih9000iu95pfpn11ijof" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -1110,7 +1385,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2015/11/04/linux/ubuntu/ubuntu-maas-install/" data-id="ck3q02a3d00jid9pferqq9tku" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2015/11/04/linux/ubuntu/ubuntu-maas-install/" data-id="ck3s6ih9f00jo95pfvzjzfz5f" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -1247,7 +1522,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2015/10/29/linux/ubuntu/keepalived/" data-id="ck3q02a3b00jbd9pfkr34nhr3" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2015/10/29/linux/ubuntu/keepalived/" data-id="ck3s6ih9c00jh95pfehrpxiu1" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -1325,288 +1600,6 @@
 
 
 
-    <article id="post-data-engineer/kafka-install" class="article article-type-post" itemscope itemprop="blogPost">
-    <div class="article-inner">
-        
-        
-            <header class="article-header">
-                
-    
-        <h1 itemprop="name">
-            <a class="article-title" href="/2015/10/13/data-engineer/kafka-install/">Apache Kafka 叢集</a>
-        </h1>
-    
-
-                
-                    <div class="article-meta">
-                        
-    <div class="article-date">
-        <i class="fa fa-calendar-o"></i>
-        Posted on 
-        <a href="/2015/10/13/data-engineer/kafka-install/">
-            <u><time datetime="2015-10-13T09:08:54.000Z" itemprop="datePublished">2015-10-13</time></u>
-        </a>
-    </div>
-
-
-                        
-
-                        
-    <div class="article-category">
-    	<i class="fa fa-folder"></i>
-        <a class="article-category-link" href="/categories/Spark/">Spark</a>
-    </div>
-
-                        
-    <div class="article-tag">
-        <i class="fa fa-tag"></i>
-        <a class="tag-link" href="/tags/Kafka/">Kafka</a>, <a class="tag-link" href="/tags/Message-Queue/">Message Queue</a>, <a class="tag-link" href="/tags/Spark/">Spark</a>
-    </div>
-
-                    </div>
-                
-            </header>
-        
-        
-        <div class="article-entry" itemprop="articleBody">
-        
-            <p><p>Apache Kafka 是一個分散式的訊息佇列框架，是由 LinkedIn 公司使用 Scala 語言開發的系統，被廣泛用來處理高吞吐量與容易水平擴展，目前許多巨量資料運算框架以都有整合 Kafka，諸如：Spark、Cloudera、Apache Storm等，</p>
-<p>Kafka 是基於<code>Publish/Subscribe</code>的訊息系統，主要設計由以下特點：</p>
-<ul>
-<li>在 TB 級以上資料也能確保常數時間複雜度的存取效能，且時間複雜度為O(1)的訊息持久化。</li>
-<li>高吞吐量，在低階的商業電腦上也能提供單機<code>100k/sec</code>條以上的訊息傳輸。</li>
-<li>支援 Kafka Server 之間的訊息分區(Partition)以及分散式發送，並保證每個分區內的訊息循序傳輸。</li>
-<li>同時支援離線資料處理與即時資料處理</li>
-<li>容易的服務不中斷水平擴展。</li>
-</ul></p>
-            <p class="article-more-link">
-                <a href="/2015/10/13/data-engineer/kafka-install/">Read More</a>
-            </p>
-        
-        </div>
-        
-        <footer class="article-footer">
-            <div class="share-container">
-
-
-
-</div>
-
-    <a data-url="https://k2r2bai.com/2015/10/13/data-engineer/kafka-install/" data-id="ck3q029wk0014d9pfpelqqizb" class="article-share-link"><i class="fa fa-share"></i>Share</a>
-<script>
-    (function ($) {
-        // Prevent duplicate binding
-        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
-            __SHARE_BUTTON_BINDED__ = true;
-        } else {
-            return;
-        }
-        $('body').on('click', function() {
-            $('.article-share-box.on').removeClass('on');
-        }).on('click', '.article-share-link', function(e) {
-            e.stopPropagation();
-
-            var $this = $(this),
-                url = $this.attr('data-url'),
-                encodedUrl = encodeURIComponent(url),
-                id = 'article-share-box-' + $this.attr('data-id'),
-                offset = $this.offset(),
-                box;
-
-            if ($('#' + id).length) {
-                box = $('#' + id);
-
-                if (box.hasClass('on')){
-                    box.removeClass('on');
-                    return;
-                }
-            } else {
-                var html = [
-                    '<div id="' + id + '" class="article-share-box">',
-                        '<input class="article-share-input" value="' + url + '">',
-                        '<div class="article-share-links">',
-                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
-                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
-                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
-                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
-                        '</div>',
-                    '</div>'
-                ].join('');
-
-              box = $(html);
-
-              $('body').append(box);
-            }
-
-            $('.article-share-box.on').hide();
-
-            box.css({
-                top: offset.top + 25,
-                left: offset.left
-            }).addClass('on');
-
-        }).on('click', '.article-share-box', function (e) {
-            e.stopPropagation();
-        }).on('click', '.article-share-box-input', function () {
-            $(this).select();
-        }).on('click', '.article-share-box-link', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
-        });
-    })(jQuery);
-</script>
-
-            
-    
-        <a href="https://k2r2bai.com/2015/10/13/data-engineer/kafka-install/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2015/10/13/data-engineer/kafka-install/">Comments</a>
-    
-
-        </footer>
-    </div>
-</article>
-
-
-
-
-    <article id="post-data-engineer/spark-mesos" class="article article-type-post" itemscope itemprop="blogPost">
-    <div class="article-inner">
-        
-        
-            <header class="article-header">
-                
-    
-        <h1 itemprop="name">
-            <a class="article-title" href="/2015/10/12/data-engineer/spark-mesos/">Spark on Mesos 多節點部署</a>
-        </h1>
-    
-
-                
-                    <div class="article-meta">
-                        
-    <div class="article-date">
-        <i class="fa fa-calendar-o"></i>
-        Posted on 
-        <a href="/2015/10/12/data-engineer/spark-mesos/">
-            <u><time datetime="2015-10-12T09:08:54.000Z" itemprop="datePublished">2015-10-12</time></u>
-        </a>
-    </div>
-
-
-                        
-
-                        
-    <div class="article-category">
-    	<i class="fa fa-folder"></i>
-        <a class="article-category-link" href="/categories/Spark/">Spark</a>
-    </div>
-
-                        
-    <div class="article-tag">
-        <i class="fa fa-tag"></i>
-        <a class="tag-link" href="/tags/HDFS/">HDFS</a>, <a class="tag-link" href="/tags/Mesos/">Mesos</a>, <a class="tag-link" href="/tags/Spark/">Spark</a>
-    </div>
-
-                    </div>
-                
-            </header>
-        
-        
-        <div class="article-entry" itemprop="articleBody">
-        
-            <p><p>Spark + Mesos 叢集是由多個主節點與工作節點組合而成，它實作了兩層的排程（Scheduler）來提供粗/細粒度的排程。在 Mesos 中主節點（Master）主要負責資料的分配與排程，然而從節點（Slave）則是主要執行任務負載的角色。Mesos 也提供了高可靠的部署模式，可利用多個主節點的 ZooKeeper 來做服務發現。</p></p>
-            <p class="article-more-link">
-                <a href="/2015/10/12/data-engineer/spark-mesos/">Read More</a>
-            </p>
-        
-        </div>
-        
-        <footer class="article-footer">
-            <div class="share-container">
-
-
-
-</div>
-
-    <a data-url="https://k2r2bai.com/2015/10/12/data-engineer/spark-mesos/" data-id="ck3q029wm0019d9pf0dvjt0ay" class="article-share-link"><i class="fa fa-share"></i>Share</a>
-<script>
-    (function ($) {
-        // Prevent duplicate binding
-        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
-            __SHARE_BUTTON_BINDED__ = true;
-        } else {
-            return;
-        }
-        $('body').on('click', function() {
-            $('.article-share-box.on').removeClass('on');
-        }).on('click', '.article-share-link', function(e) {
-            e.stopPropagation();
-
-            var $this = $(this),
-                url = $this.attr('data-url'),
-                encodedUrl = encodeURIComponent(url),
-                id = 'article-share-box-' + $this.attr('data-id'),
-                offset = $this.offset(),
-                box;
-
-            if ($('#' + id).length) {
-                box = $('#' + id);
-
-                if (box.hasClass('on')){
-                    box.removeClass('on');
-                    return;
-                }
-            } else {
-                var html = [
-                    '<div id="' + id + '" class="article-share-box">',
-                        '<input class="article-share-input" value="' + url + '">',
-                        '<div class="article-share-links">',
-                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
-                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
-                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
-                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
-                        '</div>',
-                    '</div>'
-                ].join('');
-
-              box = $(html);
-
-              $('body').append(box);
-            }
-
-            $('.article-share-box.on').hide();
-
-            box.css({
-                top: offset.top + 25,
-                left: offset.left
-            }).addClass('on');
-
-        }).on('click', '.article-share-box', function (e) {
-            e.stopPropagation();
-        }).on('click', '.article-share-box-input', function () {
-            $(this).select();
-        }).on('click', '.article-share-box-link', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
-        });
-    })(jQuery);
-</script>
-
-            
-    
-        <a href="https://k2r2bai.com/2015/10/12/data-engineer/spark-mesos/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2015/10/12/data-engineer/spark-mesos/">Comments</a>
-    
-
-        </footer>
-    </div>
-</article>
-
-
-
-
     <nav id="page-nav">
         <a class="extend prev" rel="prev" href="/archives/11/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/archives/10/">10</a><a class="page-number" href="/archives/11/">11</a><span class="page-number current">12</span><a class="page-number" href="/archives/13/">13</a><a class="extend next" rel="next" href="/archives/13/">Next &raquo;</a>
     </nav>
@@ -1623,6 +1616,22 @@
         <h3 class="widget-title">recent</h3>
         <div class="widget">
             <ul id="recent-post" class="">
+                
+                    <li>
+                        <div class="item-inner">
+                            <p class="item-category"><a class="article-category-link" href="/categories/LINE-Dev-Day/">LINE Dev Day</a></p>
+                            <p class="item-title"><a href="/2019/12/03/linedevday/part3/" class="title">2019 LINE Dev Day 議程心得 Part3</a></p>
+                            <p class="item-date"><time datetime="2019-12-02T16:00:00.000Z" itemprop="datePublished">2019-12-03</time></p>
+                        </div>
+                    </li>
+                
+                    <li>
+                        <div class="item-inner">
+                            <p class="item-category"><a class="article-category-link" href="/categories/LINE-Dev-Day/">LINE Dev Day</a></p>
+                            <p class="item-title"><a href="/2019/12/02/linedevday/part2/" class="title">2019 LINE Dev Day 議程心得 Part2</a></p>
+                            <p class="item-date"><time datetime="2019-12-01T16:00:00.000Z" itemprop="datePublished">2019-12-02</time></p>
+                        </div>
+                    </li>
                 
                     <li>
                         <div class="item-inner">
@@ -1645,22 +1654,6 @@
                             <p class="item-category"><a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a></p>
                             <p class="item-title"><a href="/2019/10/14/ironman2020/day29/" class="title">動手實作 Kubernetes 自定義控制器 Part5</a></p>
                             <p class="item-date"><time datetime="2019-10-13T16:00:00.000Z" itemprop="datePublished">2019-10-14</time></p>
-                        </div>
-                    </li>
-                
-                    <li>
-                        <div class="item-inner">
-                            <p class="item-category"><a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a></p>
-                            <p class="item-title"><a href="/2019/10/13/ironman2020/day28/" class="title">動手實作 Kubernetes 自定義控制器 Part4</a></p>
-                            <p class="item-date"><time datetime="2019-10-12T16:00:00.000Z" itemprop="datePublished">2019-10-13</time></p>
-                        </div>
-                    </li>
-                
-                    <li>
-                        <div class="item-inner">
-                            <p class="item-category"><a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a></p>
-                            <p class="item-title"><a href="/2019/10/12/ironman2020/day27/" class="title">動手實作 Kubernetes 自定義控制器 Part3</a></p>
-                            <p class="item-date"><time datetime="2019-10-11T16:00:00.000Z" itemprop="datePublished">2019-10-12</time></p>
                         </div>
                     </li>
                 

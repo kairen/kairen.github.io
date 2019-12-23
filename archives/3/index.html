@@ -156,7 +156,7 @@
         </div>
         <div class="article-info profile-block">
             <div class="article-info-block">
-                126
+                128
                 <span>posts</span>
             </div>
             <div class="article-info-block">
@@ -209,6 +209,281 @@
 
             
             <section id="main">
+    <article id="post-ironman2020/day11" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 itemprop="name">
+            <a class="article-title" href="/2019/09/26/ironman2020/day11/">實作 Kubernetes 裸機 Load Balancer Part1</a>
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2019/09/26/ironman2020/day11/">
+            <u><time datetime="2019-09-25T16:00:00.000Z" itemprop="datePublished">2019-09-26</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在生產環境中，通常都是以 Ingress 方式來曝露 HTTP/HTTPS 存取服務，而前幾天分享如何透過 NGINX Ingress、ExternalDNS 與 CoreDNS 等，就是在自建 Kubernetes 上實現這樣功能，讓我們以 L7 網路協定功能來達到服務存取目的。但在實際應用中，還是有很多需要以 TCP/UDP 方式存取或連接服務，這樣該如何進行呢?相信有研究過 Kubernetes 朋友都知道 NGINX Ingress 也支援了 TCP/UDP 的反向代理，這表示 Ingress 也能支援 TCP/UDP。但另一個問題來了，如果叢集有兩個服務需要用到同一個 TCP/UDP Port 時，這該怎麼辦呢?這時 Ingress 就無法很好地達到該需求，那我們該怎麼做呢?事實上，Kubernetes Service 的 LoadBalancer 類型就能達到，但是<code>僅限於公有雲服務</code>上才能完成，在地端的 Kubernetes 存在著一些限制，使得無法滿足需求。而這次主題就是要針對該議題進行說明與嘗試實作。</p></p>
+            <p class="article-more-link">
+                <a href="/2019/09/26/ironman2020/day11/">Read More</a>
+            </p>
+        
+        </div>
+        
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2019/09/26/ironman2020/day11/" data-id="ck3s6ih3e003495pfqkxzaq2v" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2019/09/26/ironman2020/day11/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/09/26/ironman2020/day11/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+
+
+    <article id="post-ironman2020/day10" class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        
+            <header class="article-header">
+                
+    
+        <h1 itemprop="name">
+            <a class="article-title" href="/2019/09/25/ironman2020/day10/">實現 Kubernetes Service/Ingress 同步設定 DNS 資源紀錄 Part2</a>
+        </h1>
+    
+
+                
+                    <div class="article-meta">
+                        
+    <div class="article-date">
+        <i class="fa fa-calendar-o"></i>
+        Posted on 
+        <a href="/2019/09/25/ironman2020/day10/">
+            <u><time datetime="2019-09-24T16:00:00.000Z" itemprop="datePublished">2019-09-25</time></u>
+        </a>
+    </div>
+
+
+                        
+
+                        
+    <div class="article-category">
+    	<i class="fa fa-folder"></i>
+        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a>
+    </div>
+
+                        
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
+    </div>
+
+                    </div>
+                
+            </header>
+        
+        
+        <div class="article-entry" itemprop="articleBody">
+        
+            <p><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>有時地端 Kubernetes 會需要提供給內部團隊使用，而團隊人員若希望以域名方式直接存取 Kubernetes 上的服務時，就必須建立一套機制。但這樣需求中，也增加了維運人員的負擔，因為若沒有自動化機制，就要在 Kubernetes Ingress/Service 變動時，手動處理 DNS 資源紀錄，以確保內部團隊能夠解析到位址。</p>
+<p>基於此原因，今天延續在<a href="https://k2r2bai.com/2019/09/24/ironman2020/day09/">實現 Kubernetes Service/Ingress 同步設定 DNS 資源紀錄 Part1</a>的文章提到的架構，實際將該架構部署到一座地端 Kubernetes 叢集上測試，並透過實作過程來了解其功能是如何運作的。</p></p>
+            <p class="article-more-link">
+                <a href="/2019/09/25/ironman2020/day10/">Read More</a>
+            </p>
+        
+        </div>
+        
+        <footer class="article-footer">
+            <div class="share-container">
+
+
+
+</div>
+
+    <a data-url="https://k2r2bai.com/2019/09/25/ironman2020/day10/" data-id="ck3s6ih3f003695pf4ft6ob59" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+<script>
+    (function ($) {
+        // Prevent duplicate binding
+        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
+            __SHARE_BUTTON_BINDED__ = true;
+        } else {
+            return;
+        }
+        $('body').on('click', function() {
+            $('.article-share-box.on').removeClass('on');
+        }).on('click', '.article-share-link', function(e) {
+            e.stopPropagation();
+
+            var $this = $(this),
+                url = $this.attr('data-url'),
+                encodedUrl = encodeURIComponent(url),
+                id = 'article-share-box-' + $this.attr('data-id'),
+                offset = $this.offset(),
+                box;
+
+            if ($('#' + id).length) {
+                box = $('#' + id);
+
+                if (box.hasClass('on')){
+                    box.removeClass('on');
+                    return;
+                }
+            } else {
+                var html = [
+                    '<div id="' + id + '" class="article-share-box">',
+                        '<input class="article-share-input" value="' + url + '">',
+                        '<div class="article-share-links">',
+                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
+                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
+                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
+                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
+                        '</div>',
+                    '</div>'
+                ].join('');
+
+              box = $(html);
+
+              $('body').append(box);
+            }
+
+            $('.article-share-box.on').hide();
+
+            box.css({
+                top: offset.top + 25,
+                left: offset.left
+            }).addClass('on');
+
+        }).on('click', '.article-share-box', function (e) {
+            e.stopPropagation();
+        }).on('click', '.article-share-box-input', function () {
+            $(this).select();
+        }).on('click', '.article-share-box-link', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
+        });
+    })(jQuery);
+</script>
+
+            
+    
+        <a href="https://k2r2bai.com/2019/09/25/ironman2020/day10/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/09/25/ironman2020/day10/">Comments</a>
+    
+
+        </footer>
+    </div>
+</article>
+
+
+
+
     <article id="post-ironman2020/day09" class="article article-type-post" itemscope itemprop="blogPost">
     <div class="article-inner">
         
@@ -269,7 +544,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2019/09/24/ironman2020/day09/" data-id="ck3q029xa0032d9pfc4ctr71j" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2019/09/24/ironman2020/day09/" data-id="ck3s6ih3b002v95pfnn05rlnq" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -406,7 +681,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2019/09/23/ironman2020/day08/" data-id="ck3q029xa0031d9pfin2yu8b8" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2019/09/23/ironman2020/day08/" data-id="ck3s6ih3d002z95pfc2b9nmbz" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -543,7 +818,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2019/09/22/ironman2020/day07/" data-id="ck3q029x9002yd9pfgf78vais" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2019/09/22/ironman2020/day07/" data-id="ck3s6ih3c002y95pf7c9bumob" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -681,7 +956,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2019/09/21/ironman2020/day06/" data-id="ck3q029x8002wd9pfyxoc9qmb" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2019/09/21/ironman2020/day06/" data-id="ck3s6ih3a002t95pfbgwfe4wk" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -819,7 +1094,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2019/09/20/ironman2020/day05/" data-id="ck3q029x7002sd9pfthty6kha" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2019/09/20/ironman2020/day05/" data-id="ck3s6ih39002p95pf0ovumbqz" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -956,7 +1231,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2019/09/19/ironman2020/day04/" data-id="ck3q029x6002pd9pfzp3neav8" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2019/09/19/ironman2020/day04/" data-id="ck3s6ih38002m95pfhepn8q6s" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -1093,7 +1368,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2019/09/18/ironman2020/day03/" data-id="ck3q029x5002ld9pfqhud8ert" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2019/09/18/ironman2020/day03/" data-id="ck3s6ih37002i95pf46dfv3f2" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -1233,7 +1508,7 @@
 
 </div>
 
-    <a data-url="https://k2r2bai.com/2019/09/17/ironman2020/day02/" data-id="ck3q029x2002gd9pffyxqqe7a" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="https://k2r2bai.com/2019/09/17/ironman2020/day02/" data-id="ck3s6ih35002g95pfhcv7vokr" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         // Prevent duplicate binding
@@ -1311,307 +1586,6 @@
 
 
 
-    <article id="post-ironman2020/day01" class="article article-type-post" itemscope itemprop="blogPost">
-    <div class="article-inner">
-        
-        
-            <header class="article-header">
-                
-    
-        <h1 itemprop="name">
-            <a class="article-title" href="/2019/09/16/ironman2020/day01/">淺談 Kubernetes 的部署工具選擇 Part1</a>
-        </h1>
-    
-
-                
-                    <div class="article-meta">
-                        
-    <div class="article-date">
-        <i class="fa fa-calendar-o"></i>
-        Posted on 
-        <a href="/2019/09/16/ironman2020/day01/">
-            <u><time datetime="2019-09-15T16:00:00.000Z" itemprop="datePublished">2019-09-16</time></u>
-        </a>
-    </div>
-
-
-                        
-
-                        
-    <div class="article-category">
-    	<i class="fa fa-folder"></i>
-        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a>
-    </div>
-
-                        
-    <div class="article-tag">
-        <i class="fa fa-tag"></i>
-        <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
-    </div>
-
-                    </div>
-                
-            </header>
-        
-        
-        <div class="article-entry" itemprop="articleBody">
-        
-            <p><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>我們都知道 Kubernetes 有很多特性可以確保系統與應用程式能夠更加穩定、部署更加流暢與管理更加簡單，而且使用起來也相對容易，但在自建(或地端)部署時，卻與想像的不同，有很多需要關注的問題與事情，例如:高可靠性(Highly Available，HA)、如何安全地更新叢集、裸機負載平衡器(Bare-metal Load Balancer)、動態 DNS 更新、硬體設備整合、分散式儲存整合與離線安裝(Offline Installation)等等，除了上述問題外，還要為了客戶能夠對部署的 Kubernetes 更有信心，因此必須進行壓力測試、E2E 測試、一致性測試與叢集安全掃描等等。從上述簡短的描述中，可以了解到自己蓋一套可以用的 Kubernetes 叢集，並且自己維運是多麼麻煩的事，這對公司來說都是成本支出。也正因此大多數人會偏向使用公有雲的 Kubernetes 服務，如 EKS、GKE 與 AKS 等等來減少維運成本的支出。下圖顯示不同部署的方式需要管理的部分。</p></p>
-            <p class="article-more-link">
-                <a href="/2019/09/16/ironman2020/day01/">Read More</a>
-            </p>
-        
-        </div>
-        
-        <footer class="article-footer">
-            <div class="share-container">
-
-
-
-</div>
-
-    <a data-url="https://k2r2bai.com/2019/09/16/ironman2020/day01/" data-id="ck3q029x0002dd9pf003unxxn" class="article-share-link"><i class="fa fa-share"></i>Share</a>
-<script>
-    (function ($) {
-        // Prevent duplicate binding
-        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
-            __SHARE_BUTTON_BINDED__ = true;
-        } else {
-            return;
-        }
-        $('body').on('click', function() {
-            $('.article-share-box.on').removeClass('on');
-        }).on('click', '.article-share-link', function(e) {
-            e.stopPropagation();
-
-            var $this = $(this),
-                url = $this.attr('data-url'),
-                encodedUrl = encodeURIComponent(url),
-                id = 'article-share-box-' + $this.attr('data-id'),
-                offset = $this.offset(),
-                box;
-
-            if ($('#' + id).length) {
-                box = $('#' + id);
-
-                if (box.hasClass('on')){
-                    box.removeClass('on');
-                    return;
-                }
-            } else {
-                var html = [
-                    '<div id="' + id + '" class="article-share-box">',
-                        '<input class="article-share-input" value="' + url + '">',
-                        '<div class="article-share-links">',
-                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
-                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
-                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
-                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
-                        '</div>',
-                    '</div>'
-                ].join('');
-
-              box = $(html);
-
-              $('body').append(box);
-            }
-
-            $('.article-share-box.on').hide();
-
-            box.css({
-                top: offset.top + 25,
-                left: offset.left
-            }).addClass('on');
-
-        }).on('click', '.article-share-box', function (e) {
-            e.stopPropagation();
-        }).on('click', '.article-share-box-input', function () {
-            $(this).select();
-        }).on('click', '.article-share-box-link', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
-        });
-    })(jQuery);
-</script>
-
-            
-    
-        <a href="https://k2r2bai.com/2019/09/16/ironman2020/day01/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/09/16/ironman2020/day01/">Comments</a>
-    
-
-        </footer>
-    </div>
-</article>
-
-
-
-
-    <article id="post-kubernetes/federation-v2" class="article article-type-post" itemscope itemprop="blogPost">
-    <div class="article-inner">
-        
-            
-	
-		<a href="/2019/04/20/kubernetes/federation-v2/" itemprop="url">
-            <img src="/images/k8s/federation/banner.png" class="article-banner" />
-        </a>
-	
-
-
-
-        
-        
-            <header class="article-header">
-                
-    
-        <h1 itemprop="name">
-            <a class="article-title" href="/2019/04/20/kubernetes/federation-v2/">KubeFed: Kubernetes Federation v2</a>
-        </h1>
-    
-
-                
-                    <div class="article-meta">
-                        
-    <div class="article-date">
-        <i class="fa fa-calendar-o"></i>
-        Posted on 
-        <a href="/2019/04/20/kubernetes/federation-v2/">
-            <u><time datetime="2019-04-19T16:00:00.000Z" itemprop="datePublished">2019-04-20</time></u>
-        </a>
-    </div>
-
-
-                        
-    <div class="article-date">
-        <i class="fa fa-calendar-check-o"></i>
-        Edited on
-        <a href="/2019/04/20/kubernetes/federation-v2/">
-             <u><time datetime="2019-06-13T16:00:00.000Z" itemprop="datePublished">2019-06-14</time></u>
-        </a>
-    </div>
-
-
-                        
-    <div class="article-category">
-    	<i class="fa fa-folder"></i>
-        <a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a>
-    </div>
-
-                        
-    <div class="article-tag">
-        <i class="fa fa-tag"></i>
-        <a class="tag-link" href="/tags/Federation/">Federation</a>, <a class="tag-link" href="/tags/Kubernetes/">Kubernetes</a>
-    </div>
-
-                    </div>
-                
-            </header>
-        
-        
-        <div class="article-entry" itemprop="articleBody">
-        
-            <p><p><a href="https://kubernetes.io/docs/concepts/cluster-administration/federation/" target="_blank" rel="noopener">Kubernetes Federation(聯邦)</a> 一直是很有趣的議題，並被重視的功能，Federation 目的是希望實現單一叢集統一管理多個 Kubernetes 叢集的機制，這些叢集可能是跨地區(Region)，也可能是在不同公有雲供應商(Cloud Provider)上，亦或者是公司內部自行建立的叢集。一但叢集進行聯邦後，就可以利用 Federation API 資源來統一管理多個叢集的 Kubernetes API 資源，如定義 Deployment 如何部署到不同叢集上，其叢集所需的副本數等。</p>
-<p>而 Kubernetes Federation 的誕生正是希望利用聯邦機制來解決一些問題，並達到一些好處，如以下：</p>
-<ul>
-<li>簡化管理多個叢集的 Kubernetes 物件(如 Deployment, Service 等)。</li>
-<li>在多個叢集之間分散工作負載(容器)，以提升應用程式(服務)的可靠性。</li>
-<li>跨叢集的資源排程，依據排程策略在多個叢集進行應用程式(服務)部署。</li>
-<li>在不同叢集中，能更快速更容易地遷移應用程式(服務)。</li>
-<li>跨叢集的服務發現，服務可以提供給當地存取，以降低延遲。</li>
-<li>實踐多雲(Multi-cloud)或混合雲(Hybird Cloud)的部署。</li>
-</ul></p>
-            <p class="article-more-link">
-                <a href="/2019/04/20/kubernetes/federation-v2/">Read More</a>
-            </p>
-        
-        </div>
-        
-        <footer class="article-footer">
-            <div class="share-container">
-
-
-
-</div>
-
-    <a data-url="https://k2r2bai.com/2019/04/20/kubernetes/federation-v2/" data-id="ck3q029y4004yd9pfyx0uckd5" class="article-share-link"><i class="fa fa-share"></i>Share</a>
-<script>
-    (function ($) {
-        // Prevent duplicate binding
-        if (typeof(__SHARE_BUTTON_BINDED__) === 'undefined' || !__SHARE_BUTTON_BINDED__) {
-            __SHARE_BUTTON_BINDED__ = true;
-        } else {
-            return;
-        }
-        $('body').on('click', function() {
-            $('.article-share-box.on').removeClass('on');
-        }).on('click', '.article-share-link', function(e) {
-            e.stopPropagation();
-
-            var $this = $(this),
-                url = $this.attr('data-url'),
-                encodedUrl = encodeURIComponent(url),
-                id = 'article-share-box-' + $this.attr('data-id'),
-                offset = $this.offset(),
-                box;
-
-            if ($('#' + id).length) {
-                box = $('#' + id);
-
-                if (box.hasClass('on')){
-                    box.removeClass('on');
-                    return;
-                }
-            } else {
-                var html = [
-                    '<div id="' + id + '" class="article-share-box">',
-                        '<input class="article-share-input" value="' + url + '">',
-                        '<div class="article-share-links">',
-                            '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="fa fa-twitter article-share-twitter" target="_blank" title="Twitter"></a>',
-                            '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="fa fa-facebook article-share-facebook" target="_blank" title="Facebook"></a>',
-                            '<a href="http://pinterest.com/pin/create/button/?url=' + encodedUrl + '" class="fa fa-pinterest article-share-pinterest" target="_blank" title="Pinterest"></a>',
-                            '<a href="https://plus.google.com/share?url=' + encodedUrl + '" class="fa fa-google article-share-google" target="_blank" title="Google+"></a>',
-                        '</div>',
-                    '</div>'
-                ].join('');
-
-              box = $(html);
-
-              $('body').append(box);
-            }
-
-            $('.article-share-box.on').hide();
-
-            box.css({
-                top: offset.top + 25,
-                left: offset.left
-            }).addClass('on');
-
-        }).on('click', '.article-share-box', function (e) {
-            e.stopPropagation();
-        }).on('click', '.article-share-box-input', function () {
-            $(this).select();
-        }).on('click', '.article-share-box-link', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            window.open(this.href, 'article-share-box-window-' + Date.now(), 'width=500,height=450');
-        });
-    })(jQuery);
-</script>
-
-            
-    
-        <a href="https://k2r2bai.com/2019/04/20/kubernetes/federation-v2/#comments" class="article-comment-link disqus-comment-count" data-disqus-url="https://k2r2bai.com/2019/04/20/kubernetes/federation-v2/">Comments</a>
-    
-
-        </footer>
-    </div>
-</article>
-
-
-
-
     <nav id="page-nav">
         <a class="extend prev" rel="prev" href="/archives/2/">&laquo; Prev</a><a class="page-number" href="/">1</a><a class="page-number" href="/archives/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/archives/4/">4</a><a class="page-number" href="/archives/5/">5</a><span class="space">&hellip;</span><a class="page-number" href="/archives/13/">13</a><a class="extend next" rel="next" href="/archives/4/">Next &raquo;</a>
     </nav>
@@ -1628,6 +1602,22 @@
         <h3 class="widget-title">recent</h3>
         <div class="widget">
             <ul id="recent-post" class="">
+                
+                    <li>
+                        <div class="item-inner">
+                            <p class="item-category"><a class="article-category-link" href="/categories/LINE-Dev-Day/">LINE Dev Day</a></p>
+                            <p class="item-title"><a href="/2019/12/03/linedevday/part3/" class="title">2019 LINE Dev Day 議程心得 Part3</a></p>
+                            <p class="item-date"><time datetime="2019-12-02T16:00:00.000Z" itemprop="datePublished">2019-12-03</time></p>
+                        </div>
+                    </li>
+                
+                    <li>
+                        <div class="item-inner">
+                            <p class="item-category"><a class="article-category-link" href="/categories/LINE-Dev-Day/">LINE Dev Day</a></p>
+                            <p class="item-title"><a href="/2019/12/02/linedevday/part2/" class="title">2019 LINE Dev Day 議程心得 Part2</a></p>
+                            <p class="item-date"><time datetime="2019-12-01T16:00:00.000Z" itemprop="datePublished">2019-12-02</time></p>
+                        </div>
+                    </li>
                 
                     <li>
                         <div class="item-inner">
@@ -1650,22 +1640,6 @@
                             <p class="item-category"><a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a></p>
                             <p class="item-title"><a href="/2019/10/14/ironman2020/day29/" class="title">動手實作 Kubernetes 自定義控制器 Part5</a></p>
                             <p class="item-date"><time datetime="2019-10-13T16:00:00.000Z" itemprop="datePublished">2019-10-14</time></p>
-                        </div>
-                    </li>
-                
-                    <li>
-                        <div class="item-inner">
-                            <p class="item-category"><a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a></p>
-                            <p class="item-title"><a href="/2019/10/13/ironman2020/day28/" class="title">動手實作 Kubernetes 自定義控制器 Part4</a></p>
-                            <p class="item-date"><time datetime="2019-10-12T16:00:00.000Z" itemprop="datePublished">2019-10-13</time></p>
-                        </div>
-                    </li>
-                
-                    <li>
-                        <div class="item-inner">
-                            <p class="item-category"><a class="article-category-link" href="/categories/Kubernetes/">Kubernetes</a><i class="fa fa-angle-right"></i><a class="article-category-link" href="/categories/Kubernetes/IT-Ironman/">IT Ironman</a></p>
-                            <p class="item-title"><a href="/2019/10/12/ironman2020/day27/" class="title">動手實作 Kubernetes 自定義控制器 Part3</a></p>
-                            <p class="item-date"><time datetime="2019-10-11T16:00:00.000Z" itemprop="datePublished">2019-10-12</time></p>
                         </div>
                     </li>
                 
