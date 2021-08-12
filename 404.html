@@ -1,4 +1,4 @@
-<!doctype html><html lang=default>
+<!doctype html><html lang=en>
 <head>
 <meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1">
@@ -45,12 +45,12 @@
 </a>
 </li><li class=nav-item>
 <a class=nav-link data-bs-toggle=offcanvas href=#offcanvasSettings role=button aria-controls=offcanvasSettings>
-<i class="fas fa-fw fa-sliders-h"></i>
+<i class="fas fa-fw fa-sliders-h"></i> Settings
 </a>
 </li>
 <div class="offcanvas offcanvas-end surface h-100" tabindex=-1 id=offcanvasSettings aria-labelledby=offcanvasSettingsLabel>
 <div class=offcanvas-header>
-<h5 class=offcanvas-title w id=offcanvasSettingsLabel><i class="fas fa-fw fa-sliders-h"></i> </h5>
+<h5 class=offcanvas-title w id=offcanvasSettingsLabel><i class="fas fa-fw fa-sliders-h"></i> Settings</h5>
 <a role=button data-bs-dismiss=offcanvas aria-label=Close>
 <span class="fas fa-2x fa-fw fa-times"></span>
 </a>
@@ -58,7 +58,7 @@
 <div class=offcanvas-body><section class=setting>
 <form class=row>
 <div class=col-auto>
-<label><i class="fas fa-fw fa-adjust"></i> </label>
+<label><i class="fas fa-fw fa-adjust"></i> Mode</label>
 </div>
 <div class="col-auto ms-auto">
 <div class="form-check form-switch">
@@ -70,7 +70,7 @@
 <section class=setting>
 <form class="font-size-switcher-form row">
 <div class=col-auto>
-<label for=fontSize class=form-label><i class="fas fa-fw fa-font"></i> </label>
+<label for=fontSize class=form-label><i class="fas fa-fw fa-font"></i> Font Size</label>
 </div>
 <div class="col-auto ms-auto">
 <input type=range class=form-range min=-2 max=2 id=fontSize>
@@ -80,25 +80,25 @@
 <section class="setting palettes">
 <form class=row>
 <div class=col-auto>
-<label><i class="fas fa-fw fa-palette"></i> </label>
+<label><i class="fas fa-fw fa-palette"></i> Palette</label>
 </div>
 <div class="col-auto ms-auto">
 <span id=btnPalette class="btn btn-sm"><i class="fas fa-eye-dropper"></i></span>
 </div>
 </form>
 <div class="container mt-2 visually-hidden" id=palettePicker>
-<div class=btn-group><button type=button id=palette-blue title class="btn btn-sm palette bg-blue d-flex align-items-center justify-content-center">
-</button><button type=button id=palette-blue-gray title class="btn btn-sm palette bg-blue-gray d-flex align-items-center justify-content-center">
-</button><button type=button id=palette-brown title class="btn btn-sm palette bg-brown d-flex align-items-center justify-content-center">
-</button><button type=button id=palette-cyan title class="btn btn-sm palette bg-cyan d-flex align-items-center justify-content-center">
-</button><button type=button id=palette-green title class="btn btn-sm palette bg-green d-flex align-items-center justify-content-center">
-</button><button type=button id=palette-indigo title class="btn btn-sm palette bg-indigo d-flex align-items-center justify-content-center">
-</button><button type=button id=palette-orange title class="btn btn-sm palette bg-orange d-flex align-items-center justify-content-center">
-</button><button type=button id=palette-pink title class="btn btn-sm palette bg-pink d-flex align-items-center justify-content-center">
-</button><button type=button id=palette-purple title class="btn btn-sm palette bg-purple d-flex align-items-center justify-content-center">
-</button><button type=button id=palette-red title class="btn btn-sm palette bg-red d-flex align-items-center justify-content-center">
-</button><button type=button id=palette-teal title class="btn btn-sm palette bg-teal d-flex align-items-center justify-content-center">
-</button><button type=button id=palette-yellow title class="btn btn-sm palette bg-yellow d-flex align-items-center justify-content-center">
+<div class=btn-group><button type=button id=palette-blue title=Blue class="btn btn-sm palette bg-blue d-flex align-items-center justify-content-center">
+</button><button type=button id=palette-blue-gray title="Blue Gray" class="btn btn-sm palette bg-blue-gray d-flex align-items-center justify-content-center">
+</button><button type=button id=palette-brown title=Brown class="btn btn-sm palette bg-brown d-flex align-items-center justify-content-center">
+</button><button type=button id=palette-cyan title=Cyan class="btn btn-sm palette bg-cyan d-flex align-items-center justify-content-center">
+</button><button type=button id=palette-green title=Green class="btn btn-sm palette bg-green d-flex align-items-center justify-content-center">
+</button><button type=button id=palette-indigo title=Indigo class="btn btn-sm palette bg-indigo d-flex align-items-center justify-content-center">
+</button><button type=button id=palette-orange title=Orange class="btn btn-sm palette bg-orange d-flex align-items-center justify-content-center">
+</button><button type=button id=palette-pink title=Pink class="btn btn-sm palette bg-pink d-flex align-items-center justify-content-center">
+</button><button type=button id=palette-purple title=Purple class="btn btn-sm palette bg-purple d-flex align-items-center justify-content-center">
+</button><button type=button id=palette-red title=Red class="btn btn-sm palette bg-red d-flex align-items-center justify-content-center">
+</button><button type=button id=palette-teal title=Teal class="btn btn-sm palette bg-teal d-flex align-items-center justify-content-center">
+</button><button type=button id=palette-yellow title=Yellow class="btn btn-sm palette bg-yellow d-flex align-items-center justify-content-center">
 </button></button>
 </div>
 </div>
