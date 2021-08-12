@@ -1,0 +1,275 @@
+<!doctype html><html lang=default>
+<head>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>Categories - Hugo Bootstrap</title><link rel=apple-touch-icon href=/images/favicons/apple-touch-icon.png sizes=180x180>
+<link rel=icon href=/images/favicons/favicon-32x32.png sizes=32x32 type=image/png>
+<link rel=icon href=/images/favicons/favicon-16x16.png sizes=16x16 type=image/png>
+<link rel=manifest href=/images/favicons/manifest.json>
+<link rel=icon href=/images/favicons/favicon.ico>
+<meta name=keywords content="Hugo,Bootstrap,Blog Theme">
+<meta name=description content="An extreme fast, responsive and feature-rich blog theme for Hugo"><meta itemprop=name content="Categories">
+<meta itemprop=description content="An extreme fast, responsive and feature-rich blog theme for Hugo"><meta property="og:title" content="Categories">
+<meta property="og:description" content="An extreme fast, responsive and feature-rich blog theme for Hugo">
+<meta property="og:type" content="website">
+<meta property="og:url" content="/categories/">
+<meta name=twitter:card content="summary">
+<meta name=twitter:title content="Categories">
+<meta name=twitter:description content="An extreme fast, responsive and feature-rich blog theme for Hugo">
+<meta name=twitter:site content="@yourtwitterusername">
+<link rel=alternate type=application/rss+xml href=/categories/index.xml title="Hugo Bootstrap"><meta data-name=palette content="blue"><link rel=stylesheet href=/css/bundle.min.f2209a83bfa7f733540426e3abe2edccef95ac63c8535e2b3750caccec2f85ed.css integrity="sha256-8iCag7+n9zNUBCbjq+LtzO+VrGPIU14rN1DKzOwvhe0=" crossorigin=anonymous><script src=/js/bundle.min.3ca42bc06f6c318cc54e40743c29d71b5aaa73b4839705ee5c445e7b6e2d7a21.js integrity="sha256-PKQrwG9sMYzFTkB0PCnXG1qqc7SDlwXuXERee24teiE=" crossorigin=anonymous></script>
+</head><body><header><nav class="navbar navbar-expand-xl fixed-top">
+<div class=container>
+<a class=navbar-brand href=/>
+<img class=logo alt=Logo src=/images/logo.webp loading=lazy>BOOTSTRAP</a>
+<button class=navbar-toggler type=button data-bs-toggle=collapse data-bs-target=#navbarSupportedContent aria-controls=navbarSupportedContent aria-expanded=false aria-label="Toggle navigation">
+<span class=navbar-toggler-icon></span>
+</button>
+<div class="collapse navbar-collapse" id=navbarSupportedContent>
+<ul class="navbar-nav me-1 mb-2 mb-lg-0"><form class="search-bar d-flex ms-1" action=/search>
+<div class="input-group input-group-sm">
+<button class="btn btn-search disabled position-absolute left-0" type=submit><i class="fas fa-fw fa-search"></i></button>
+<input class="form-control rounded-pill" id=searchQuery name=q type=search aria-label=Search>
+</div>
+</form></ul><ul class="navbar-nav me-1 mb-2 mb-lg-0 me-1 ms-auto"><li class=nav-item>
+<a class=nav-link href=/archives/>
+<i class="fas fa-fw fa-file-archive"></i>Archives
+</a>
+</li><li class=nav-item>
+<a class="nav-link active" href=/categories/>
+<i class="fas fa-fw fa-folder"></i>Categories
+</a>
+</li><li class=nav-item>
+<a class=nav-link href=/tags/>
+<i class="fas fa-fw fa-tags"></i>Tags
+</a>
+</li><li class=nav-item>
+<a class=nav-link href=/series/>
+<i class="fas fa-fw fa-columns"></i>Series
+</a>
+</li><li class=nav-item>
+<a class=nav-link data-bs-toggle=offcanvas href=#offcanvasSettings role=button aria-controls=offcanvasSettings>
+<i class="fas fa-fw fa-sliders-h"></i>
+</a>
+</li>
+<div class="offcanvas offcanvas-end surface h-100" tabindex=-1 id=offcanvasSettings aria-labelledby=offcanvasSettingsLabel>
+<div class=offcanvas-header>
+<h5 class=offcanvas-title w id=offcanvasSettingsLabel><i class="fas fa-fw fa-sliders-h"></i> </h5>
+<a role=button data-bs-dismiss=offcanvas aria-label=Close>
+<span class="fas fa-2x fa-fw fa-times"></span>
+</a>
+</div>
+<div class=offcanvas-body><section class=setting>
+<form class=row>
+<div class=col-auto>
+<label><i class="fas fa-fw fa-adjust"></i> </label>
+</div>
+<div class="col-auto ms-auto">
+<div class="form-check form-switch">
+<input class=form-check-input type=checkbox id=modeSwitcher>
+</div>
+</div>
+</form>
+</section>
+<section class=setting>
+<form class="font-size-switcher-form row">
+<div class=col-auto>
+<label for=fontSize class=form-label><i class="fas fa-fw fa-font"></i> </label>
+</div>
+<div class="col-auto ms-auto">
+<input type=range class=form-range min=-2 max=2 id=fontSize>
+</div>
+</form>
+</section>
+<section class="setting palettes">
+<form class=row>
+<div class=col-auto>
+<label><i class="fas fa-fw fa-palette"></i> </label>
+</div>
+<div class="col-auto ms-auto">
+<span id=btnPalette class="btn btn-sm"><i class="fas fa-eye-dropper"></i></span>
+</div>
+</form>
+<div class="container mt-2 visually-hidden" id=palettePicker>
+<div class=btn-group><button type=button id=palette-blue title class="btn btn-sm palette bg-blue d-flex align-items-center justify-content-center">
+</button><button type=button id=palette-blue-gray title class="btn btn-sm palette bg-blue-gray d-flex align-items-center justify-content-center">
+</button><button type=button id=palette-brown title class="btn btn-sm palette bg-brown d-flex align-items-center justify-content-center">
+</button><button type=button id=palette-cyan title class="btn btn-sm palette bg-cyan d-flex align-items-center justify-content-center">
+</button><button type=button id=palette-green title class="btn btn-sm palette bg-green d-flex align-items-center justify-content-center">
+</button><button type=button id=palette-indigo title class="btn btn-sm palette bg-indigo d-flex align-items-center justify-content-center">
+</button><button type=button id=palette-orange title class="btn btn-sm palette bg-orange d-flex align-items-center justify-content-center">
+</button><button type=button id=palette-pink title class="btn btn-sm palette bg-pink d-flex align-items-center justify-content-center">
+</button><button type=button id=palette-purple title class="btn btn-sm palette bg-purple d-flex align-items-center justify-content-center">
+</button><button type=button id=palette-red title class="btn btn-sm palette bg-red d-flex align-items-center justify-content-center">
+</button><button type=button id=palette-teal title class="btn btn-sm palette bg-teal d-flex align-items-center justify-content-center">
+</button><button type=button id=palette-yellow title class="btn btn-sm palette bg-yellow d-flex align-items-center justify-content-center">
+</button></button>
+</div>
+</div>
+</section></div>
+</div></ul>
+</div>
+</div>
+</nav>
+</header>
+<main role=main class=container>
+<div class="row content">
+<div class=col-lg-8>
+<div class=container><nav class=row aria-label=breadcrumb>
+<ol class="breadcrumb surface"><li class=breadcrumb-item><a href=/></a></li><li class="breadcrumb-item active">Categories</li></ol>
+</nav><div class=taxonomys><div class="taxonomy row surface">
+<h2 class=taxonomy-title>
+<a href=/categories/shortcode/>Shortcode</a>
+</h2>
+<div class=taxonomy-meta>
+<span class=taxonomy-post-count><i class="fas fa-fw fa-file-alt"></i></span>
+</div><ul class=taxonomy-posts><li class=taxonomy-post>
+<a href=/posts/shortcodes/alert/>Alert Shortcode</a>
+<span class="float-end post-date">Oct 22</span>
+</li></ul></div></div>
+</div>
+</div><aside class="col-lg-4 sidebar d-flex">
+<div class=container><section class="profile surface row text-center">
+<div class="col-12 d-flex align-items-center justify-content-center"><img class="profile-avatar rounded-circle" src=/images/profile.webp alt="Kyle Bai" loading=lazy></div>
+<div class="col-12 profile-meta"><div class=profile-name>Kyle Bai</div><div class=profile-bio>MY HEAD IS IN THE CLOUD!! Co-organizer of @cloud-native-taiwan. AWS Container Hero. Consultant at Red Hat Taiwan.</div><div class=profile-location><i class="fas fa-fw fa-map-marker-alt"></i>Taipei</div></div>
+</section>
+<section class="recent-posts row surface">
+<h4></h4>
+<ul><li><a href=/posts/shortcodes/alert/>Alert Shortcode
+</a></li></ul>
+</section><section class="taxonomy-categories row surface">
+<h4>
+<a href=/categories></a>
+</h4>
+<div><a href=/categories/shortcode/ class="post-taxonomy rounded btn btn-sm me-2 mb-2" title=Shortcode>
+Shortcode <span class="badge rounded-pill">1</span>
+</a></div>
+</section><section class="taxonomy-series row surface">
+<h4>
+<a href=/series></a>
+</h4>
+<div><a href=/series/%E7%94%A8%E6%88%B6%E6%89%8B%E5%86%8A/ class="post-taxonomy rounded btn btn-sm me-2 mb-2" title=用戶手冊>
+用戶手冊 <span class="badge rounded-pill">1</span>
+</a></div>
+</section><section class="taxonomy-tags row surface">
+<h4>
+<a href=/tags></a>
+</h4>
+<div><a href=/tags/alert/ class="post-taxonomy rounded btn btn-sm me-2 mb-2" title=Alert>
+Alert <span class="badge rounded-pill">1</span>
+</a></div>
+</section></div>
+</aside>
+</div>
+</main><footer class="footer mt-auto py-3 text-center container"><nav class="social-links nav my-2 justify-content-center"><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=https://space.bilibili.com/yourbilibiliuserid title=bilibili>
+<i class="fa-fw fa-2x fas fa-tv"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=https://bitbucket.org/yourbitbucketworkspaceid title=Bitbucket>
+<i class="fa-fw fa-2x fab fa-bitbucket"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=https://discord.com/invite/yourdiscordinvitecode title=Discord>
+<i class="fa-fw fa-2x fab fa-discord"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=https://yourforum.tld title=Discourse>
+<i class="fa-fw fa-2x fab fa-discourse"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=https://hub.docker.com/u/yourdockerhubusername title="Docker Hub">
+<i class="fa-fw fa-2x fab fa-docker"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" href=mailto:user@domain.tld title=Email>
+<i class="fas fa-fw fa-2x fa-envelope"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=https://facebook.com/yourfacebookusername title=Facebook>
+<i class="fa-fw fa-2x fab fa-facebook-f"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=https://facebook.com/groups/yourfacebookgroupname title="Facebook Group">
+<i class="fa-fw fa-2x fab fa-facebook-square"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=https://github.com/yourgithubusername title=GitHub>
+<i class="fa-fw fa-2x fab fa-github"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=https://gitlab.com/yourgitlabusername title=GitLab>
+<i class="fa-fw fa-2x fab fa-gitlab"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=https://www.instagram.com/yourinstagramusername title=Instagram>
+<i class="fa-fw fa-2x fab fa-instagram"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=https://www.last.fm/user/yourlastfmusername title=Last.fm>
+<i class="fa-fw fa-2x fab fa-lastfm"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=https://linkedin.com/yourlinkedinusername title=LinkedIn>
+<i class="fa-fw fa-2x fab fa-linkedin-in"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=https://medium.com/@yourmediumusername title=Medium>
+<i class="fab fa-fw fa-2x fa-medium-m"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href="http://wpa.qq.com/msgrd?v=3&uin=yourqqnumber&site=qq&menu=yes" title=QQ>
+<i class="fa-fw fa-2x fab fa-qq"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=https://www.quora.com/profile/yourquorausername title=Quora>
+<i class="fa-fw fa-2x fab fa-quora"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=https://www.reddit.com/user/yourredditusername title=Reddit>
+<i class="fa-fw fa-2x fab fa-reddit"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=https://stackoverflow.com/users/yourstackoverflowuserid title="Stack Overflow">
+<i class="fa-fw fa-2x fab fa-stack-overflow"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=https://t.me/yourtelegramusername title=Telegram>
+<i class="fa-fw fa-2x fab fa-telegram-plane"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=https://yourtumblrusername.tumblr.com title=Tumblr>
+<i class="fa-fw fa-2x fab fa-tumblr"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=https://twitter.com/yourtwitterusername title=Twitter>
+<i class="fa-fw fa-2x fab fa-twitter"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=https://weibo.com/yourweibousername title=Weibo>
+<i class="fa-fw fa-2x fab fa-weibo"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=https://www.youtube.com/channel/youryoutubechannelid title=Youtube>
+<i class="fa-fw fa-2x fab fa-youtube"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=https://www.zhihu.com/people/yourzhihuusername title=Zhihu>
+<i class="fa-fw fa-2x fab fa-zhihu"></i>
+</a>
+</li><li class=nav-item>
+<a class="nav-link social-link" target=_blank href=/categories/index.xml title=RSS>
+<i class="fas fa-fw fa-2x fa-rss"></i>
+</a>
+</li></nav>
+<div class="copyright mb-2">
+Copyright © 2021-2021 KaiRen Bai. All Rights Reserved.
+</div>
+<div class="powered-by mb-2">
+Powered by <a href=https://gohugo.io target=_blank>Hugo</a> and the <a href=https://github.com/razonyang/hugo-theme-bootstrap target=_blank>Bootstrap</a> theme.
+</div></footer>
+<a id=btnScrollToTop class=btn-scroll-to-top>
+<i class="fas fa-fw fa-chevron-circle-up fa-2x"></i>
+</a>
+</body>
+</html>
