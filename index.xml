@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>KaiRen's Blog</title><link>/</link><description>Recent content on KaiRen's Blog</description><generator>Hugo -- gohugo.io</generator><copyright>Copyright © 2021-{year} KaiRen Bai. All Rights Reserved.</copyright><lastBuildDate>Thu, 12 Aug 2021 00:00:00 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml"/><item><title>I am back!!</title><link>/posts/archived-blog/</link><pubDate>Thu, 12 Aug 2021 00:00:00 +0000</pubDate><guid>/posts/archived-blog/</guid><description>&lt;p>經過很長一段時間，終於在經歷一段心理抗爭後，慢慢找回一些學習技術的初心，剛好也順便把之前維護的 Hexo blog 替換成 Hugo :D&lt;/p>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>KaiRen's Blog</title><link>/</link><description>Recent content on KaiRen's Blog</description><generator>Hugo -- gohugo.io</generator><copyright>Copyright © 2021-{year} KaiRen Bai. All Rights Reserved.</copyright><lastBuildDate>Thu, 12 Aug 2021 00:00:00 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml"/><item><title>I am back!!</title><link>/posts/archived-blog/</link><pubDate>Thu, 12 Aug 2021 00:00:00 +0000</pubDate><guid>/posts/archived-blog/</guid><description>&lt;p>經過很長一段時間，終於在長期的心理抗爭後，慢慢找回一些學習技術的初心，剛好也順便把之前維護的 Hexo 替換成 Hugo :D&lt;/p>
 &lt;blockquote>
-&lt;p>由於我已經開始在新部落格撰寫新文章，所以將舊的部落格移至 &lt;strong>&lt;a href="https://kairen-archived.github.io/" target="_blank">KaiRen Archived&lt;/a>
-&lt;/strong>&lt;/p>
-&lt;p>Because I have start to write new article in new blog, so I have moved the old blog to &lt;strong>&lt;a href="https://kairen-archived.github.io/" target="_blank">KaiRen Archived&lt;/a>
+&lt;p>由於我已經開始在新部落格撰寫文章，因此將舊的部落格移至 &lt;strong>&lt;a href="https://kairen-archived.github.io/" target="_blank">KaiRen Archived&lt;/a>
+&lt;/strong>。&lt;/p>
+&lt;p>Because I have started to write new article in new blog, so I have moved the old blog to &lt;strong>&lt;a href="https://kairen-archived.github.io/" target="_blank">KaiRen Archived&lt;/a>
 &lt;/strong>.&lt;/p>
 &lt;/blockquote></description></item></channel></rss>
